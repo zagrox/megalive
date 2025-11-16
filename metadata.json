@@ -1,0 +1,5 @@
+{
+  "name": "MegaLive",
+  "description": "A dashboard to customize and configure an N8N chatbot workflow with document vector store integration, featuring a live preview and RTL design.",
+  "requestFramePermissions": []
+}
