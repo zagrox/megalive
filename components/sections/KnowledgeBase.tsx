@@ -68,7 +68,7 @@ const KnowledgeBase: React.FC = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">پایگاه دانش (Vector Store)</h2>
+        
         <p className="text-gray-500 dark:text-gray-400">فایل‌های خود را آپلود کنید تا چت‌بات از محتوای آن‌ها برای پاسخگویی استفاده کند.</p>
       </div>
 

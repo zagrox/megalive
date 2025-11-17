@@ -158,7 +158,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                             tabIndex={1}
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left dir-ltr placeholder:text-right"
+                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right dir-ltr placeholder:text-right"
                         />
                     </div>
 
@@ -185,7 +185,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                             tabIndex={3}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-14 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left dir-ltr placeholder:text-right"
+                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-14 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right dir-ltr placeholder:text-right"
                         />
                     </div>
                 </div>
@@ -236,7 +236,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                             placeholder="آدرس ایمیل"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left dir-ltr placeholder:text-right"
+                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right dir-ltr placeholder:text-right"
                         />
                     </div>
 
@@ -249,7 +249,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                             minLength={8}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left dir-ltr placeholder:text-right"
+                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right dir-ltr placeholder:text-right"
                         />
                     </div>
 
@@ -285,7 +285,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                             placeholder="آدرس ایمیل"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left dir-ltr placeholder:text-right"
+                            className="w-full bg-[#1e293b] border border-gray-700 rounded-2xl py-5 pr-14 pl-4 text-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right dir-ltr placeholder:text-right"
                         />
                     </div>
 

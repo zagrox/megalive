@@ -26,7 +26,6 @@ const Dashboard: React.FC = () => {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">System Online</span>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">داشبورد فرماندهی</h2>
             <p className="text-gray-500 dark:text-gray-400 mt-1">نمای کلی عملکرد مدل زبانی و تعاملات کاربران</p>
         </div>
         
