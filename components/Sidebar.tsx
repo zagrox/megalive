@@ -26,11 +26,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   appLogoUrl
 }) => {
   const menuItems: { id: TabType; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'داشبورد وضعیت', icon: <LayoutDashboard size={20} /> },
-    { id: 'general', label: 'تنظیمات عمومی', icon: <Settings size={20} /> },
+    { id: 'dashboard', label: 'داشبورد من', icon: <LayoutDashboard size={20} /> },
+    { id: 'general', label: 'تنظیمات ربات', icon: <Settings size={20} /> },
     { id: 'appearance', label: 'ظاهر چت‌بات', icon: <Palette size={20} /> },
     { id: 'knowledge', label: 'پایگاه دانش', icon: <Database size={20} /> },
-    { id: 'integrations', label: 'افزونه‌ها و ادغام‌ها', icon: <Puzzle size={20} /> },
+    { id: 'integrations', label: 'اتصال افزونه‌', icon: <Puzzle size={20} /> },
     { id: 'deploy', label: 'انتشار و کد', icon: <Rocket size={20} /> },
   ];
 
@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <button 
         onClick={toggleCollapse}
         className={`
-          flex absolute -left-3 top-9 z-50
+          flex absolute -left-3 top-16 z-50
           w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
           rounded-full items-center justify-center
           text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400
@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </button>
 
       {/* Header */}
-      <div className={`p-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 h-[73px] ${isCollapsed ? 'justify-center' : ''}`}>
+      <div className={`p-4 flex items-center gap-8 border-b border-gray-100 dark:border-gray-800 h-[73px] ${isCollapsed ? 'justify-center' : ''}`}>
         {appLogoUrl ? (
            <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg shadow-blue-600/20 flex-shrink-0 bg-white dark:bg-gray-800 p-0.5">
               <img 
