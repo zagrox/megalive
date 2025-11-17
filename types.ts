@@ -11,6 +11,7 @@ export interface BotConfig {
   appTitle?: string;
   appSlogan?: string;
   appLogoUrl?: string;
+  appColor?: string;
   name: string;
   description: string;
   systemInstruction: string;
