@@ -1,3 +1,4 @@
+
 export interface UploadedFile {
   id: string;
   name: string;
@@ -7,6 +8,9 @@ export interface UploadedFile {
 }
 
 export interface BotConfig {
+  appTitle?: string;
+  appSlogan?: string;
+  appLogoUrl?: string;
   name: string;
   description: string;
   systemInstruction: string;
@@ -17,7 +21,7 @@ export interface BotConfig {
   n8nWebhookUrl: string;
 }
 
-export type TabType = 'general' | 'appearance' | 'knowledge' | 'deploy';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile';
 
 export interface Message {
   id: string;

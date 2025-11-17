@@ -1,6 +1,9 @@
+
 import { BotConfig, UploadedFile } from './types';
 
 export const DEFAULT_CONFIG: BotConfig = {
+  appTitle: 'Mega Live AI',
+  appSlogan: 'نسخه ۱.۰.۰',
   name: 'دستیار هوشمند',
   description: 'پاسخگوی سوالات کاربران درباره خدمات ما',
   systemInstruction: 'شما یک دستیار هوشمند مفید و مودب هستید که به کاربران در مورد خدمات شرکت کمک می‌کنید. همیشه به زبان فارسی پاسخ دهید.',
