@@ -131,7 +131,7 @@ const App: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-24 lg:pb-12">
             <div className="max-w-7xl mx-auto">
               {activeTab === 'dashboard' && (
-                <Dashboard />
+                <Dashboard setActiveTab={setActiveTab} />
               )}
               {activeTab !== 'dashboard' && (
                 <div className="max-w-3xl mx-auto">

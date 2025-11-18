@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { Activity, Zap, Users, Server, ArrowUpRight, Bot, ChevronDown, Plus, Check } from 'lucide-react';
+import { 
+    Activity, Zap, Users, Server, ArrowUpRight, Bot, ChevronDown, Plus, Check, 
+    Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
+    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone
+} from 'lucide-react';
+import { TabType } from '../../types';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  setActiveTab: (tab: TabType) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
   const [selectedBot, setSelectedBot] = useState('دستیار هوشمند');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -11,8 +20,65 @@ const Dashboard: React.FC = () => {
     { id: 3, name: 'مدیریت فروش', status: 'online' },
   ];
 
+  const quickAccessCards = [
+    { 
+        id: 'appearance' as TabType, 
+        title: 'Bot Theme', 
+        desc: 'ظاهر و رنگ‌بندی', 
+        icon: <Palette size={24} />, 
+        color: 'text-purple-600 dark:text-purple-400',
+        bg: 'bg-purple-50 dark:bg-purple-900/20',
+        border: 'hover:border-purple-200 dark:hover:border-purple-800'
+    },
+    { 
+        id: 'general' as TabType, 
+        title: 'Bot Setting', 
+        desc: 'تنظیمات اصلی و هویت', 
+        icon: <Settings size={24} />, 
+        color: 'text-blue-600 dark:text-blue-400',
+        bg: 'bg-blue-50 dark:bg-blue-900/20',
+        border: 'hover:border-blue-200 dark:hover:border-blue-800'
+    },
+    { 
+        id: 'knowledge' as TabType, 
+        title: 'Bot Data', 
+        desc: 'مدیریت پایگاه دانش', 
+        icon: <Database size={24} />, 
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+        border: 'hover:border-emerald-200 dark:hover:border-emerald-800'
+    },
+    { 
+        id: 'integrations' as TabType, 
+        title: 'Bot Plugins', 
+        desc: 'اتصال به ابزارها', 
+        icon: <Puzzle size={24} />, 
+        color: 'text-amber-600 dark:text-amber-400',
+        bg: 'bg-amber-50 dark:bg-amber-900/20',
+        border: 'hover:border-amber-200 dark:hover:border-amber-800'
+    },
+    { 
+        id: 'deploy' as TabType, 
+        title: 'Bot Publish', 
+        desc: 'انتشار و دریافت کد', 
+        icon: <Rocket size={24} />, 
+        color: 'text-pink-600 dark:text-pink-400',
+        bg: 'bg-pink-50 dark:bg-pink-900/20',
+        border: 'hover:border-pink-200 dark:hover:border-pink-800'
+    },
+  ];
+
+  const integrationStatus = [
+    { id: 'chatbot', name: 'Chatbot', icon: <MessageSquare size={20} />, status: 'Active', color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+    { id: 'telegram', name: 'Telegram', icon: <Send size={20} />, status: 'Connected', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { id: 'sheets', name: 'Google Sheets', icon: <Table size={20} />, status: 'Synced', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { id: 'wordpress', name: 'WordPress', icon: <LayoutTemplate size={20} />, status: 'Not Linked', color: 'text-gray-400', bg: 'bg-gray-100 dark:bg-gray-800' },
+    { id: 'email', name: 'Email', icon: <Mail size={20} />, status: 'Active', color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+    { id: 'whatsapp', name: 'WhatsApp', icon: <Phone size={20} />, status: 'Pending', color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
+  ];
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header Section */}
       <div className="flex items-end justify-between border-b border-gray-200 dark:border-gray-800 pb-6 transition-colors">
         <div>
@@ -20,8 +86,7 @@ const Dashboard: React.FC = () => {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">System Online</span>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">داشبورد فرماندهی</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">نمای کلی عملکرد مدل زبانی و تعاملات کاربران</p>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">داشبورد مگالایو</h2>
         </div>
         
         {/* Bot Selector Dropdown */}
@@ -142,6 +207,74 @@ const Dashboard: React.FC = () => {
                 <span className="text-xs text-emerald-500 font-mono">Stable</span>
             </div>
         </div>
+      </div>
+
+      {/* Manage App Section */}
+      <div className="pt-4">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">مدیریت اپلیکیشن</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {quickAccessCards.map((card) => (
+                <button 
+                    key={card.id}
+                    onClick={() => setActiveTab(card.id)}
+                    className={`
+                        flex flex-col p-5 rounded-2xl border border-gray-200 dark:border-gray-800 
+                        bg-white dark:bg-gray-900 transition-all duration-300 group
+                        hover:shadow-lg ${card.border} hover:-translate-y-1
+                    `}
+                >
+                    <div className="flex justify-between items-start w-full mb-4">
+                        <div className={`p-3 rounded-xl ${card.bg} ${card.color}`}>
+                            {card.icon}
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-full p-1.5 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                            <ArrowLeft size={14} className="rtl:rotate-0 rotate-180" />
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <h4 className="font-bold text-gray-800 dark:text-white text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-vazir">
+                            {card.title}
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {card.desc}
+                        </p>
+                    </div>
+                </button>
+            ))}
+        </div>
+      </div>
+
+      {/* Integrations Status Section */}
+      <div className="pt-2">
+         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">وضعیت پلتفرم‌ها</h3>
+         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {integrationStatus.map((item, index) => (
+                <button
+                    key={index}
+                    onClick={() => setActiveTab('integrations')}
+                    className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md group"
+                >
+                    <div className={`p-3 rounded-xl mb-3 ${item.bg} ${item.color} group-hover:scale-110 transition-transform`}>
+                        {item.icon}
+                    </div>
+                    <span className="font-bold text-gray-700 dark:text-gray-200 text-sm mb-1.5">{item.name}</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                            item.status === 'Active' || item.status === 'Connected' || item.status === 'Synced' 
+                            ? 'bg-green-500' 
+                            : item.status === 'Pending' ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}></span>
+                        <span className={`text-[10px] ${
+                             item.status === 'Active' || item.status === 'Connected' || item.status === 'Synced' 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : item.status === 'Pending' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'
+                        }`}>
+                            {item.status}
+                        </span>
+                    </div>
+                </button>
+            ))}
+         </div>
       </div>
     </div>
   );
