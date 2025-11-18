@@ -1,12 +1,10 @@
 import React from 'react';
-import { Settings, Palette, Database, Rocket, Box, Moon, Sun, ChevronLeft, LayoutDashboard, Puzzle, User } from 'lucide-react';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box } from 'lucide-react';
 import { TabType } from '../types';
 
 interface SidebarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
-  isDark: boolean;
-  toggleTheme: () => void;
   isCollapsed: boolean;
   toggleCollapse: () => void;
   appTitle?: string;
@@ -17,8 +15,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeTab, 
   setActiveTab, 
-  isDark, 
-  toggleTheme,
   isCollapsed,
   toggleCollapse,
   appTitle = 'Mega Live AI',
@@ -36,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className={`
-      relative h-screen
+      relative h-screen z-40
       bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800
       transition-all duration-300 ease-in-out shadow-xl lg:shadow-none
       flex flex-col flex-shrink-0
@@ -47,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <button 
         onClick={toggleCollapse}
         className={`
-          flex absolute -left-3 top-9 z-50
+          flex absolute -left-3 top-6 z-50
           w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
           rounded-full items-center justify-center
           text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400
@@ -58,9 +54,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </button>
 
       {/* Header */}
-      <div className={`p-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 h-[73px] ${isCollapsed ? 'justify-center' : ''}`}>
+      <div className={`p-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 h-[65px] ${isCollapsed ? 'justify-center' : ''}`}>
         {appLogoUrl ? (
-           <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg shadow-blue-600/20 flex-shrink-0 bg-white dark:bg-gray-800 p-0.5">
+           <div className="w-9 h-9 rounded-lg overflow-hidden shadow-lg shadow-blue-600/20 flex-shrink-0 bg-white dark:bg-gray-800 p-0.5">
               <img 
                 src={appLogoUrl} 
                 alt="App Logo" 
@@ -69,18 +65,18 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
            </div>
         ) : (
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/20 flex-shrink-0">
-            <Box size={24} />
+          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/20 flex-shrink-0">
+            <Box size={22} />
           </div>
         )}
         <div className={`transition-opacity duration-200 overflow-hidden ${isCollapsed ? 'hidden' : 'block'}`}>
-          <h1 className="font-bold text-gray-800 dark:text-white text-lg whitespace-nowrap">{appTitle}</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{appSlogan}</p>
+          <h1 className="font-bold text-gray-800 dark:text-white text-base whitespace-nowrap">{appTitle}</h1>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{appSlogan}</p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 lg:p-4 space-y-2 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 p-2 lg:p-3 space-y-1.5 overflow-y-auto overflow-x-hidden">
         {menuItems.map((item) => (
           <button
             key={item.id}
@@ -94,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             } ${isCollapsed ? 'justify-center' : ''}`}
           >
             <div className="flex-shrink-0">{item.icon}</div>
-            <span className={`whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
+            <span className={`whitespace-nowrap text-sm transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
               {item.label}
             </span>
             
@@ -108,33 +104,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </nav>
 
-      {/* Footer Actions */}
+      {/* Footer Actions (Storage only) */}
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
         
-        {/* User Profile Button */}
-        <button
-            onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center gap-3 rounded-xl transition-all duration-200 group relative
-                ${activeTab === 'profile' 
-                   ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                   : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }
-                ${isCollapsed ? 'justify-center p-3' : 'px-3 py-3'}
-            `}
-        >
-             <div className={`flex-shrink-0 ${activeTab === 'profile' ? '' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`}>
-                <User size={20} />
-             </div>
-             <span className={`whitespace-nowrap font-medium transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
-                حساب کاربری
-             </span>
-             {isCollapsed && (
-              <div className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                حساب کاربری
-              </div>
-            )}
-        </button>
-
         {/* Storage Widget */}
         <div className={`bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-800 dark:to-gray-800 rounded-xl border border-blue-100 dark:border-gray-700 overflow-hidden transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
           {!isCollapsed ? (
@@ -154,15 +126,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
           )}
         </div>
-
-        {/* Theme Toggle */}
-        <button 
-          onClick={toggleTheme}
-          className={`w-full flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isCollapsed ? 'justify-center p-3' : 'justify-between px-4 py-3'}`}
-        >
-          <span className={`text-sm font-medium whitespace-nowrap ${isCollapsed ? 'hidden' : 'block'}`}>حالت شب</span>
-          {isDark ? <Moon size={18} className="text-blue-400 flex-shrink-0" /> : <Sun size={18} className="text-orange-400 flex-shrink-0" />}
-        </button>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import Dashboard from './components/sections/Dashboard';
 import GeneralSettings from './components/sections/GeneralSettings';
 import AppearanceSettings from './components/sections/AppearanceSettings';
@@ -108,26 +109,34 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
       
-      {/* Unified Sidebar for all devices */}
+      {/* Sidebar */}
       <Sidebar 
         appTitle={config.appTitle}
         appSlogan={config.appSlogan}
         appLogoUrl={config.appLogoUrl}
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-        isDark={isDark}
-        toggleTheme={toggleTheme}
         isCollapsed={isSidebarCollapsed}
         toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      {/* Content Wrapper */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
         
-        <div className="flex-1 flex overflow-hidden">
-          {/* Settings Scrollable Area */}
+        {/* Top Header */}
+        <Header 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab}
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+        />
+
+        {/* Main Content & Preview */}
+        <main className="flex-1 flex overflow-hidden relative">
+          
+          {/* Settings/Dashboard Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-24 lg:pb-12">
             <div className="max-w-7xl mx-auto">
               {activeTab === 'dashboard' && (
@@ -169,8 +178,8 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

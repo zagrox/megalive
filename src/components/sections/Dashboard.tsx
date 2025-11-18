@@ -86,7 +86,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">System Online</span>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">داشبورد مگالایو</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-lg">وضعیت کلی سیستم و دسترسی سریع به بخش‌ها</p>
         </div>
         
         {/* Bot Selector Dropdown */}
@@ -211,7 +211,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
 
       {/* Manage App Section */}
       <div className="pt-4">
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">مدیریت اپلیکیشن</h3>
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">مدیریت چت‌بات</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {quickAccessCards.map((card) => (
                 <button 
@@ -246,7 +246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
 
       {/* Integrations Status Section */}
       <div className="pt-2">
-         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">وضعیت پلتفرم‌ها</h3>
+         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">اتصال پلتفرم‌ها</h3>
          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {integrationStatus.map((item, index) => (
                 <button
