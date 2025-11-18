@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <img 
                 src={appLogoUrl} 
                 alt="App Logo" 
-                className="w-full h-full object-contain" 
+                className="w-full h-full object-contain dark:invert" 
                 referrerPolicy="no-referrer"
               />
            </div>
