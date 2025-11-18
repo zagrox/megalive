@@ -1,4 +1,3 @@
-
 import { BotConfig, UploadedFile } from './types';
 
 export const DEFAULT_CONFIG: BotConfig = {

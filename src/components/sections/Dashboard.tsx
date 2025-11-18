@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Zap, Users, Server, Terminal, Clock, ArrowUpRight, Bot, ChevronDown, Plus, Check } from 'lucide-react';
+import { Activity, Zap, Users, Server, ArrowUpRight, Bot, ChevronDown, Plus, Check } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [selectedBot, setSelectedBot] = useState('دستیار هوشمند');
@@ -11,12 +11,6 @@ const Dashboard: React.FC = () => {
     { id: 3, name: 'مدیریت فروش', status: 'online' },
   ];
 
-  // Mock data for the chart
-  const trafficData = [
-    40, 65, 45, 80, 55, 70, 45, 60, 75, 50, 85, 65, 
-    90, 70, 55, 40, 60, 80, 50, 70, 60, 80, 95, 60
-  ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Section */}
@@ -26,6 +20,7 @@ const Dashboard: React.FC = () => {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">System Online</span>
             </div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">داشبورد فرماندهی</h2>
             <p className="text-gray-500 dark:text-gray-400 mt-1">نمای کلی عملکرد مدل زبانی و تعاملات کاربران</p>
         </div>
         
@@ -147,132 +142,6 @@ const Dashboard: React.FC = () => {
                 <span className="text-xs text-emerald-500 font-mono">Stable</span>
             </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Chart Area (Simulated) */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-all">
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                    <Activity size={18} className="text-blue-500" />
-                    ترافیک شبکه عصبی
-                </h3>
-                <select className="text-xs bg-gray-50 dark:bg-gray-800 border-none text-gray-500 rounded-md px-2 py-1 outline-none">
-                    <option>۲۴ ساعت گذشته</option>
-                    <option>۷ روز گذشته</option>
-                </select>
-            </div>
-            
-            {/* CSS Chart Simulation */}
-            <div className="h-64 flex items-end justify-between gap-2 px-2 dir-ltr">
-                {trafficData.map((h, i) => (
-                    <div key={i} className="w-full h-full bg-gray-100 dark:bg-gray-800 rounded-t-sm relative group overflow-hidden">
-                        <div 
-                            className="absolute bottom-0 w-full bg-blue-500 dark:bg-blue-600 opacity-80 group-hover:opacity-100 transition-all duration-300 ease-out" 
-                            style={{height: `${h}%`}}
-                        ></div>
-                        {/* Tooltip simulation */}
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                            {h}%
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <div className="flex justify-between text-xs text-gray-400 font-mono mt-3 px-2 dir-ltr">
-                <span>00:00</span>
-                <span>06:00</span>
-                <span>12:00</span>
-                <span>18:00</span>
-                <span>23:59</span>
-            </div>
-          </div>
-
-          {/* System Log / Terminal */}
-          <div className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden shadow-sm dark:shadow-lg flex flex-col h-96 lg:h-auto transition-colors">
-             <div className="bg-gray-50 dark:bg-gray-950 px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between transition-colors">
-                <div className="flex items-center gap-2">
-                    <Terminal size={14} className="text-gray-500 dark:text-green-500" />
-                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400">LIVE_LOGS</span>
-                </div>
-                <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400/80 dark:bg-red-500/50"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80 dark:bg-yellow-500/50"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400/80 dark:bg-green-500/50"></div>
-                </div>
-             </div>
-             <div className="p-4 font-mono text-xs overflow-y-auto flex-1 space-y-2 dir-ltr">
-                 <div className="flex gap-2">
-                    <span className="text-gray-400 dark:text-gray-500">[14:20:01]</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">INFO</span>
-                    <span className="text-gray-700 dark:text-gray-300">Vector store index updated successfully.</span>
-                 </div>
-                 <div className="flex gap-2">
-                    <span className="text-gray-400 dark:text-gray-500">[14:20:05]</span>
-                    <span className="text-green-600 dark:text-green-400 font-bold">REQ</span>
-                    <span className="text-gray-700 dark:text-gray-300">Incoming webhook from N8N (ID: 8f2a...)</span>
-                 </div>
-                 <div className="flex gap-2">
-                    <span className="text-gray-400 dark:text-gray-500">[14:20:06]</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">GEN</span>
-                    <span className="text-gray-700 dark:text-gray-300">Gemini-Pro-1.5 generating response...</span>
-                 </div>
-                 <div className="flex gap-2">
-                    <span className="text-gray-400 dark:text-gray-500">[14:20:08]</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">INFO</span>
-                    <span className="text-gray-700 dark:text-gray-300">Response sent. Latency: 840ms.</span>
-                 </div>
-                 <div className="flex gap-2">
-                    <span className="text-gray-400 dark:text-gray-500">[14:21:12]</span>
-                    <span className="text-amber-600 dark:text-yellow-400 font-bold">WARN</span>
-                    <span className="text-gray-700 dark:text-gray-300">Rate limit approaching (85%).</span>
-                 </div>
-                  <div className="flex gap-2">
-                    <span className="text-gray-400 dark:text-gray-500">[14:22:01]</span>
-                    <span className="text-green-600 dark:text-green-400 font-bold">REQ</span>
-                    <span className="text-gray-700 dark:text-gray-300">New session started.</span>
-                 </div>
-                 <div className="animate-pulse text-gray-400 dark:text-gray-500 mt-2">_</div>
-             </div>
-          </div>
-      </div>
-
-      {/* Recent Activities Table */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm transition-colors">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-            <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <Clock size={18} className="text-gray-400" />
-                آخرین فعالیت‌ها
-            </h3>
-            <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">مشاهده همه</button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right">
-                <thead className="bg-gray-50 dark:bg-gray-950 text-gray-500 font-medium">
-                    <tr>
-                        <th className="px-6 py-3 text-right">شناسه درخواست</th>
-                        <th className="px-6 py-3 text-right">مدل زبانی</th>
-                        <th className="px-6 py-3 text-right">وضعیت</th>
-                        <th className="px-6 py-3 text-right">زمان پاسخ</th>
-                        <th className="px-6 py-3 text-right dir-ltr text-right">Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {[1, 2, 3].map((i) => (
-                        <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-xs text-gray-500 dir-ltr text-right">req_8f2a9c{i}</td>
-                            <td className="px-6 py-4 text-gray-800 dark:text-gray-200">Gemini 1.5 Pro</td>
-                            <td className="px-6 py-4">
-                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                                    موفق
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 font-mono text-gray-600 dark:text-gray-400 dir-ltr text-right">{450 + i * 120}ms</td>
-                            <td className="px-6 py-4 text-gray-500 dir-ltr text-right">2024-05-20 14:2{i}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-          </div>
       </div>
     </div>
   );

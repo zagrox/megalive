@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@directus/sdk": "^15.0.0",
     "@google/genai": "^1.29.1",
     "lucide-react": "^0.553.0",
     "react": "^19.0.0",

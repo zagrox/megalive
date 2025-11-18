@@ -1,26 +1,19 @@
-import { client, getAssetUrl } from './client';
-import { readItems, readSingleton } from '@directus/sdk';
 import { BotConfig } from '../types';
+import { directus, getAssetUrl } from './directus';
+import { readSingleton } from '@directus/sdk';
 
 export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
   try {
-    // We use the generic 'readItems' because 'configuration' might be a singleton or a collection depending on setup.
-    // If it's a singleton in Directus, usually readSingleton('configuration') is preferred.
-    // Assuming it's a singleton collection:
-    
-    // Note: Typescript generic <any> is used here for simplicity as we don't have the full schema type generated
-    const result = await client.request(readSingleton('configuration'));
-    
-    if (!result) return {};
+    // Use the SDK to fetch the singleton 'configuration' collection
+    const configData = await directus.request(readSingleton('configuration'));
 
-    const configData = result as any;
+    if (!configData) return {};
 
     // Map CMS fields (snake_case) to App Config (camelCase)
     const mappedConfig: Partial<BotConfig> = {};
 
     if (configData.app_title) mappedConfig.appTitle = configData.app_title;
     if (configData.app_slogan) mappedConfig.appSlogan = configData.app_slogan;
-    if (configData.app_color) mappedConfig.appColor = configData.app_color;
     if (configData.name) mappedConfig.name = configData.name;
     if (configData.description) mappedConfig.description = configData.description;
     if (configData.system_instruction) mappedConfig.systemInstruction = configData.system_instruction;
@@ -29,20 +22,24 @@ export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
     if (configData.n8n_webhook_url) mappedConfig.n8nWebhookUrl = configData.n8n_webhook_url;
     if (configData.temperature) mappedConfig.temperature = Number(configData.temperature);
 
-    // Handle App Logo
+    // Handle App Logo (Sidebar)
     if (configData.app_logo) {
-        const logoId = typeof configData.app_logo === 'object' && configData.app_logo !== null 
-          ? configData.app_logo.id 
-          : configData.app_logo;
-        mappedConfig.appLogoUrl = getAssetUrl(logoId);
+      // The SDK might return an ID string or an object depending on query depth.
+      // For readSingleton default, it usually returns the ID unless fields are specified.
+      const logoId = typeof configData.app_logo === 'object' && configData.app_logo !== null 
+        ? (configData.app_logo as any).id 
+        : configData.app_logo;
+          
+      mappedConfig.appLogoUrl = getAssetUrl(String(logoId));
     }
 
     // Handle Bot Avatar Logo
     if (configData.logo) {
       const logoId = typeof configData.logo === 'object' && configData.logo !== null 
-        ? configData.logo.id 
+        ? (configData.logo as any).id 
         : configData.logo;
-      mappedConfig.logoUrl = getAssetUrl(logoId);
+
+      mappedConfig.logoUrl = getAssetUrl(String(logoId));
     }
 
     console.log('Configuration loaded from CRM via SDK:', mappedConfig);
@@ -50,7 +47,6 @@ export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
 
   } catch (error) {
     console.error('Error loading CRM configuration:', error);
-    // Fallback to returning empty object so the app uses defaults
     return {};
   }
 };
