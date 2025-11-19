@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-    Activity, Zap, Users, Server, ArrowUpRight, Bot, ChevronDown, Plus, Check, 
-    Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
+    Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
     MessageSquare, Send, Table, LayoutTemplate, Mail, Phone
 } from 'lucide-react';
-import { TabType } from '../../types';
+import { TabType, Chatbot } from '../../types';
 
 interface DashboardProps {
   setActiveTab: (tab: TabType) => void;
+  selectedChatbot: Chatbot | null;
+  // Added purely to satisfy type checker if App.tsx hasn't updated perfectly in sync, though logic is removed
+  chatbots?: Chatbot[];
+  onSelectChatbot?: (bot: Chatbot) => void;
+  onCreateChatbot?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
-  const [selectedBot, setSelectedBot] = useState('دستیار هوشمند');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const bots = [
-    { id: 1, name: 'دستیار هوشمند', status: 'online' },
-    { id: 2, name: 'پشتیبان فنی', status: 'offline' },
-    { id: 3, name: 'مدیریت فروش', status: 'online' },
-  ];
+const Dashboard: React.FC<DashboardProps> = ({ 
+  setActiveTab,
+  selectedChatbot,
+}) => {
 
   const quickAccessCards = [
     { 
@@ -83,51 +82,12 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
       <div className="flex items-end justify-between border-b border-gray-200 dark:border-gray-800 pb-6 transition-colors">
         <div>
             <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">System Online</span>
+                <span className={`w-2 h-2 rounded-full animate-pulse ${selectedChatbot?.chatbot_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    {selectedChatbot?.chatbot_active ? 'System Online' : 'System Offline'}
+                </span>
             </div>
             <p className="text-gray-500 dark:text-gray-400 text-lg">وضعیت کلی سیستم و دسترسی سریع به بخش‌ها</p>
-        </div>
-        
-        {/* Bot Selector Dropdown */}
-        <div className="hidden sm:block relative z-20">
-            <button 
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 hover:border-blue-400 dark:hover:border-blue-600 transition-all shadow-sm min-w-[220px] group"
-            >
-                <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
-                    <Bot size={20} />
-                </div>
-                <div className="flex flex-col items-start">
-                    <span className="text-xs text-gray-400 font-medium">چت‌بات فعال</span>
-                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{selectedBot}</span>
-                </div>
-                <ChevronDown size={16} className={`text-gray-400 mr-auto transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden animate-fade-in">
-                    <div className="py-1 max-h-60 overflow-y-auto">
-                        {bots.map(bot => (
-                            <button 
-                                key={bot.id}
-                                onClick={() => { setSelectedBot(bot.name); setIsDropdownOpen(false); }}
-                                className="w-full text-right px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors"
-                            >
-                                <span className={`w-2 h-2 rounded-full ${bot.status === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-300 dark:bg-gray-600'}`}></span>
-                                <span className={`text-sm ${selectedBot === bot.name ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{bot.name}</span>
-                                {selectedBot === bot.name && <Check size={14} className="mr-auto text-blue-600 dark:text-blue-400" />}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950/50">
-                        <button className="w-full flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 hover:border-blue-200 py-2.5 rounded-lg transition-all active:scale-95">
-                            <Plus size={14} />
-                            افزودن چت‌بات جدید
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
       </div>
 

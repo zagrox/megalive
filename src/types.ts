@@ -23,6 +23,27 @@ export interface BotConfig {
 
 // --- Directus Schema Definitions ---
 
+export interface Chatbot {
+  id: number;
+  status: string;
+  user_created: string;
+  date_created: string;
+  user_updated: string;
+  date_updated: string;
+  chatbot_name: string;
+  chabot_title: string; // Note: typo from DB schema maintained
+  chatbot_site?: string;
+  chatbot_telegram?: string;
+  chatbot_webhook?: string;
+  chatbot_welcome?: string;
+  chatbot_logo?: string;
+  chatbot_prompt?: string;
+  chatbot_active: boolean;
+  chatbot_suggestion?: string[];
+  chatbot_pro: boolean;
+  chatbot_input?: string;
+}
+
 export interface DirectusFile {
   id: string;
   filename_download: string;
@@ -49,6 +70,7 @@ export interface DirectusConfiguration {
 export interface DirectusSchema {
   configuration: DirectusConfiguration;
   directus_files: DirectusFile;
+  chatbot: Chatbot[];
 }
 
 export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile';

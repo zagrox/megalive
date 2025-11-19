@@ -11,8 +11,9 @@ import Profile from './components/sections/Profile';
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
-import { BotConfig, TabType } from './types';
+import { BotConfig, TabType, Chatbot } from './types';
 import { fetchCrmConfig } from './services/configService';
+import { fetchUserChatbots, createChatbot } from './services/chatbotService';
 import { useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -21,6 +22,8 @@ const App: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [config, setConfig] = useState<BotConfig>(DEFAULT_CONFIG);
+  const [chatbots, setChatbots] = useState<Chatbot[]>([]);
+  const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
   
   // Initialize sidebar collapsed state based on screen width
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -96,8 +99,35 @@ const App: React.FC = () => {
         }
       };
       loadCrmConfig();
+
+      const loadChatbots = async () => {
+        const bots = await fetchUserChatbots();
+        setChatbots(bots);
+        if (bots.length > 0) {
+           // Try to restore selection or default to first
+           const savedId = localStorage.getItem('selectedChatbotId');
+           const savedBot = savedId ? bots.find(b => b.id === Number(savedId)) : null;
+           setSelectedChatbot(savedBot || bots[0]);
+        }
+      };
+      loadChatbots();
     }
   }, [user?.id]);
+
+  const handleSelectChatbot = (bot: Chatbot) => {
+    setSelectedChatbot(bot);
+    localStorage.setItem('selectedChatbotId', String(bot.id));
+    // Future: Map bot fields to config
+  };
+
+  const handleCreateChatbot = async () => {
+    const newName = `دستیار هوشمند جدید`;
+    const newBot = await createChatbot(newName);
+    if (newBot) {
+      setChatbots(prev => [newBot, ...prev]);
+      handleSelectChatbot(newBot);
+    }
+  };
 
   const toggleTheme = () => {
     const newIsDark = !isDark;
@@ -138,6 +168,10 @@ const App: React.FC = () => {
         setActiveTab={setActiveTab} 
         isCollapsed={isSidebarCollapsed}
         toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        chatbots={chatbots}
+        selectedChatbot={selectedChatbot}
+        onSelectChatbot={handleSelectChatbot}
+        onCreateChatbot={handleCreateChatbot}
       />
 
       {/* Content Wrapper */}
@@ -158,7 +192,13 @@ const App: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-24 lg:pb-12">
             <div className="max-w-7xl mx-auto">
               {activeTab === 'dashboard' && (
-                <Dashboard setActiveTab={setActiveTab} />
+                <Dashboard 
+                  setActiveTab={setActiveTab}
+                  selectedChatbot={selectedChatbot}
+                  chatbots={chatbots}
+                  onSelectChatbot={handleSelectChatbot}
+                  onCreateChatbot={handleCreateChatbot}
+                />
               )}
               {activeTab !== 'dashboard' && (
                 <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : 'max-w-3xl'}`}>
