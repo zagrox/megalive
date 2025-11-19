@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Chatbot } from '../../types';
-import { Save, Upload, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Save, Upload, Loader2, Check, AlertCircle, Plus, X } from 'lucide-react';
 import { directus, getAssetUrl } from '../../services/directus';
 import { uploadFiles } from '@directus/sdk';
 import { HexColorPicker } from 'react-colorful';
@@ -16,6 +16,7 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [suggestionInput, setSuggestionInput] = useState('');
 
   useEffect(() => {
     if (selectedChatbot) {
@@ -24,6 +25,7 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
         chatbot_logo: selectedChatbot.chatbot_logo,
         chatbot_color: selectedChatbot.chatbot_color || '#3b82f6',
         chatbot_input: selectedChatbot.chatbot_input || '',
+        chatbot_suggestion: selectedChatbot.chatbot_suggestion || [],
       });
     }
   }, [selectedChatbot]);
@@ -68,6 +70,33 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
     }
   };
 
+  const addSuggestion = () => {
+    const currentSuggestions = formData.chatbot_suggestion || [];
+    if (currentSuggestions.length >= 3) return;
+    
+    const text = suggestionInput.trim();
+    if (!text) return;
+
+    const newSuggestions = [...currentSuggestions, text];
+    setFormData(prev => ({ ...prev, chatbot_suggestion: newSuggestions }));
+    onPreviewUpdate?.({ chatbot_suggestion: newSuggestions });
+    setSuggestionInput('');
+  };
+
+  const removeSuggestion = (index: number) => {
+    const currentSuggestions = formData.chatbot_suggestion || [];
+    const newSuggestions = currentSuggestions.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, chatbot_suggestion: newSuggestions }));
+    onPreviewUpdate?.({ chatbot_suggestion: newSuggestions });
+  };
+
+  const handleSuggestionKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSuggestion();
+    }
+  };
+
   if (!selectedChatbot) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -80,6 +109,8 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
   const logoPreview = formData.chatbot_logo 
     ? getAssetUrl(formData.chatbot_logo) 
     : 'https://via.placeholder.com/150';
+
+  const suggestions = formData.chatbot_suggestion || [];
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -101,6 +132,50 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
             }}
             className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all"
           />
+        </div>
+
+        {/* Chat Suggestions (Quick Replies) */}
+        <div className="grid gap-2">
+            <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">سوالات پیشنهادی (حداکثر ۳ مورد)</label>
+                <span className="text-xs text-gray-400">{suggestions.length}/3</span>
+            </div>
+            <div className="relative">
+                <input
+                    type="text"
+                    value={suggestionInput}
+                    onChange={(e) => setSuggestionInput(e.target.value)}
+                    onKeyDown={handleSuggestionKeyPress}
+                    disabled={suggestions.length >= 3}
+                    placeholder={suggestions.length >= 3 ? "ظرفیت تکمیل است" : "متن سوال را بنویسید و اینتر بزنید..."}
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+                />
+                <button 
+                    onClick={addSuggestion}
+                    disabled={suggestions.length >= 3 || !suggestionInput.trim()}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 disabled:opacity-0 transition-all"
+                >
+                    <Plus size={16} />
+                </button>
+            </div>
+            
+            {/* Suggestions List (Tags) */}
+            {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {suggestions.map((suggestion, index) => (
+                        <div key={index} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm border border-gray-200 dark:border-gray-700">
+                            <span>{suggestion}</span>
+                            <button 
+                                onClick={() => removeSuggestion(index)}
+                                className="p-0.5 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-500 rounded-full transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+             <p className="text-xs text-gray-400">این گزینه‌ها به عنوان دکمه‌های سریع بالای باکس ورودی نمایش داده می‌شوند.</p>
         </div>
 
         {/* Input Placeholder */}

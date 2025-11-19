@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, RefreshCw, Sparkles } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles, Tag } from 'lucide-react';
 import { BotConfig, Message } from '../types';
 import { sendChatMessage } from '../services/geminiService';
 
@@ -31,13 +31,14 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  const handleSend = async (textOverride?: string) => {
+    const textToSend = textOverride || input;
+    if (!textToSend.trim() || loading) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      text: input,
+      text: textToSend,
       timestamp: Date.now()
     };
 
@@ -90,8 +91,8 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
           <div>
             <h3 className="font-bold text-sm">{config.name}</h3>
             <p className="text-xs text-white/80 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-              آنلاین
+              <span className={`w-1.5 h-1.5 rounded-full ${config.isActive !== false ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></span>
+              {config.isActive !== false ? 'آنلاین' : 'آفلاین'}
             </p>
           </div>
         </div>
@@ -142,28 +143,48 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
         )}
       </div>
 
-      {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-100">
-        <div className="relative flex items-center">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
-            className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800"
-          />
-          <button 
-            onClick={handleSend}
-            disabled={!input.trim() || loading}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
-          >
-            <Send size={16} className={loading ? 'opacity-0' : 'rtl:rotate-180'} />
-            {loading && <Sparkles size={16} className="absolute top-2 left-2 animate-spin" />}
-          </button>
-        </div>
-        <div className="text-center mt-2">
-             <span className="text-[10px] text-gray-400">قدرت گرفته از N8N و Gemini</span>
+      {/* Suggestion Chips & Input */}
+      <div className="bg-white border-t border-gray-100">
+        
+        {/* Suggestions */}
+        {config.suggestions && config.suggestions.length > 0 && (
+           <div className="px-4 pt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {config.suggestions.map((suggestion, idx) => (
+                  <button
+                     key={idx}
+                     onClick={() => handleSend(suggestion)}
+                     disabled={loading}
+                     className="flex-shrink-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors border border-gray-200 whitespace-nowrap"
+                  >
+                      {suggestion}
+                  </button>
+              ))}
+           </div>
+        )}
+
+        {/* Input Area */}
+        <div className="p-4">
+            <div className="relative flex items-center">
+            <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
+                className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800"
+            />
+            <button 
+                onClick={() => handleSend()}
+                disabled={!input.trim() || loading}
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
+            >
+                <Send size={16} className={loading ? 'opacity-0' : 'rtl:rotate-180'} />
+                {loading && <Sparkles size={16} className="absolute top-2 left-2 animate-spin" />}
+            </button>
+            </div>
+            <div className="text-center mt-2">
+                <span className="text-[10px] text-gray-400">قدرت گرفته از N8N و Gemini</span>
+            </div>
         </div>
       </div>
     </div>

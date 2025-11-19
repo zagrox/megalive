@@ -127,6 +127,8 @@ const App: React.FC = () => {
         logoUrl: selectedChatbot.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : prev.logoUrl,
         primaryColor: selectedChatbot.chatbot_color || prev.primaryColor,
         chatInputPlaceholder: selectedChatbot.chatbot_input || prev.chatInputPlaceholder,
+        isActive: selectedChatbot.chatbot_active ?? prev.isActive,
+        suggestions: selectedChatbot.chatbot_suggestion || prev.suggestions,
       }));
     }
   }, [selectedChatbot]);
@@ -163,7 +165,9 @@ const App: React.FC = () => {
       n8nWebhookUrl: data.chatbot_webhook !== undefined ? data.chatbot_webhook : prev.n8nWebhookUrl,
       primaryColor: data.chatbot_color !== undefined ? data.chatbot_color : prev.primaryColor,
       chatInputPlaceholder: data.chatbot_input !== undefined ? data.chatbot_input : prev.chatInputPlaceholder,
+      isActive: data.chatbot_active !== undefined ? data.chatbot_active : prev.isActive,
       logoUrl: data.chatbot_logo ? getAssetUrl(data.chatbot_logo) : prev.logoUrl,
+      suggestions: data.chatbot_suggestion !== undefined ? data.chatbot_suggestion : prev.suggestions,
     }));
   };
 

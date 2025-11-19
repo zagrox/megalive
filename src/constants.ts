@@ -12,6 +12,8 @@ export const DEFAULT_CONFIG: BotConfig = {
   temperature: 0.7,
   n8nWebhookUrl: 'https://your-n8n-instance.com/webhook/test',
   chatInputPlaceholder: 'پیام خود را بنویسید...',
+  isActive: true,
+  suggestions: [],
 };
 
 export const MOCK_FILES: UploadedFile[] = [

@@ -23,6 +23,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
         chatbot_name: selectedChatbot.chatbot_name || '',
         chabot_title: selectedChatbot.chabot_title || '', // Handles typo from DB
         chatbot_prompt: selectedChatbot.chatbot_prompt || '',
+        chatbot_active: selectedChatbot.chatbot_active ?? true,
       });
     }
   }, [selectedChatbot]);
@@ -73,6 +74,32 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
       </div>
 
       <div className="space-y-6">
+        {/* Active Status Toggle */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">وضعیت چت‌بات</label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+               {formData.chatbot_active ? 'چت‌بات فعال است و به کاربران پاسخ می‌دهد.' : 'چت‌بات غیرفعال است.'}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+                const newVal = !formData.chatbot_active;
+                setFormData(prev => ({ ...prev, chatbot_active: newVal }));
+                onPreviewUpdate?.({ chatbot_active: newVal });
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                formData.chatbot_active ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+            }`}
+          >
+            <span
+                className={`${
+                    formData.chatbot_active ? '-translate-x-6' : '-translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out`}
+            />
+          </button>
+        </div>
+
         {/* Name */}
         <div className="grid gap-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نام چت‌بات</label>

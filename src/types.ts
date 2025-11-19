@@ -20,6 +20,8 @@ export interface BotConfig {
   temperature: number;
   n8nWebhookUrl: string;
   chatInputPlaceholder: string;
+  isActive?: boolean;
+  suggestions: string[];
 }
 
 // --- Directus Schema Definitions ---
