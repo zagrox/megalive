@@ -1,3 +1,4 @@
+
 export interface UploadedFile {
   id: string;
   name: string;
@@ -42,6 +43,7 @@ export interface DirectusConfiguration {
   n8n_webhook_url?: string;
   temperature?: number;
   logo?: string | DirectusFile; // Bot avatar
+  app_role?: string; // The ID of the role for new users
 }
 
 export interface DirectusSchema {
