@@ -5,11 +5,11 @@ import { readMe, passwordRequest, passwordReset, createUser, readSingleton, upda
 
 export interface User {
   id: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
-  avatar?: string;
-  role?: string;
+  avatar?: string | null;
+  role?: any;
 }
 
 interface RegisterData {
