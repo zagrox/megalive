@@ -42,7 +42,6 @@ export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
       mappedConfig.logoUrl = getAssetUrl(String(logoId));
     }
 
-    console.log('Configuration loaded from CRM via SDK:', mappedConfig);
     return mappedConfig;
 
   } catch (error) {

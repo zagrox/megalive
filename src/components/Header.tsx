@@ -11,6 +11,8 @@ import {
   Bot 
 } from 'lucide-react';
 import { TabType } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { getAssetUrl } from '../services/directus';
 
 interface HeaderProps {
   activeTab: TabType;
@@ -20,6 +22,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggleTheme }) => {
+  const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +49,14 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
       default: return 'داشبورد';
     }
   };
+
+  const handleLogout = async () => {
+    await logout();
+    setIsProfileOpen(false);
+  };
+
+  const userAvatar = user?.avatar ? getAssetUrl(user.avatar) : null;
+  const fullName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'کاربر مهمان';
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-20 px-6 flex items-center justify-between transition-colors duration-300 sticky top-0 z-30">
@@ -89,8 +100,12 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 py-1.5 px-2 rounded-lg transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-              <User size={18} />
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 overflow-hidden">
+              {userAvatar ? (
+                <img src={userAvatar} alt="User" className="w-full h-full object-cover" />
+              ) : (
+                <User size={18} />
+              )}
             </div>
             
             <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -100,8 +115,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
           {isProfileOpen && (
             <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-fade-in z-50">
               <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-                <p className="text-sm font-bold text-gray-800 dark:text-white">امیرحسین محمدی</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">admin@megalive.ir</p>
+                <p className="text-sm font-bold text-gray-800 dark:text-white">{fullName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               </div>
               <div className="p-1">
                 <button 
@@ -127,7 +142,10 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
                 </button>
               </div>
               <div className="border-t border-gray-100 dark:border-gray-800 p-1">
-                <button className="w-full text-right px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex items-center gap-2 transition-colors">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full text-right px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex items-center gap-2 transition-colors"
+                >
                   <LogOut size={16} />
                   خروج از حساب
                 </button>

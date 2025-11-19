@@ -70,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
         <div className={`transition-opacity duration-200 overflow-hidden ${isCollapsed ? 'hidden' : 'block'}`}>
-          <h1 className="font-bold text-gray-800 dark:text-white text-base whitespace-nowrap">{appTitle}</h1>
+          <h1 className="text-lg font-bold text-gray-800 dark:text-white text-base whitespace-nowrap">{appTitle}</h1>
           <p className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{appSlogan}</p>
         </div>
       </div>

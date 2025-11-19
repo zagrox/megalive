@@ -9,11 +9,16 @@ import Integrations from './components/sections/Integrations';
 import Deploy from './components/sections/Deploy';
 import Profile from './components/sections/Profile';
 import ChatPreview from './components/ChatPreview';
+import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
 import { BotConfig, TabType } from './types';
 import { fetchCrmConfig } from './services/configService';
+import { useAuth } from './context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
+  const { user, loading: authLoading } = useAuth();
+  
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [config, setConfig] = useState<BotConfig>(DEFAULT_CONFIG);
   
@@ -37,27 +42,12 @@ const App: React.FC = () => {
     return false;
   });
 
-  // Load configuration from CRM
-  useEffect(() => {
-    const loadCrmConfig = async () => {
-      try {
-        const crmConfig = await fetchCrmConfig();
-        if (Object.keys(crmConfig).length > 0) {
-          setConfig(prev => ({ ...prev, ...crmConfig }));
-        }
-      } catch (error) {
-        console.error("Failed to load CRM config:", error);
-      }
-    };
-    loadCrmConfig();
-  }, []);
-
+  // Theme Logic
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = () => {
       const saved = localStorage.getItem('theme');
-      // Priority: Local Storage > System Preference
       const shouldBeDark = saved 
         ? saved === 'dark' 
         : mediaQuery.matches;
@@ -71,12 +61,9 @@ const App: React.FC = () => {
       }
     };
 
-    // Apply on mount
     applyTheme();
 
-    // Listen for system changes (e.g. OS switches to night mode)
     const handleSystemChange = (e: MediaQueryListEvent) => {
-      // Only auto-switch if user hasn't manually overridden
       if (!localStorage.getItem('theme')) {
         setIsDark(e.matches);
         if (e.matches) {
@@ -94,11 +81,27 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Load configuration from CRM only when authenticated
+  // Dependency changed from [user] to [user?.id] to avoid re-running on object reference changes
+  useEffect(() => {
+    if (user?.id) {
+      const loadCrmConfig = async () => {
+        try {
+          const crmConfig = await fetchCrmConfig();
+          if (Object.keys(crmConfig).length > 0) {
+            setConfig(prev => ({ ...prev, ...crmConfig }));
+          }
+        } catch (error) {
+          console.error("Failed to load CRM config:", error);
+        }
+      };
+      loadCrmConfig();
+    }
+  }, [user?.id]);
+
   const toggleTheme = () => {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
-    
-    // Saving to localStorage creates a manual override
     localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
     
     if (newIsDark) {
@@ -108,6 +111,21 @@ const App: React.FC = () => {
     }
   };
 
+  // 1. Loading State
+  if (authLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-950 text-blue-600 dark:text-blue-400">
+        <Loader2 className="animate-spin" size={48} />
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated State
+  if (!user) {
+    return <Login />;
+  }
+
+  // 3. Authenticated Dashboard
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
       
