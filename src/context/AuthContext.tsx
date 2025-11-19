@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setError(null);
     try {
       // @ts-ignore
-      await directus.login({ email, password });
+      await directus.login(email, password);
       await checkAuth(); // Fetch user details and update state
     } catch (err: any) {
       console.error("Login failed:", err);
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       // 3. Auto Login
       // @ts-ignore
-      await directus.login({ email: data.email, password: data.password });
+      await directus.login(data.email, data.password);
       await checkAuth();
       
     } catch (err: any) {
