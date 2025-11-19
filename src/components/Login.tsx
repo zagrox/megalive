@@ -196,7 +196,16 @@ const Login: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">رمز عبور</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">رمز عبور</label>
+                      <button 
+                        type="button"
+                        onClick={() => setView('forgot')}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        فراموشی رمز عبور؟
+                      </button>
+                    </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <Lock className="h-5 w-5 text-gray-400" />
@@ -209,15 +218,6 @@ const Login: React.FC = () => {
                         placeholder="••••••••"
                         required
                       />
-                    </div>
-                    <div className="flex justify-end">
-                      <button 
-                        type="button"
-                        onClick={() => setView('forgot')}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        فراموشی رمز عبور؟
-                      </button>
                     </div>
                   </div>
 
