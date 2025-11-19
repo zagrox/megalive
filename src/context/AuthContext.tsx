@@ -1,9 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react';
 import { directus } from '../services/directus';
-import { readMe, passwordRequest, passwordReset, createUser, readSingleton } from '@directus/sdk';
+import { readMe, passwordRequest, passwordReset, createUser, readSingleton, updateMe } from '@directus/sdk';
 
-interface User {
+export interface User {
   id: string;
   first_name: string;
   last_name: string;
@@ -26,6 +26,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   requestReset: (email: string) => Promise<void>;
   confirmReset: (token: string, password: string) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -169,8 +170,20 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
   };
 
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      // Update in Directus
+      const updatedUser = await directus.request(updateMe(data));
+      // Merge returned data into current user state
+      setUser(prev => prev ? { ...prev, ...updatedUser } : null);
+    } catch (err: any) {
+      console.error("Profile update failed:", err);
+      throw err;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, requestReset, confirmReset, loading, error }}>
+    <AuthContext.Provider value={{ user, login, register, logout, requestReset, confirmReset, updateProfile, loading, error }}>
       {children}
     </AuthContext.Provider>
   );

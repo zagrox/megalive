@@ -161,7 +161,7 @@ const App: React.FC = () => {
                 <Dashboard setActiveTab={setActiveTab} />
               )}
               {activeTab !== 'dashboard' && (
-                <div className="max-w-3xl mx-auto">
+                <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : 'max-w-3xl'}`}>
                   {activeTab === 'general' && (
                     <GeneralSettings config={config} setConfig={setConfig} />
                   )}
@@ -185,8 +185,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Left Preview Area (Sticky) - Only show if NOT in dashboard */}
-          {activeTab !== 'dashboard' && (
+          {/* Left Preview Area (Sticky) - Only show if NOT in dashboard and NOT in profile */}
+          {activeTab !== 'dashboard' && activeTab !== 'profile' && (
             <div className="w-[400px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-full hidden xl:flex flex-col justify-center p-8 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] transition-colors duration-300 shrink-0">
               <div className="mb-6 text-center">
                 <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">پیش‌نمایش زنده</h3>

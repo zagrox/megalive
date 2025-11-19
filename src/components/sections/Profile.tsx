@@ -1,27 +1,59 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { getAssetUrl } from '../../services/directus';
 
 const Profile: React.FC = () => {
+  const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  
   const [formData, setFormData] = useState({
-    firstName: 'امیرحسین',
-    lastName: 'محمدی',
-    email: 'admin@megalive.ir',
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
+    email: user?.email || '',
     phone: '09123456789',
-    role: 'مدیر کل سیستم',
+    role: 'کاربر سیستم',
     location: 'تهران، ایران',
-    bio: 'علاقمند به هوش مصنوعی و توسعه نرم‌افزار. مدیر فنی پروژه MegaLive.',
+    bio: 'علاقمند به هوش مصنوعی و توسعه نرم‌افزار.',
     notifications: true,
     twoFactor: true
   });
 
-  const handleSave = () => {
+  // Update form data when user context changes (e.g. initial load or after save)
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.first_name ?? '',
+        lastName: user.last_name ?? '',
+        email: user.email ?? ''
+      }));
+    }
+  }, [user]);
+
+  const handleSave = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setSuccess(false);
+    try {
+      // Map camelCase form data to snake_case API format
+      await updateProfile({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+      });
+      
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error("Failed to save profile:", err);
+      alert('خطا در ذخیره اطلاعات. لطفا اتصال اینترنت خود را بررسی کنید.');
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
+
+  const userAvatar = user?.avatar ? getAssetUrl(user.avatar) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -38,7 +70,7 @@ const Profile: React.FC = () => {
              <div className="relative mt-12 mb-4">
                 <div className="w-28 h-28 mx-auto rounded-full border-4 border-white dark:border-gray-900 bg-gray-200 dark:bg-gray-800 overflow-hidden shadow-lg relative group cursor-pointer">
                     <img 
-                        src="https://api.dicebear.com/7.x/avataaars/svg?seed=Amir" 
+                        src={userAvatar}
                         alt="Profile" 
                         className="w-full h-full object-cover"
                     />
@@ -117,10 +149,18 @@ const Profile: React.FC = () => {
                 <button 
                     onClick={handleSave}
                     disabled={loading}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20"
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg 
+                      ${success 
+                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-600/20' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20'}`}
                 >
                     {loading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : success ? (
+                        <>
+                            <Check size={18} />
+                            <span>ذخیره شد</span>
+                        </>
                     ) : (
                         <>
                             <Save size={18} />
@@ -163,7 +203,9 @@ const Profile: React.FC = () => {
                         type="email" 
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr"
+                        disabled
+                        className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none text-left dir-ltr text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                        title="برای تغییر ایمیل با پشتیبانی تماس بگیرید"
                     />
                 </div>
 
