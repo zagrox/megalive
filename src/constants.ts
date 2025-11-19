@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG: BotConfig = {
   logoUrl: 'https://picsum.photos/200',
   temperature: 0.7,
   n8nWebhookUrl: 'https://your-n8n-instance.com/webhook/test',
+  chatInputPlaceholder: 'پیام خود را بنویسید...',
 };
 
 export const MOCK_FILES: UploadedFile[] = [

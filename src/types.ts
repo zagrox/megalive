@@ -19,6 +19,7 @@ export interface BotConfig {
   logoUrl: string;
   temperature: number;
   n8nWebhookUrl: string;
+  chatInputPlaceholder: string;
 }
 
 // --- Directus Schema Definitions ---
@@ -42,6 +43,7 @@ export interface Chatbot {
   chatbot_suggestion?: string[];
   chatbot_pro: boolean;
   chatbot_input?: string;
+  chatbot_color?: string;
 }
 
 export interface DirectusFile {

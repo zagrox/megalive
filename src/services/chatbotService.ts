@@ -1,5 +1,5 @@
 import { directus } from './directus';
-import { readItems, createItem } from '@directus/sdk';
+import { readItems, createItem, updateItem } from '@directus/sdk';
 import { Chatbot } from '../types';
 
 export const fetchUserChatbots = async (): Promise<Chatbot[]> => {
@@ -27,6 +27,17 @@ export const createChatbot = async (name: string): Promise<Chatbot | null> => {
     return result as Chatbot;
   } catch (error) {
     console.error('Error creating chatbot:', error);
+    return null;
+  }
+};
+
+export const updateChatbot = async (id: number, data: Partial<Chatbot>): Promise<Chatbot | null> => {
+  try {
+    // @ts-ignore
+    const result = await directus.request(updateItem('chatbot', id, data));
+    return result as Chatbot;
+  } catch (error) {
+    console.error('Error updating chatbot:', error);
     return null;
   }
 };

@@ -1,43 +1,98 @@
 import React from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Webhook } from 'lucide-react';
+import { Chatbot } from '../../types';
 
-const Deploy: React.FC = () => {
-  const [copied, setCopied] = React.useState(false);
+interface DeployProps {
+  selectedChatbot: Chatbot | null;
+}
+
+const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
+  const [copiedEmbed, setCopiedEmbed] = React.useState(false);
+  const [copiedWebhook, setCopiedWebhook] = React.useState(false);
+
   const embedCode = `<script src="https://cdn.n8n-chatbot.com/widget.js"></script>
 <script>
   window.initN8NBot({
-    id: "YOUR_BOT_ID",
+    id: "${selectedChatbot?.id || 'BOT_ID'}",
     region: "ir-teh"
   });
 </script>`;
 
-  const handleCopy = () => {
+  const webhookUrl = selectedChatbot?.chatbot_webhook || 'Webhook URL not available';
+
+  const handleCopyEmbed = () => {
     navigator.clipboard.writeText(embedCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedEmbed(true);
+    setTimeout(() => setCopiedEmbed(false), 2000);
+  };
+
+  const handleCopyWebhook = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopiedWebhook(true);
+    setTimeout(() => setCopiedWebhook(false), 2000);
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
        <div>
-        <p className="text-gray-500 dark:text-gray-400 text-lg">از این قطعه کد برای قرار دادن چت‌بات در وب‌سایت خود استفاده کنید.</p>
+        <p className="text-gray-500 dark:text-gray-400 text-lg">راه‌های اتصال و استفاده از چت‌بات.</p>
       </div>
 
+      {/* Embed Code Section */}
       <div className="bg-gray-900 rounded-xl p-6 relative overflow-hidden border border-gray-800 dark:border-gray-700">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
         <div className="flex justify-between items-start mb-4">
             <span className="text-gray-400 text-xs font-mono">HTML Embed Code</span>
             <button 
-                onClick={handleCopy}
+                onClick={handleCopyEmbed}
                 className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors"
             >
-                {copied ? <Check size={14} className="text-green-400"/> : <Copy size={14} />}
-                {copied ? 'کپی شد' : 'کپی کد'}
+                {copiedEmbed ? <Check size={14} className="text-green-400"/> : <Copy size={14} />}
+                {copiedEmbed ? 'کپی شد' : 'کپی کد'}
             </button>
         </div>
         <pre className="font-mono text-sm text-blue-300 overflow-x-auto dir-ltr text-left bg-black/30 p-4 rounded-lg border border-white/5">
             {embedCode}
         </pre>
+      </div>
+
+      {/* Webhook Section */}
+      <div className="bg-gray-900 rounded-xl p-6 relative overflow-hidden border border-gray-800 dark:border-gray-700">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
+        <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-2">
+                <Webhook size={16} className="text-emerald-400" />
+                <span className="text-gray-400 text-xs font-mono">API Webhook Endpoint</span>
+            </div>
+            <button 
+                onClick={handleCopyWebhook}
+                className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors"
+            >
+                {copiedWebhook ? <Check size={14} className="text-green-400"/> : <Copy size={14} />}
+                {copiedWebhook ? 'کپی شد' : 'کپی آدرس'}
+            </button>
+        </div>
+        <div className="font-mono text-sm text-emerald-300 overflow-x-auto dir-ltr text-left bg-black/30 p-4 rounded-lg border border-white/5 mb-4">
+            {webhookUrl}
+        </div>
+        
+        <div className="pt-4 border-t border-white/10">
+            <p className="text-sm text-gray-300 mb-3">پارامترهای ورودی (JSON Body):</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono dir-ltr text-left">
+                <div className="bg-black/20 p-3 rounded border border-white/5">
+                    <span className="text-blue-400 block mb-1">sessionId</span>
+                    <span className="text-gray-500">String (Unique ID)</span>
+                </div>
+                <div className="bg-black/20 p-3 rounded border border-white/5">
+                    <span className="text-blue-400 block mb-1">action</span>
+                    <span className="text-gray-500">String (e.g., "chat")</span>
+                </div>
+                <div className="bg-black/20 p-3 rounded border border-white/5">
+                    <span className="text-blue-400 block mb-1">chatInput</span>
+                    <span className="text-gray-500">String (User Message)</span>
+                </div>
+            </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

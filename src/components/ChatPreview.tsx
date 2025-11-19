@@ -150,7 +150,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="پیام خود را بنویسید..."
+            placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
             className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800"
           />
           <button 

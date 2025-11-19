@@ -13,8 +13,9 @@ import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
 import { BotConfig, TabType, Chatbot } from './types';
 import { fetchCrmConfig } from './services/configService';
-import { fetchUserChatbots, createChatbot } from './services/chatbotService';
+import { fetchUserChatbots, createChatbot, updateChatbot } from './services/chatbotService';
 import { useAuth } from './context/AuthContext';
+import { getAssetUrl } from './services/directus';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -85,7 +86,6 @@ const App: React.FC = () => {
   }, []);
 
   // Load configuration from CRM only when authenticated
-  // Dependency changed from [user] to [user?.id] to avoid re-running on object reference changes
   useEffect(() => {
     if (user?.id) {
       const loadCrmConfig = async () => {
@@ -114,10 +114,26 @@ const App: React.FC = () => {
     }
   }, [user?.id]);
 
+  // Sync selected chatbot to preview config
+  useEffect(() => {
+    if (selectedChatbot) {
+      setConfig(prev => ({
+        ...prev,
+        name: selectedChatbot.chatbot_name || prev.name,
+        description: selectedChatbot.chabot_title || prev.description, // Mapping typo field
+        systemInstruction: selectedChatbot.chatbot_prompt || prev.systemInstruction,
+        welcomeMessage: selectedChatbot.chatbot_welcome || prev.welcomeMessage,
+        n8nWebhookUrl: selectedChatbot.chatbot_webhook || prev.n8nWebhookUrl,
+        logoUrl: selectedChatbot.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : prev.logoUrl,
+        primaryColor: selectedChatbot.chatbot_color || prev.primaryColor,
+        chatInputPlaceholder: selectedChatbot.chatbot_input || prev.chatInputPlaceholder,
+      }));
+    }
+  }, [selectedChatbot]);
+
   const handleSelectChatbot = (bot: Chatbot) => {
     setSelectedChatbot(bot);
     localStorage.setItem('selectedChatbotId', String(bot.id));
-    // Future: Map bot fields to config
   };
 
   const handleCreateChatbot = async () => {
@@ -127,6 +143,28 @@ const App: React.FC = () => {
       setChatbots(prev => [newBot, ...prev]);
       handleSelectChatbot(newBot);
     }
+  };
+
+  const handleUpdateChatbot = async (id: number, data: Partial<Chatbot>) => {
+    const updatedBot = await updateChatbot(id, data);
+    if (updatedBot) {
+      setChatbots(prev => prev.map(b => b.id === id ? updatedBot : b));
+      setSelectedChatbot(updatedBot);
+    }
+  };
+
+  const handlePreviewUpdate = (data: Partial<Chatbot>) => {
+    setConfig(prev => ({
+      ...prev,
+      name: data.chatbot_name !== undefined ? data.chatbot_name : prev.name,
+      description: data.chabot_title !== undefined ? data.chabot_title : prev.description,
+      systemInstruction: data.chatbot_prompt !== undefined ? data.chatbot_prompt : prev.systemInstruction,
+      welcomeMessage: data.chatbot_welcome !== undefined ? data.chatbot_welcome : prev.welcomeMessage,
+      n8nWebhookUrl: data.chatbot_webhook !== undefined ? data.chatbot_webhook : prev.n8nWebhookUrl,
+      primaryColor: data.chatbot_color !== undefined ? data.chatbot_color : prev.primaryColor,
+      chatInputPlaceholder: data.chatbot_input !== undefined ? data.chatbot_input : prev.chatInputPlaceholder,
+      logoUrl: data.chatbot_logo ? getAssetUrl(data.chatbot_logo) : prev.logoUrl,
+    }));
   };
 
   const toggleTheme = () => {
@@ -203,10 +241,18 @@ const App: React.FC = () => {
               {activeTab !== 'dashboard' && (
                 <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : 'max-w-3xl'}`}>
                   {activeTab === 'general' && (
-                    <GeneralSettings config={config} setConfig={setConfig} />
+                    <GeneralSettings 
+                      selectedChatbot={selectedChatbot} 
+                      onUpdateChatbot={handleUpdateChatbot} 
+                      onPreviewUpdate={handlePreviewUpdate}
+                    />
                   )}
                   {activeTab === 'appearance' && (
-                    <AppearanceSettings config={config} setConfig={setConfig} />
+                    <AppearanceSettings 
+                      selectedChatbot={selectedChatbot} 
+                      onUpdateChatbot={handleUpdateChatbot} 
+                      onPreviewUpdate={handlePreviewUpdate}
+                    />
                   )}
                   {activeTab === 'knowledge' && (
                     <KnowledgeBase />
@@ -215,7 +261,7 @@ const App: React.FC = () => {
                     <Integrations />
                   )}
                   {activeTab === 'deploy' && (
-                    <Deploy />
+                    <Deploy selectedChatbot={selectedChatbot} />
                   )}
                   {activeTab === 'profile' && (
                     <Profile />

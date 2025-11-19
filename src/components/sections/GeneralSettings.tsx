@@ -1,24 +1,54 @@
-import React, { useState } from 'react';
-import { BotConfig } from '../../types';
-import { Wand2, Save, AlertCircle, Link } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Chatbot } from '../../types';
+import { Wand2, Save, AlertCircle, Loader2, Check } from 'lucide-react';
 import { generateSystemPrompt } from '../../services/geminiService';
 
 interface Props {
-  config: BotConfig;
-  setConfig: React.Dispatch<React.SetStateAction<BotConfig>>;
+  selectedChatbot: Chatbot | null;
+  onUpdateChatbot: (id: number, data: Partial<Chatbot>) => Promise<void>;
+  onPreviewUpdate?: (data: Partial<Chatbot>) => void;
 }
 
-const GeneralSettings: React.FC<Props> = ({ config, setConfig }) => {
+const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, onPreviewUpdate }) => {
+  const [formData, setFormData] = useState<Partial<Chatbot>>({});
+  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [businessDesc, setBusinessDesc] = useState('');
   const [showPromptGen, setShowPromptGen] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (selectedChatbot) {
+      setFormData({
+        chatbot_name: selectedChatbot.chatbot_name || '',
+        chabot_title: selectedChatbot.chabot_title || '', // Handles typo from DB
+        chatbot_prompt: selectedChatbot.chatbot_prompt || '',
+      });
+    }
+  }, [selectedChatbot]);
+
+  const handleSave = async () => {
+    if (!selectedChatbot) return;
+    setLoading(true);
+    setSuccess(false);
+    try {
+      await onUpdateChatbot(selectedChatbot.id, formData);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGeneratePrompt = async () => {
     if (!businessDesc) return;
     setGenerating(true);
     try {
       const prompt = await generateSystemPrompt(businessDesc);
-      setConfig(prev => ({ ...prev, systemInstruction: prompt }));
+      setFormData(prev => ({ ...prev, chatbot_prompt: prompt }));
+      onPreviewUpdate?.({ chatbot_prompt: prompt });
       setShowPromptGen(false);
     } catch (e) {
       // Handle error
@@ -26,6 +56,15 @@ const GeneralSettings: React.FC<Props> = ({ config, setConfig }) => {
       setGenerating(false);
     }
   };
+
+  if (!selectedChatbot) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <AlertCircle size={48} className="mb-4 opacity-20" />
+        <p>لطفا ابتدا یک چت‌بات را انتخاب کنید</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -39,39 +78,29 @@ const GeneralSettings: React.FC<Props> = ({ config, setConfig }) => {
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نام چت‌بات</label>
           <input
             type="text"
-            value={config.name}
-            onChange={(e) => setConfig({ ...config, name: e.target.value })}
+            value={formData.chatbot_name || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData(prev => ({ ...prev, chatbot_name: val }));
+              onPreviewUpdate?.({ chatbot_name: val });
+            }}
             className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all"
           />
         </div>
 
-        {/* Description */}
+        {/* Description / Title */}
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">توضیحات کوتاه</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">توضیحات کوتاه (Title)</label>
           <textarea
-            value={config.description}
-            onChange={(e) => setConfig({ ...config, description: e.target.value })}
+            value={formData.chabot_title || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData(prev => ({ ...prev, chabot_title: val }));
+              onPreviewUpdate?.({ chabot_title: val });
+            }}
             rows={2}
             className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all resize-none"
           />
-        </div>
-
-        {/* N8N Webhook URL */}
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-             <Link size={14} className="text-gray-400" />
-             آدرس وب‌هوک N8N
-          </label>
-          <div className="relative">
-            <input
-              type="url"
-              value={config.n8nWebhookUrl}
-              onChange={(e) => setConfig({ ...config, n8nWebhookUrl: e.target.value })}
-              placeholder="https://your-n8n.com/webhook/..."
-              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all dir-ltr text-left"
-            />
-          </div>
-          <p className="text-xs text-gray-400">این آدرس برای ارسال پیام‌های کاربران به ورک‌فلو N8N استفاده می‌شود.</p>
         </div>
 
         {/* System Instruction */}
@@ -110,8 +139,12 @@ const GeneralSettings: React.FC<Props> = ({ config, setConfig }) => {
           )}
 
           <textarea
-            value={config.systemInstruction}
-            onChange={(e) => setConfig({ ...config, systemInstruction: e.target.value })}
+            value={formData.chatbot_prompt || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData(prev => ({ ...prev, chatbot_prompt: val }));
+              onPreviewUpdate?.({ chatbot_prompt: val });
+            }}
             rows={8}
             className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
           />
@@ -122,9 +155,20 @@ const GeneralSettings: React.FC<Props> = ({ config, setConfig }) => {
         </div>
         
         <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
-             <button className="flex items-center gap-2 bg-gray-900 dark:bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-gray-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-gray-900/20 dark:shadow-blue-600/20 active:scale-95">
-                 <Save size={18} />
-                 ذخیره تغییرات
+             <button 
+               onClick={handleSave}
+               disabled={loading}
+               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-gray-900/20 dark:shadow-blue-600/20 active:scale-95 disabled:opacity-70
+                 ${success ? 'bg-green-600 text-white' : 'bg-gray-900 dark:bg-blue-600 text-white hover:bg-gray-800 dark:hover:bg-blue-700'}`}
+             >
+                 {loading ? (
+                   <Loader2 size={18} className="animate-spin" />
+                 ) : success ? (
+                   <Check size={18} />
+                 ) : (
+                   <Save size={18} />
+                 )}
+                 {success ? 'ذخیره شد' : 'ذخیره تغییرات'}
              </button>
         </div>
       </div>
