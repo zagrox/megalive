@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react';
 import { directus } from '../services/directus';
 import { readMe, passwordRequest, passwordReset, createUser, readSingleton, updateMe } from '@directus/sdk';
@@ -7,7 +6,7 @@ export interface User {
   id: string;
   first_name: string | null;
   last_name: string | null;
-  email: string;
+  email: string | null;
   avatar?: string | null;
   role?: any;
 }
@@ -175,7 +174,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       // Update in Directus
       const updatedUser = await directus.request(updateMe(data));
       // Merge returned data into current user state
-      setUser(prev => prev ? { ...prev, ...updatedUser } : null);
+      setUser(prev => prev ? { ...prev, ...updatedUser } as User : null);
     } catch (err: any) {
       console.error("Profile update failed:", err);
       throw err;
