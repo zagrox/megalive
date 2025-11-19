@@ -46,6 +46,7 @@ export interface Chatbot {
   chatbot_pro: boolean;
   chatbot_input?: string;
   chatbot_color?: string;
+  chatbot_slug?: string;
 }
 
 export interface DirectusFile {
@@ -77,7 +78,7 @@ export interface DirectusSchema {
   chatbot: Chatbot[];
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot';
 
 export interface Message {
   id: string;

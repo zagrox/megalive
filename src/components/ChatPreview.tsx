@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, RefreshCw, Sparkles, Tag } from 'lucide-react';
 import { BotConfig, Message } from '../types';
@@ -146,16 +147,17 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
       {/* Suggestion Chips & Input */}
       <div className="bg-white border-t border-gray-100">
         
-        {/* Suggestions */}
+        {/* Suggestions (Tag Style) */}
         {config.suggestions && config.suggestions.length > 0 && (
-           <div className="px-4 pt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+           <div className="px-4 pt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar mask-gradient-right">
               {config.suggestions.map((suggestion, idx) => (
                   <button
                      key={idx}
                      onClick={() => handleSend(suggestion)}
                      disabled={loading}
-                     className="flex-shrink-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors border border-gray-200 whitespace-nowrap"
+                     className="flex-shrink-0 text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-600 px-3 py-1.5 rounded-full transition-all border border-gray-200 whitespace-nowrap flex items-center gap-1 group"
                   >
+                      <Tag size={10} className="text-gray-400 group-hover:text-blue-400" />
                       {suggestion}
                   </button>
               ))}
@@ -171,11 +173,12 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
-                className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800"
+                disabled={config.isActive === false}
+                className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <button 
                 onClick={() => handleSend()}
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loading || config.isActive === false}
                 className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
             >
                 <Send size={16} className={loading ? 'opacity-0' : 'rtl:rotate-180'} />

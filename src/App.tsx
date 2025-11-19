@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -8,6 +9,7 @@ import KnowledgeBase from './components/sections/KnowledgeBase';
 import Integrations from './components/sections/Integrations';
 import Deploy from './components/sections/Deploy';
 import Profile from './components/sections/Profile';
+import CreateBot from './components/sections/CreateBot';
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
@@ -108,6 +110,9 @@ const App: React.FC = () => {
            const savedId = localStorage.getItem('selectedChatbotId');
            const savedBot = savedId ? bots.find(b => b.id === Number(savedId)) : null;
            setSelectedChatbot(savedBot || bots[0]);
+        } else {
+           // No chatbots found (new user), redirect to creation page
+           setActiveTab('create-bot');
         }
       };
       loadChatbots();
@@ -139,12 +144,17 @@ const App: React.FC = () => {
   };
 
   const handleCreateChatbot = async () => {
-    const newName = `دستیار هوشمند جدید`;
-    const newBot = await createChatbot(newName);
+    setActiveTab('create-bot');
+  };
+
+  const handleSubmitCreateChatbot = async (name: string, slug: string) => {
+    const newBot = await createChatbot(name, slug);
     if (newBot) {
       setChatbots(prev => [newBot, ...prev]);
       handleSelectChatbot(newBot);
+      setActiveTab('general');
     }
+    return newBot;
   };
 
   const handleUpdateChatbot = async (id: number, data: Partial<Chatbot>) => {
@@ -243,7 +253,13 @@ const App: React.FC = () => {
                 />
               )}
               {activeTab !== 'dashboard' && (
-                <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : 'max-w-3xl'}`}>
+                <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
+                  {activeTab === 'create-bot' && (
+                    <CreateBot 
+                      onSubmit={handleSubmitCreateChatbot} 
+                      onCancel={chatbots.length > 0 ? () => setActiveTab('dashboard') : undefined} 
+                    />
+                  )}
                   {activeTab === 'general' && (
                     <GeneralSettings 
                       selectedChatbot={selectedChatbot} 
@@ -259,7 +275,7 @@ const App: React.FC = () => {
                     />
                   )}
                   {activeTab === 'knowledge' && (
-                    <KnowledgeBase />
+                    <KnowledgeBase selectedChatbot={selectedChatbot} />
                   )}
                   {activeTab === 'integrations' && (
                     <Integrations />
@@ -275,8 +291,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Left Preview Area (Sticky) - Only show if NOT in dashboard and NOT in profile */}
-          {activeTab !== 'dashboard' && activeTab !== 'profile' && (
+          {/* Left Preview Area (Sticky) - Only show if NOT in dashboard and NOT in profile and NOT in create mode */}
+          {activeTab !== 'dashboard' && activeTab !== 'profile' && activeTab !== 'create-bot' && (
             <div className="w-[400px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-full hidden xl:flex flex-col justify-center p-8 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] transition-colors duration-300 shrink-0">
               <div className="mb-6 text-center">
                 <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">پیش‌نمایش زنده</h3>

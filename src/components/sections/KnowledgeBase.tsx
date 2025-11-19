@@ -1,44 +1,115 @@
-import React, { useState, useEffect } from 'react';
-import { UploadedFile } from '../../types';
-import { directus } from '../../services/directus';
-import { uploadFiles, readFiles, deleteFile } from '@directus/sdk';
-import { UploadCloud, FileText, Trash2, CheckCircle2, Loader2, Search, AlertCircle } from 'lucide-react';
 
-const KnowledgeBase: React.FC = () => {
+import React, { useState, useEffect } from 'react';
+import { UploadedFile, Chatbot } from '../../types';
+import { directus } from '../../services/directus';
+import { uploadFiles, readFiles, deleteFile, readFolders } from '@directus/sdk';
+import { UploadCloud, FileText, Trash2, CheckCircle2, Loader2, Search, AlertCircle, FolderOpen } from 'lucide-react';
+
+interface KnowledgeBaseProps {
+  selectedChatbot: Chatbot | null;
+}
+
+const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [folderName, setFolderName] = useState<string | null>(null);
 
-  // Fetch existing files on mount
+  // 1. Resolve Folder ID based on selectedChatbot.chatbot_slug
   useEffect(() => {
-    loadFiles();
-  }, []);
+    const resolveFolder = async () => {
+      if (!selectedChatbot?.chatbot_slug) {
+        setFolderId(null);
+        setFolderName(null);
+        setFiles([]);
+        setIsLoading(false);
+        return;
+      }
 
-  const loadFiles = async () => {
+      setIsLoading(true);
+      setFolderId(null);
+      
+      try {
+        // Find parent 'llm' folder
+        // @ts-ignore
+        const llmFolders = await directus.request(readFolders({
+            filter: { name: { _eq: 'llm' } }
+        }));
+        
+        const llmFolderId = llmFolders[0]?.id;
+
+        if (!llmFolderId) {
+             console.warn("'llm' root folder not found.");
+             setError("پوشه ریشه 'llm' یافت نشد.");
+             setIsLoading(false);
+             return;
+        }
+
+        // Find subfolder with chatbot slug
+        // @ts-ignore
+        const botFolders = await directus.request(readFolders({
+            filter: {
+                _and: [
+                    { parent: { _eq: llmFolderId } },
+                    { name: { _eq: selectedChatbot.chatbot_slug } }
+                ]
+            }
+        }));
+
+        if (botFolders && botFolders.length > 0) {
+            setFolderId(botFolders[0].id);
+            setFolderName(`llm/${botFolders[0].name}`);
+        } else {
+            // Folder might not exist yet (error during creation?), set null so we don't show wrong files
+            setError(`پوشه مخصوص این بات (llm/${selectedChatbot.chatbot_slug}) یافت نشد.`);
+        }
+
+      } catch (err) {
+        console.error("Error resolving folder:", err);
+        setError("خطا در شناسایی پوشه فایل‌ها.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    resolveFolder();
+  }, [selectedChatbot]);
+
+  // 2. Fetch files when folderId is available
+  useEffect(() => {
+    if (folderId) {
+        loadFiles(folderId);
+    }
+  }, [folderId]);
+
+  const loadFiles = async (targetFolderId: string) => {
     setIsLoading(true);
     try {
-      // We fetch files from the system 'directus_files' collection
-      // You might want to filter this by a specific folder in a real app
+      // Fetch files filtered by specific folder
+      // @ts-ignore
       const result = await directus.request(readFiles({
         fields: ['id', 'filename_download', 'filesize', 'uploaded_on', 'type'],
+        filter: {
+            folder: { _eq: targetFolderId }
+        },
         sort: ['-uploaded_on'],
         limit: 50
       }));
 
-      const mappedFiles: UploadedFile[] = result.map(f => ({
+      const mappedFiles: UploadedFile[] = result.map((f: any) => ({
         id: f.id,
         name: f.filename_download,
         size: Number(f.filesize),
-        status: 'ready', // Assumed ready if they exist on server
+        status: 'ready',
         uploadDate: new Date(f.uploaded_on).toLocaleDateString('fa-IR')
       }));
 
       setFiles(mappedFiles);
     } catch (err) {
       console.error("Failed to load files:", err);
-      // Don't show error for 403 (Forbidden) if user isn't logged in, just show empty
-      // setError("عدم توانایی در دریافت لیست فایل‌ها.");
+      setError("عدم توانایی در دریافت لیست فایل‌ها.");
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +142,11 @@ const KnowledgeBase: React.FC = () => {
   };
 
   const handleUpload = async (file: File) => {
+    if (!folderId) {
+        alert("پوشه مقصد مشخص نیست. امکان آپلود وجود ندارد.");
+        return;
+    }
+
     const tempId = Date.now().toString();
     
     // Optimistic UI update
@@ -87,14 +163,10 @@ const KnowledgeBase: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      // Optional: Add title or folder
-      // formData.append('title', file.name); 
+      formData.append('folder', folderId); // Attach to specific folder
       
+      // @ts-ignore
       const result = await directus.request(uploadFiles(formData));
-      
-      // The SDK uploadFiles returns the file object (or array of objects)
-      // We need to handle both possibilities, though usually single upload returns object
-      // Note: @directus/sdk types might imply it returns an object directly for single upload
       
       const uploadedFile = result; 
 
@@ -110,7 +182,7 @@ const KnowledgeBase: React.FC = () => {
     } catch (err) {
       console.error("Upload failed:", err);
       setFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error' } : f));
-      setError("آپلود فایل با خطا مواجه شد. لطفا دسترسی‌ها را بررسی کنید.");
+      setError("آپلود فایل با خطا مواجه شد.");
     }
   };
 
@@ -118,6 +190,7 @@ const KnowledgeBase: React.FC = () => {
     if (!window.confirm("آیا از حذف این فایل اطمینان دارید؟")) return;
     
     try {
+        // @ts-ignore
         await directus.request(deleteFile(id));
         setFiles(prev => prev.filter(f => f.id !== id));
     } catch (err) {
@@ -134,10 +207,25 @@ const KnowledgeBase: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  if (!selectedChatbot) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <AlertCircle size={48} className="mb-4 opacity-20" />
+        <p>لطفا ابتدا یک چت‌بات را انتخاب کنید</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <p className="text-gray-500 dark:text-gray-400 text-lg">فایل‌های خود را در سرور Directus آپلود کنید.</p>
+        <p className="text-gray-500 dark:text-gray-400 text-lg">فایل‌های دانشی خود را مدیریت کنید.</p>
+        {folderName && (
+            <div className="mt-2 flex items-center gap-2 text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr">
+                <FolderOpen size={14} />
+                Target Folder: {folderName}
+            </div>
+        )}
       </div>
 
       {/* Error Alert */}
@@ -153,12 +241,14 @@ const KnowledgeBase: React.FC = () => {
         className={`relative border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer
           ${dragActive 
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-            : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+            : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'}
+          ${!folderId ? 'opacity-50 pointer-events-none grayscale' : ''}  
+        `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => document.getElementById('file-upload')?.click()}
+        onClick={() => folderId && document.getElementById('file-upload')?.click()}
       >
         <input 
             id="file-upload" 
@@ -172,7 +262,9 @@ const KnowledgeBase: React.FC = () => {
           <UploadCloud size={32} />
         </div>
         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">فایل را اینجا رها کنید یا کلیک کنید</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">آپلود مستقیم به Directus</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+            {folderId ? 'آپلود مستقیم به پوشه اختصاصی ربات' : 'در حال شناسایی پوشه مقصد...'}
+        </p>
       </div>
 
       {/* File List */}
@@ -180,7 +272,7 @@ const KnowledgeBase: React.FC = () => {
         <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
             <h3 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                 <FileText size={18} />
-                فایل‌های ذخیره شده
+                فایل‌های موجود
             </h3>
             <div className="relative">
                 <Search size={16} className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"/>
@@ -189,9 +281,12 @@ const KnowledgeBase: React.FC = () => {
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {isLoading ? (
-              <div className="p-8 text-center text-gray-400">در حال بارگذاری...</div>
+              <div className="p-8 flex justify-center items-center gap-2 text-gray-400">
+                  <Loader2 className="animate-spin" size={18} />
+                  در حال بارگذاری لیست فایل‌ها...
+              </div>
           ) : files.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 dark:text-gray-500">هیچ فایلی در سرور یافت نشد.</div>
+              <div className="p-8 text-center text-gray-400 dark:text-gray-500">هیچ فایلی در این پوشه یافت نشد.</div>
           ) : (
             files.map((file) => (
                 <div key={file.id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
