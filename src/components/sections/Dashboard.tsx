@@ -1,9 +1,10 @@
 import React from 'react';
 import { 
     Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
-    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone
+    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot
 } from 'lucide-react';
 import { TabType, Chatbot } from '../../types';
+import { getAssetUrl } from '../../services/directus';
 
 interface DashboardProps {
   setActiveTab: (tab: TabType) => void;
@@ -18,6 +19,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   setActiveTab,
   selectedChatbot,
 }) => {
+  const logoUrl = selectedChatbot?.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : null;
 
   const quickAccessCards = [
     { 
@@ -79,15 +81,26 @@ const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header Section */}
-      <div className="flex items-end justify-between border-b border-gray-200 dark:border-gray-800 pb-6 transition-colors">
-        <div>
-            <div className="flex items-center gap-2 mb-2">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${selectedChatbot?.chatbot_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                    {selectedChatbot?.chatbot_active ? 'System Online' : 'System Offline'}
-                </span>
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-6 transition-colors border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-4">
+            <div className="relative flex-shrink-0">
+                <div className="flex items-center justify-center w-16 h-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 ring-4 ring-blue-100 dark:ring-blue-900/30">
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Chatbot Logo" className="object-cover w-full h-full" />
+                    ) : (
+                        <Bot size={32} className="text-gray-400" />
+                    )}
+                </div>
             </div>
-            <p className="text-gray-500 dark:text-gray-400 text-lg">وضعیت کلی سیستم و دسترسی سریع به بخش‌ها</p>
+            <div>
+              <h2 className="text-3xl font-bold text-gray-800 dark:text-white">{selectedChatbot?.chatbot_name || 'Chatbot Name'}</h2>
+              <div className="flex items-center gap-2 mt-1">
+                  <span className={`w-2 h-2 rounded-full ${selectedChatbot?.chatbot_active ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                  <span className="text-xs font-mono tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                      {selectedChatbot?.chatbot_active ? 'System Online' : 'System Offline'}
+                  </span>
+              </div>
+            </div>
         </div>
       </div>
 
