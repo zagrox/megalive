@@ -43,12 +43,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const menuItems: { id: TabType; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'داشبورد وضعیت', icon: <LayoutDashboard size={20} /> },
+    { id: 'dashboard', label: 'داشبورد چت‌بات', icon: <LayoutDashboard size={20} /> },
     { id: 'general', label: 'تنظیمات عمومی', icon: <Settings size={20} /> },
     { id: 'appearance', label: 'ظاهر چت‌بات', icon: <Palette size={20} /> },
     { id: 'knowledge', label: 'پایگاه دانش', icon: <Database size={20} /> },
-    { id: 'integrations', label: 'افزونه‌ها و ادغام‌ها', icon: <Puzzle size={20} /> },
-    { id: 'deploy', label: 'انتشار و کد', icon: <Rocket size={20} /> },
+    { id: 'integrations', label: 'اتصال افزونه‌ها', icon: <Puzzle size={20} /> },
+    { id: 'deploy', label: 'انتشار آنلاین', icon: <Rocket size={20} /> },
   ];
 
   return (
