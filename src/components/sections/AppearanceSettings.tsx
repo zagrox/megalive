@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Chatbot } from '../../types';
 import { Save, Upload, Loader2, Check, AlertCircle, Plus, X } from 'lucide-react';
 import { directus, getAssetUrl } from '../../services/directus';
-import { uploadFiles } from '@directus/sdk';
+import { uploadFiles, deleteFile } from '@directus/sdk';
 import { HexColorPicker } from 'react-colorful';
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
   onUpdateChatbot: (id: number, data: Partial<Chatbot>) => Promise<void>;
   onPreviewUpdate?: (data: Partial<Chatbot>) => void;
 }
+
+const AVATAR_FOLDER_ID = "3469b6ba-b2e0-40de-b58d-5da0385c404d";
 
 const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, onPreviewUpdate }) => {
   const [formData, setFormData] = useState<Partial<Chatbot>>({});
@@ -50,10 +52,25 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
     
     setUploading(true);
     try {
+      // 1. Try to delete old avatar if exists
+      const oldLogoId = formData.chatbot_logo;
+      if (oldLogoId) {
+        try {
+          // @ts-ignore
+          await directus.request(deleteFile(oldLogoId));
+        } catch (delError) {
+          console.warn("Could not delete old avatar (might not exist or permission denied):", delError);
+          // Proceed with upload regardless
+        }
+      }
+
+      // 2. Upload new avatar to specific folder
       const file = e.target.files[0];
       const form = new FormData();
       form.append('file', file);
+      form.append('folder', AVATAR_FOLDER_ID);
       
+      // @ts-ignore
       const result = await directus.request(uploadFiles(form));
       // The result usually is the file object or array depending on endpoint version, 
       // for single upload SDK returns the object.
@@ -67,6 +84,8 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
       alert("خطا در آپلود تصویر");
     } finally {
       setUploading(false);
+      // Reset input so the same file can be selected again if needed
+      e.target.value = '';
     }
   };
 
