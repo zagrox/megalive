@@ -46,6 +46,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
       case 'integrations': return 'افزونه‌ها و ادغام‌ها';
       case 'deploy': return 'انتشار و کد';
       case 'profile': return 'حساب کاربری';
+      case 'manage-bots': return 'مدیریت چت‌بات‌ها';
+      case 'create-bot': return 'ساخت ربات جدید';
       default: return 'داشبورد';
     }
   };
@@ -127,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
                   پروفایل من
                 </button>
                 <button 
-                  onClick={() => { setActiveTab('dashboard'); setIsProfileOpen(false); }}
+                  onClick={() => { setActiveTab('manage-bots'); setIsProfileOpen(false); }}
                   className="w-full text-right px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg flex items-center gap-2 transition-colors"
                 >
                   <Bot size={16} className="text-gray-400" />

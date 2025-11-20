@@ -1,4 +1,5 @@
 
+
 export interface UploadedFile {
   id: string;
   name: string;
@@ -78,7 +79,7 @@ export interface DirectusSchema {
   chatbot: Chatbot[];
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots';
 
 export interface Message {
   id: string;

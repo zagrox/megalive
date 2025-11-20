@@ -1,4 +1,5 @@
 
+
 import { directus } from './directus';
 import { readItems, createItem, updateItem, readFolders, createFolder } from '@directus/sdk';
 import { Chatbot } from '../types';
@@ -66,7 +67,9 @@ export const createChatbot = async (name: string, slug: string): Promise<Chatbot
 export const updateChatbot = async (id: number, data: Partial<Chatbot>): Promise<Chatbot | null> => {
   try {
     // @ts-ignore
-    const result = await directus.request(updateItem('chatbot', id, data));
+    const result = await directus.request(updateItem('chatbot', id, data, {
+      fields: ['*'] // Request the full object back after update
+    }));
     return result as Chatbot;
   } catch (error) {
     console.error('Error updating chatbot:', error);

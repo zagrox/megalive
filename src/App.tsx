@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -10,6 +11,7 @@ import Integrations from './components/sections/Integrations';
 import Deploy from './components/sections/Deploy';
 import Profile from './components/sections/Profile';
 import CreateBot from './components/sections/CreateBot';
+import ManageBots from './components/sections/ManageBots';
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
@@ -160,8 +162,11 @@ const App: React.FC = () => {
   const handleUpdateChatbot = async (id: number, data: Partial<Chatbot>) => {
     const updatedBot = await updateChatbot(id, data);
     if (updatedBot) {
-      setChatbots(prev => prev.map(b => b.id === id ? updatedBot : b));
-      setSelectedChatbot(updatedBot);
+      const newBots = chatbots.map(b => b.id === id ? updatedBot : b);
+      setChatbots(newBots);
+      if (selectedChatbot?.id === id) {
+        setSelectedChatbot(updatedBot);
+      }
     }
   };
 
@@ -206,6 +211,8 @@ const App: React.FC = () => {
   if (!user) {
     return <Login />;
   }
+  
+  const showPreview = ['general', 'appearance', 'knowledge', 'integrations', 'deploy'].includes(activeTab);
 
   // 3. Authenticated Dashboard
   return (
@@ -252,47 +259,58 @@ const App: React.FC = () => {
                   onCreateChatbot={handleCreateChatbot}
                 />
               )}
-              {activeTab !== 'dashboard' && (
-                <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
-                  {activeTab === 'create-bot' && (
-                    <CreateBot 
-                      onSubmit={handleSubmitCreateChatbot} 
-                      onCancel={chatbots.length > 0 ? () => setActiveTab('dashboard') : undefined} 
-                    />
-                  )}
-                  {activeTab === 'general' && (
-                    <GeneralSettings 
-                      selectedChatbot={selectedChatbot} 
-                      onUpdateChatbot={handleUpdateChatbot} 
-                      onPreviewUpdate={handlePreviewUpdate}
-                    />
-                  )}
-                  {activeTab === 'appearance' && (
-                    <AppearanceSettings 
-                      selectedChatbot={selectedChatbot} 
-                      onUpdateChatbot={handleUpdateChatbot} 
-                      onPreviewUpdate={handlePreviewUpdate}
-                    />
-                  )}
-                  {activeTab === 'knowledge' && (
-                    <KnowledgeBase selectedChatbot={selectedChatbot} />
-                  )}
-                  {activeTab === 'integrations' && (
-                    <Integrations />
-                  )}
-                  {activeTab === 'deploy' && (
-                    <Deploy selectedChatbot={selectedChatbot} />
-                  )}
-                  {activeTab === 'profile' && (
-                    <Profile />
-                  )}
-                </div>
+              {activeTab === 'manage-bots' && (
+                <ManageBots 
+                  chatbots={chatbots}
+                  onUpdateChatbot={handleUpdateChatbot}
+                  onSelectChatbot={handleSelectChatbot}
+                  setActiveTab={setActiveTab}
+                  onCreateChatbot={handleCreateChatbot}
+                />
+              )}
+              
+              {/* Container for Centered Pages */}
+              {['general', 'appearance', 'knowledge', 'integrations', 'deploy', 'profile', 'create-bot'].includes(activeTab) && (
+                  <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
+                    {activeTab === 'create-bot' && (
+                      <CreateBot 
+                        onSubmit={handleSubmitCreateChatbot} 
+                        onCancel={chatbots.length > 0 ? () => setActiveTab('dashboard') : undefined} 
+                      />
+                    )}
+                    {activeTab === 'general' && (
+                      <GeneralSettings 
+                        selectedChatbot={selectedChatbot} 
+                        onUpdateChatbot={handleUpdateChatbot} 
+                        onPreviewUpdate={handlePreviewUpdate}
+                      />
+                    )}
+                    {activeTab === 'appearance' && (
+                      <AppearanceSettings 
+                        selectedChatbot={selectedChatbot} 
+                        onUpdateChatbot={handleUpdateChatbot} 
+                        onPreviewUpdate={handlePreviewUpdate}
+                      />
+                    )}
+                    {activeTab === 'knowledge' && (
+                      <KnowledgeBase selectedChatbot={selectedChatbot} />
+                    )}
+                    {activeTab === 'integrations' && (
+                      <Integrations />
+                    )}
+                    {activeTab === 'deploy' && (
+                      <Deploy selectedChatbot={selectedChatbot} />
+                    )}
+                    {activeTab === 'profile' && (
+                      <Profile />
+                    )}
+                  </div>
               )}
             </div>
           </div>
 
-          {/* Left Preview Area (Sticky) - Only show if NOT in dashboard and NOT in profile and NOT in create mode */}
-          {activeTab !== 'dashboard' && activeTab !== 'profile' && activeTab !== 'create-bot' && (
+          {/* Left Preview Area (Sticky) */}
+          {showPreview && (
             <div className="w-[400px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-full hidden xl:flex flex-col justify-center p-8 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] transition-colors duration-300 shrink-0">
               <div className="mb-6 text-center">
                 <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">پیش‌نمایش زنده</h3>
