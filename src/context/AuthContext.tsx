@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setLoading(true);
     setError(null);
     try {
-      // FIX: The login function now expects a single object with email and password properties.
+      // FIX: The login function expects an object with email and password properties.
       await directus.login({ email, password });
       await checkAuth(); // Fetch user details and update state
     } catch (err: any) {
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       }));
 
       // 3. Auto Login
-      // FIX: The login function now expects a single object with email and password properties.
+      // FIX: The login function expects an object with email and password properties.
       await directus.login({ email: data.email, password: data.password });
       await checkAuth();
       
