@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mega Live AI</title>
 
+    <!-- Cache Control -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- PWA Manifest & Theme -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1A2B3C" />
@@ -50,7 +55,9 @@
       // Register Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
+          // Use an absolute URL to avoid cross-origin issues in specific hosting environments.
+          const swUrl = new URL('/sw.js', window.location.origin).href;
+          navigator.serviceWorker.register(swUrl).then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           }).catch(registrationError => {
             console.log('ServiceWorker registration failed: ', registrationError);

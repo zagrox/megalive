@@ -32,6 +32,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
   const [folderId, setFolderId] = useState<string | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
   const [buildingFileId, setBuildingFileId] = useState<string | null>(null);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
 
   // 1. Resolve Folder ID based on selectedChatbot.chatbot_slug
   useEffect(() => {
@@ -251,20 +253,38 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
     }
   };
 
-  const handleDelete = async (fileId: string, llmJobId?: number) => {
-    if (!window.confirm("آیا از حذف این فایل و پردازش مرتبط با آن اطمینان دارید؟ این عمل قابل بازگشت نیست.")) return;
+  const handleDelete = async (file: ProcessedFile) => {
+    if (deletingFileId) return; // Prevent multiple clicks
+
+    if (!window.confirm(`آیا از حذف فایل "${file.name}" اطمینان دارید؟ این عمل تمام داده‌های پردازش شده مرتبط را نیز حذف می‌کند و قابل بازگشت نیست.`)) return;
+
+    setDeletingFileId(file.id);
+
     try {
-        if (llmJobId) {
-             await directus.request(deleteItem('llm', llmJobId));
-             setLlmJobs(prev => prev.filter(j => j.id !== llmJobId));
+        // The only API call needed. Backend handles cascade deletion of the LLM job.
+        await directus.request(deleteFile(file.id));
+        
+        // On success, remove the file from the UI state.
+        setFiles(prev => prev.filter(f => f.id !== file.id));
+        if (file.llmJobId) {
+             setLlmJobs(prev => prev.filter(j => j.id !== file.llmJobId));
         }
-        await directus.request(deleteFile(fileId));
-        setFiles(prev => prev.filter(f => f.id !== fileId));
-    } catch (err) {
-        console.error("Delete failed:", err);
-        alert("خطا در حذف فایل.");
+
+    } catch (err: any) {
+        console.error("Full delete error object:", JSON.stringify(err, null, 2));
+        
+        let errorMessage = "خطا در حذف فایل. لطفاً سطح دسترسی خود را بررسی کنید.";
+        if (err?.errors?.[0]?.message) {
+            errorMessage = err.errors[0].message;
+        } else if (err.message) {
+            errorMessage = err.message;
+        }
+        
+        alert(`حذف ناموفق بود: ${errorMessage}`);
+    } finally {
+        setDeletingFileId(null); // Always clear the deleting state
     }
-  };
+};
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -383,8 +403,10 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {isLoading ? <div className="p-8 flex justify-center items-center gap-2 text-gray-400"><Loader2 className="animate-spin" size={18} />در حال بارگذاری...</div>
           : processedFiles.length === 0 ? <div className="p-8 text-center text-gray-400 dark:text-gray-500">هیچ فایلی در این پوشه یافت نشد.</div>
-          : processedFiles.map((file) => (
-                <div key={file.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+          : processedFiles.map((file) => {
+              const isDeleting = deletingFileId === file.id;
+              return (
+                <div key={file.id} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-all duration-300 ${isDeleting ? 'opacity-40 bg-red-50 dark:bg-red-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"><FileText size={20} /></div>
                     <div className="min-w-0">
@@ -398,11 +420,21 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
                 </div>
 
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                    <StatusAndActionButton file={file} />
-                    <button onClick={(e) => {e.stopPropagation(); handleDelete(file.id, file.llmJobId)}} className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="حذف فایل"><Trash2 size={18} /></button>
+                    {isDeleting ? (
+                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 px-4 py-1.5">
+                          <Loader2 size={14} className="animate-spin" />
+                          در حال حذف...
+                       </div>
+                    ) : (
+                       <>
+                         <StatusAndActionButton file={file} />
+                         <button onClick={(e) => {e.stopPropagation(); handleDelete(file)}} className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="حذف فایل"><Trash2 size={18} /></button>
+                       </>
+                    )}
                 </div>
                 </div>
-            ))
+              )
+            })
           }
         </div>
       </div>

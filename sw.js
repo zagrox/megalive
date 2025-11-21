@@ -1,17 +1,18 @@
-const CACHE_NAME = 'megalive-n8n-dashboard-v1';
+const CACHE_NAME = 'megalive-n8n-dashboard-v2';
 const urlsToCache = [
   '/',
   '/index.html'
 ];
 
-// Install event: precache the main application shell.
+// Install event: precache the main application shell and take control immediately.
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Opened cache and caching shell');
         return cache.addAll(urlsToCache);
       })
+      .then(() => self.skipWaiting()) // Force the waiting service worker to become the active service worker.
   );
 });
 
@@ -48,7 +49,7 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Activate event: clean up old caches.
+// Activate event: clean up old caches and take control of clients.
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -56,10 +57,11 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Take control of all open clients.
   );
 });
