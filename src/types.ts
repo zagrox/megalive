@@ -4,7 +4,7 @@ export interface UploadedFile {
   id: string;
   name: string;
   size: number;
-  status: 'uploading' | 'indexing' | 'ready' | 'error';
+  status: 'uploading' | 'ready' | 'error'; // Removed 'indexing'
   uploadDate: string;
 }
 
@@ -73,10 +73,20 @@ export interface DirectusConfiguration {
   app_role?: string; // The ID of the role for new users
 }
 
+export interface LLMJob {
+  id: number;
+  llm_status: 'ready' | 'start' | 'building' | 'completed' | 'error';
+  llm_file: string | DirectusFile; // Can be an ID or the full object
+  llm_chatbot: number | Chatbot;
+  llm_error?: string | null;
+  date_created: string;
+}
+
 export interface DirectusSchema {
   configuration: DirectusConfiguration;
   directus_files: DirectusFile;
   chatbot: Chatbot[];
+  llm: LLMJob[];
 }
 
 export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots';

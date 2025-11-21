@@ -28,7 +28,8 @@ export const MOCK_FILES: UploadedFile[] = [
     id: '2',
     name: 'قوانین_و_مقررات.docx',
     size: 1024 * 500, // 500KB
-    status: 'indexing',
+    // FIX: Changed status from 'indexing' to 'uploading' to align with the 'UploadedFile' type definition.
+    status: 'uploading',
     uploadDate: '1403/01/20',
   },
 ];
