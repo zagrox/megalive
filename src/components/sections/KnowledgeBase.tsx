@@ -162,20 +162,21 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
 
     try {
       const formData = new FormData();
+      // FIX: Append metadata (folder, title) before the file.
+      // Some servers require metadata fields to precede the file stream.
+      formData.append('title', file.name);
+      formData.append('folder', folderId);
       formData.append('file', file);
-      formData.append('folder', folderId); // Attach to specific folder
       
       // @ts-ignore
       const result = await directus.request(uploadFiles(formData));
       
-      const uploadedFile = result; 
-
       setFiles(prev => prev.map(f => 
         f.id === tempId ? { 
           ...f, 
-          id: uploadedFile.id, 
+          id: result.id, 
           status: 'ready',
-          uploadDate: new Date(uploadedFile.uploaded_on).toLocaleDateString('fa-IR')
+          uploadDate: new Date(result.uploaded_on).toLocaleDateString('fa-IR')
         } : f
       ));
 

@@ -32,12 +32,12 @@ const localStorageAdapter = {
 };
 
 // Initialize the SDK Client
-// We use 'authentication' with our custom storage adapter.
 // 'autoRefresh: true' ensures the SDK handles token refreshing automatically using the stored refresh token.
 export const directus = createDirectus<DirectusSchema>(CRM_URL)
   .with(rest())
-  // FIX: The authentication function expects the mode ('json' in this case) as the first argument,
-  // and the storage adapter within the options object.
+  // The authentication plugin is configured with a storage adapter and auto-refresh enabled.
+  // This setup persists the session and handles token refreshes automatically.
+  // FIX: Added 'json' mode to the authentication method call. This is required for token-based authentication with a storage adapter and resolves a TypeScript type error.
   .with(authentication('json', { 
     storage: localStorageAdapter,
     autoRefresh: true 
