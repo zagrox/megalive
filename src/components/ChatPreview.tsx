@@ -178,7 +178,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
             </button>
             </div>
             <div className="text-center mt-2">
-                <span className="text-[10px] text-gray-400">قدرت گرفته از N8N</span>
+                <span className="text-[10px] text-gray-400">قدرت گرفته از IR48</span>
             </div>
         </div>
       </div>
