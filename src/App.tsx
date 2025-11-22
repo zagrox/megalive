@@ -149,8 +149,8 @@ const App: React.FC = () => {
     setActiveTab('create-bot');
   };
 
-  const handleSubmitCreateChatbot = async (name: string, slug: string) => {
-    const newBot = await createChatbot(name, slug);
+  const handleSubmitCreateChatbot = async (name: string, slug: string, businessName: string) => {
+    const newBot = await createChatbot(name, slug, businessName);
     if (newBot) {
       setChatbots(prev => [newBot, ...prev]);
       handleSelectChatbot(newBot);

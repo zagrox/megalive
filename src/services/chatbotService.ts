@@ -17,7 +17,7 @@ export const fetchUserChatbots = async (): Promise<Chatbot[]> => {
   }
 };
 
-export const createChatbot = async (name: string, slug: string): Promise<Chatbot | null> => {
+export const createChatbot = async (name: string, slug: string, businessName: string): Promise<Chatbot | null> => {
   try {
     // 1. Create the Chatbot item
     // @ts-ignore
@@ -25,6 +25,7 @@ export const createChatbot = async (name: string, slug: string): Promise<Chatbot
       chatbot_name: name,
       chabot_title: name,
       chatbot_slug: slug,
+      chatbot_business: businessName,
       chatbot_active: true,
       status: 'published'
     }));

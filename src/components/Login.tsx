@@ -179,7 +179,7 @@ const Login: React.FC = () => {
               {view === 'login' && (
                 <form onSubmit={handleLogin} className="space-y-6 animate-fade-in">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">ایمیل سازمانی</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">شناسه ایمیل</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <Mail className="h-5 w-5 text-gray-400" />
@@ -189,7 +189,7 @@ const Login: React.FC = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full pr-10 pl-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none text-gray-900 dark:text-white transition-all text-left dir-ltr"
-                        placeholder="name@company.com"
+                        placeholder="Email"
                         required
                       />
                     </div>
@@ -198,13 +198,7 @@ const Login: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">رمز عبور</label>
-                      <button 
-                        type="button"
-                        onClick={() => setView('forgot')}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        فراموشی رمز عبور؟
-                      </button>
+                      
                     </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -219,7 +213,15 @@ const Login: React.FC = () => {
                         required
                       />
                     </div>
+                    <button 
+                        type="button"
+                        onClick={() => setView('forgot')}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        فراموشی رمز عبور؟
+                      </button>
                   </div>
+                  
 
                   <button
                     type="submit"

@@ -36,6 +36,7 @@ export interface Chatbot {
   date_updated: string;
   chatbot_name: string;
   chabot_title: string; // Note: typo from DB schema maintained
+  chatbot_business?: string;
   chatbot_site?: string;
   chatbot_telegram?: string;
   chatbot_webhook?: string;
@@ -48,6 +49,7 @@ export interface Chatbot {
   chatbot_input?: string;
   chatbot_color?: string;
   chatbot_slug?: string;
+  chatbot_vector?: number;
 }
 
 export interface DirectusFile {

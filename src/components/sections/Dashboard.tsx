@@ -20,6 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   selectedChatbot,
 }) => {
   const logoUrl = selectedChatbot?.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : null;
+  const vectorCount = selectedChatbot?.chatbot_vector ?? 0;
 
   const quickAccessCards = [
     { 
@@ -176,8 +177,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">وضعیت وکتور</span>
             </div>
              <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">99.9%</h3>
-                <span className="text-xs text-emerald-500 font-mono">Stable</span>
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">{vectorCount.toLocaleString('fa-IR')}</h3>
+                <span className="text-xs text-emerald-500 font-mono">وکتور</span>
             </div>
         </div>
       </div>

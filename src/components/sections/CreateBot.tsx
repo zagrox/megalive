@@ -1,16 +1,18 @@
 
+
 import React, { useState } from 'react';
 import { Bot, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Chatbot } from '../../types';
 
 interface Props {
-  onSubmit: (name: string, slug: string) => Promise<Chatbot | null>;
+  onSubmit: (name: string, slug: string, businessName: string) => Promise<Chatbot | null>;
   onCancel?: () => void;
 }
 
 const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +41,12 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !slug) return;
+    if (!name || !slug || !businessName) return;
 
     setLoading(true);
     setError(null);
     try {
-      await onSubmit(name, slug);
+      await onSubmit(name, slug, businessName);
     } catch (err: any) {
       // Directus unique constraint error code is usually RECORD_NOT_UNIQUE
       if (err?.errors?.[0]?.extensions?.code === 'RECORD_NOT_UNIQUE') {
@@ -89,6 +91,21 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
             </div>
 
             <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">نام کامل کسب و کار</label>
+              <input 
+                type="text" 
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="مثال: آژانس برندینگ زاگروکس"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all"
+                required
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                این نام برای درک بهتر زمینه فعالیت شما توسط ربات استفاده می‌شود.
+              </p>
+            </div>
+
+            <div className="space-y-2">
                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">شناسه یکتا (Slug)</label>
                <input 
                   type="text" 
@@ -117,7 +134,7 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
                )}
                <button 
                   type="submit" 
-                  disabled={loading || !name || !slug}
+                  disabled={loading || !name || !slug || !businessName}
                   className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${onCancel ? 'flex-[2]' : 'w-full flex-1'}`}
                >
                   {loading ? <Loader2 className="animate-spin" /> : (

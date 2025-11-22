@@ -18,6 +18,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
       setFormData({
         chatbot_name: selectedChatbot.chatbot_name || '',
         chabot_title: selectedChatbot.chabot_title || '', // Handles typo from DB
+        chatbot_business: selectedChatbot.chatbot_business || '',
         chatbot_prompt: selectedChatbot.chatbot_prompt || '',
         chatbot_active: selectedChatbot.chatbot_active ?? true,
       });
@@ -109,6 +110,25 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
             rows={2}
             className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all resize-none"
           />
+        </div>
+
+        {/* Business Name */}
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نام کامل کسب و کار</label>
+          <input
+            type="text"
+            value={formData.chatbot_business || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData(prev => ({ ...prev, chatbot_business: val }));
+            }}
+            placeholder="مثال: آژانس برندینگ زاگروکس"
+            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all"
+          />
+          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+            <AlertCircle size={12} />
+            این نام به ربات کمک می‌کند تا زمینه فعالیت شما را بهتر درک کند و در پرامپت‌ها استفاده می‌شود.
+          </p>
         </div>
 
         {/* System Instruction */}
