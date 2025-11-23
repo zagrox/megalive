@@ -13,6 +13,8 @@ const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
   // The base URL for frontend assets (e.g., chat.html, widget.js)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'YOUR_APP_URL';
   
+  // The API URL is now baked into widget.js, so it's no longer needed in the embed snippet.
+
   const embedCode = `<script src="${baseUrl}/widget.js"></script>
 <script>
   window.initMEGABot({
