@@ -9,105 +9,135 @@
       return;
     }
 
-    // --- 2. Widget creation logic ---
-    const createWidget = () => {
-      const { botId, baseUrl } = options;
-      const IFRAME_URL = `${baseUrl}/chat.html?id=${botId}`;
-
-      // Avoid creating multiple widgets
-      if (document.querySelector('.chatbot-launcher')) {
-        return;
-      }
-
-      // --- Create and inject CSS for styling ---
-      const style = document.createElement('style');
-      style.textContent = `
-        :root { --chatbot-primary-color: #3b82f6; }
-
-        @keyframes launcher-fade-in {
-          from { opacity: 0; transform: translateY(20px) scale(0.9); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .chatbot-launcher {
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          width: 60px;
-          height: 60px;
-          background-color: var(--chatbot-primary-color);
-          border-radius: 50%;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: transform 0.2s ease-in-out;
-          z-index: 9999998;
-          animation: launcher-fade-in 0.5s 0.5s ease-out backwards;
-        }
-        .chatbot-launcher:hover { transform: scale(1.1); }
-        .chatbot-launcher svg { color: white; }
+    // --- 2. Widget creation logic (now async) ---
+    const createWidget = async () => {
+      try {
+        const { botId, baseUrl } = options;
         
-        .chatbot-container {
-          position: fixed;
-          bottom: 90px;
-          right: 20px;
-          width: 400px;
-          height: 600px;
-          max-height: calc(100vh - 110px);
-          max-width: calc(100vw - 40px);
-          border-radius: 1.5rem;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-          overflow: hidden;
-          transform-origin: bottom right;
-          transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-          transform: scale(0.9);
-          opacity: 0;
-          pointer-events: none;
-          z-index: 9999999;
+        // --- Fetch config for color and status ---
+        const configUrl = `${baseUrl}/items/chatbot?filter[id][_eq]=${botId}&fields=chatbot_color,chatbot_active`;
+        const response = await fetch(configUrl);
+        if (!response.ok) {
+          console.error(`MEGABot: Failed to fetch config (${response.status})`);
+          return;
         }
-        .chatbot-container.open {
-          transform: scale(1);
-          opacity: 1;
-          pointer-events: auto;
+        const jsonResponse = await response.json();
+        const botData = jsonResponse.data?.[0];
+
+        if (!botData) {
+          console.error("MEGABot: Bot configuration not found or access denied.");
+          return;
         }
-        .chatbot-iframe {
-          width: 100%;
-          height: 100%;
-          border: none;
+
+        // If bot is not active, do not render the widget at all.
+        if (!botData.chatbot_active) {
+          console.log("MEGABot: Bot is inactive, launcher will not be shown.");
+          return;
         }
-      `;
-      document.head.appendChild(style);
+        
+        const primaryColor = botData.chatbot_color || '#3b82f6';
+        const IFRAME_URL = `${baseUrl}/chat.html?id=${botId}`;
 
-      // --- Create Chatbot Launcher Button ---
-      const launcher = document.createElement('div');
-      launcher.className = 'chatbot-launcher';
-      launcher.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-      `;
+        // Avoid creating multiple widgets
+        if (document.querySelector('.chatbot-launcher')) {
+          return;
+        }
 
-      // --- Create Iframe Container ---
-      const container = document.createElement('div');
-      container.className = 'chatbot-container';
+        // --- Create and inject CSS for styling ---
+        const style = document.createElement('style');
+        style.textContent = `
+          :root { --chatbot-primary-color: #3b82f6; }
 
-      // --- Create Iframe ---
-      const iframe = document.createElement('iframe');
-      iframe.className = 'chatbot-iframe';
-      iframe.src = IFRAME_URL;
-      iframe.title = "Chatbot Widget"; // Accessibility
+          @keyframes launcher-fade-in {
+            from { opacity: 0; transform: translateY(20px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
 
-      // --- Append elements to the body ---
-      container.appendChild(iframe);
-      document.body.appendChild(launcher);
-      document.body.appendChild(container);
+          .chatbot-launcher {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--chatbot-primary-color);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+            z-index: 9999998;
+            animation: launcher-fade-in 0.5s 0.5s ease-out backwards;
+          }
+          .chatbot-launcher:hover { transform: scale(1.1); }
+          .chatbot-launcher svg { color: white; }
+          
+          .chatbot-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            max-height: calc(100vh - 110px);
+            max-width: calc(100vw - 40px);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transform-origin: bottom right;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: scale(0.9);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999999;
+          }
+          .chatbot-container.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+          }
+          .chatbot-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+          }
+        `;
+        document.head.appendChild(style);
+        
+        // --- Safely set the primary color for the launcher ---
+        document.documentElement.style.setProperty('--chatbot-primary-color', primaryColor);
 
-      // --- Event Listener to toggle chat window ---
-      launcher.addEventListener('click', () => {
-        container.classList.toggle('open');
-      });
+        // --- Create Chatbot Launcher Button ---
+        const launcher = document.createElement('div');
+        launcher.className = 'chatbot-launcher';
+        launcher.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        `;
+
+        // --- Create Iframe Container ---
+        const container = document.createElement('div');
+        container.className = 'chatbot-container';
+
+        // --- Create Iframe ---
+        const iframe = document.createElement('iframe');
+        iframe.className = 'chatbot-iframe';
+        iframe.src = IFRAME_URL;
+        iframe.title = "Chatbot Widget"; // Accessibility
+
+        // --- Append elements to the body ---
+        container.appendChild(iframe);
+        document.body.appendChild(launcher);
+        document.body.appendChild(container);
+
+        // --- Event Listener to toggle chat window ---
+        launcher.addEventListener('click', () => {
+          container.classList.toggle('open');
+        });
+      } catch (error) {
+        console.error("MEGABot: Error initializing widget.", error);
+      }
     };
 
     // --- 3. Execute widget creation at the right time ---

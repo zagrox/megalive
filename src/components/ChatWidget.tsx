@@ -82,11 +82,19 @@ const ChatWidget: React.FC = () => {
           'chatbot_color', 'chatbot_input', 'chatbot_suggestion', 'chatbot_active', 'chatbot_webhook'
         ].join(',');
         
-        const response = await fetch(`${DIRECTUS_URL}/items/chatbot/${botId}?fields=${publicFields}`);
+        // Fetch from the collection endpoint with a filter. This is often more reliable
+        // for public permissions than accessing a single item directly via its ID.
+        const response = await fetch(`${DIRECTUS_URL}/items/chatbot?filter[id][_eq]=${botId}&fields=${publicFields}&limit=1`);
+
         if (!response.ok) {
-          throw new Error(`Failed to fetch config: ${response.statusText}`);
+          throw new Error(`Failed to fetch config: ${response.statusText} (${response.status})`);
         }
-        const { data } = await response.json();
+        const responseJson = await response.json();
+        const data = responseJson.data?.[0]; // Get the first item from the array
+
+        if (!data) {
+          throw new Error(`Bot with ID ${botId} not found or permission denied for public access.`);
+        }
         
         const fetchedConfig: Partial<BotConfig> = {
           name: data.chatbot_name,
@@ -102,11 +110,6 @@ const ChatWidget: React.FC = () => {
 
         setConfig(fetchedConfig);
         
-        // Set root variable for primary color for the launcher button
-        if(fetchedConfig.primaryColor) {
-           window.parent.document.documentElement.style.setProperty('--chatbot-primary-color', fetchedConfig.primaryColor);
-        }
-
         if (fetchedConfig.welcomeMessage) {
           setMessages([{
             id: 'welcome', role: 'model', text: fetchedConfig.welcomeMessage, timestamp: Date.now()
