@@ -12,18 +12,70 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const sessionIdRef = useRef<string>(`preview_session_${Date.now()}`);
 
-  // Reset chat when config changes (optional, but good for Preview feel)
+  // Simple markdown to HTML parser for AI responses
+  const markdownToHtml = (text: string): string => {
+    // Process bold first as it's inline and simpler
+    const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    const lines = boldedText.split('\n');
+    
+    // Check for standard markdown list (multi-line)
+    const isStandardList = lines.length > 1 && lines.some(line => line.trim().startsWith('* ') || line.trim().startsWith('- '));
+    if (isStandardList) {
+        let html = '';
+        let inList = false;
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+                if (!inList) {
+                    html += '<ul>';
+                    inList = true;
+                }
+                html += `<li>${trimmed.substring(2)}</li>`;
+            } else {
+                if (inList) {
+                    html += '</ul>';
+                    inList = false;
+                }
+                if (trimmed) {
+                    html += `<p>${trimmed}</p>`;
+                }
+            }
+        }
+        if (inList) html += '</ul>';
+        return html;
+    }
+
+    // Check for special inline list format (e.g., "text... * item 1 * item 2")
+    const inlineParts = boldedText.split(/\s\*\s/);
+    if (inlineParts.length > 1) {
+        let html = `<p>${inlineParts[0]}</p><ul>`;
+        for (let i = 1; i < inlineParts.length; i++) {
+            html += `<li>${inlineParts[i]}</li>`;
+        }
+        html += '</ul>';
+        return html;
+    }
+
+    // Fallback: just paragraphs for newlines
+    return lines.filter(line => line.trim()).map(line => `<p>${line}</p>`).join('');
+  };
+
+  // Reset chat when config changes (e.g., switching bots)
   useEffect(() => {
-    if (messages.length === 0 && config.welcomeMessage) {
+    if (config.welcomeMessage) {
        setMessages([{
         id: 'welcome',
         role: 'model',
         text: config.welcomeMessage,
         timestamp: Date.now()
       }]);
+       // Reset session to start a fresh conversation for the selected bot
+       sessionIdRef.current = `preview_session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
     }
-  }, [config.welcomeMessage]);
+  }, [config.name, config.welcomeMessage]); // Listen to name change as a proxy for bot switching
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -31,7 +83,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
     }
   }, [messages]);
 
-  const handleSend = (textOverride?: string) => {
+  const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
     if (!textToSend.trim() || loading) return;
 
@@ -46,28 +98,128 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
     setInput('');
     setLoading(true);
 
-    // Simulate API call with a delay
-    setTimeout(() => {
-      const responseText = "قابلیت چت آنلاین در این پیش‌نمایش غیرفعال است.";
-      
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        text: responseText,
-        timestamp: Date.now()
-      };
-      setMessages(prev => [...prev, botMsg]);
-      setLoading(false);
-    }, 1000);
+    // Check if webhook URL is configured.
+    if (!config.n8nWebhookUrl || config.n8nWebhookUrl === 'https://your-n8n-instance.com/webhook/test') {
+        const errorMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            text: "خطا: Webhook URL برای این ربات تنظیم نشده است.",
+            timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, errorMsg]);
+        setLoading(false);
+        return;
+    }
+
+    try {
+        const response = await fetch(config.n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId: sessionIdRef.current,
+                chatInput: textToSend,
+                action: 'chat'
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Network response error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        // --- Robustly extract text from potential N8N response structures ---
+        function extractTextFromN8N(responseData: any): string | null {
+            if (!responseData) return null;
+
+            // If response is a plain string, it might be stringified JSON.
+            if (typeof responseData === 'string') {
+                try {
+                    responseData = JSON.parse(responseData);
+                } catch (e) {
+                    return responseData; // It's just a plain string.
+                }
+            }
+            
+            // Helper to recursively find a text-like property
+            const findText = (d: any): string | null => {
+                if (!d) return null;
+                if (typeof d === 'string') return d;
+                if (typeof d !== 'object') return null;
+
+                const keys = ['text', 'output', 'answer', 'message'];
+                for (const key of keys) {
+                    if (typeof d[key] === 'string' && d[key].trim() !== '') {
+                        return d[key];
+                    }
+                }
+                
+                if (d.json) {
+                    const nestedText = findText(d.json);
+                    if (nestedText) return nestedText;
+                }
+
+                return null;
+            }
+
+            // Handle array structure (most common from N8N)
+            if (Array.isArray(responseData) && responseData.length > 0) {
+                const text = findText(responseData[0]);
+                if (text) return text;
+            }
+
+            // Handle direct object structure
+            if (typeof responseData === 'object' && !Array.isArray(responseData)) {
+                const text = findText(responseData);
+                if (text) return text;
+            }
+
+            return null;
+        }
+        
+        const responseText = extractTextFromN8N(data) || "پاسخ معتبری از سرور دریافت نشد. لطفا ساختار JSON خروجی وب‌هوک را بررسی کنید.";
+
+        const botMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            text: responseText,
+            timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, botMsg]);
+
+    } catch (err) {
+        console.error("Error sending message in preview:", err);
+        let errorMessageText = "خطا در برقراری ارتباط با سرور چت‌بات.";
+        // Catch CORS-related "Failed to fetch" error and provide a specific, helpful message.
+        if (err instanceof TypeError && err.message === 'Failed to fetch') {
+            errorMessageText = "خطا: ارتباط با Webhook برقرار نشد. این مشکل معمولا به دلیل تنظیمات CORS در سرور N8N است. لطفا از فعال بودن CORS و صحت آدرس وب‌هوک اطمینان حاصل کنید.";
+        }
+        
+        const errorMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            text: errorMessageText,
+            timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, errorMsg]);
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleRestart = () => {
-    setMessages([{
-      id: 'welcome',
-      role: 'model',
-      text: config.welcomeMessage,
-      timestamp: Date.now()
-    }]);
+    if (config.welcomeMessage) {
+        setMessages([{
+        id: 'welcome',
+        role: 'model',
+        text: config.welcomeMessage,
+        timestamp: Date.now()
+        }]);
+    } else {
+        setMessages([]);
+    }
+    // Also reset session on manual restart
+    sessionIdRef.current = `preview_session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
   };
 
   return (
@@ -111,11 +263,15 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
               className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm
                 ${msg.role === 'user' 
                   ? 'bg-white text-gray-800 rounded-bl-none border border-gray-100' 
-                  : 'text-white rounded-br-none'
+                  : 'text-white rounded-br-none chat-content'
                 }`}
               style={msg.role === 'model' ? { backgroundColor: config.primaryColor } : {}}
             >
-              {msg.text}
+              {msg.role === 'model' ? (
+                <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.text) }} />
+              ) : (
+                msg.text
+              )}
             </div>
           </div>
         ))}

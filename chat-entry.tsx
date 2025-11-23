@@ -18,6 +18,20 @@ const styles = `
   .animate-fade-in-widget {
     animation: fade-in-widget 0.4s ease-out forwards;
   }
+
+  /* Chat bubble content formatting */
+  .chat-content p:not(:last-child) {
+    margin-bottom: 0.75rem;
+  }
+  .chat-content ul {
+    list-style-type: disc;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-right: 1rem; /* RTL padding */
+  }
+  .chat-content li {
+    margin-bottom: 0.25rem;
+  }
 `;
 
 const styleSheet = document.createElement("style");

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, RefreshCw, Sparkles, Tag } from 'lucide-react';
 import { BotConfig, Message } from '../types';
@@ -14,6 +15,55 @@ const ChatWidget: React.FC = () => {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef<string>(`session_${Date.now()}_${Math.random().toString(36).substring(2)}`);
+
+  // Simple markdown to HTML parser for AI responses
+  const markdownToHtml = (text: string): string => {
+    // Process bold first as it's inline and simpler
+    const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    const lines = boldedText.split('\n');
+    
+    // Check for standard markdown list (multi-line)
+    const isStandardList = lines.length > 1 && lines.some(line => line.trim().startsWith('* ') || line.trim().startsWith('- '));
+    if (isStandardList) {
+        let html = '';
+        let inList = false;
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+                if (!inList) {
+                    html += '<ul>';
+                    inList = true;
+                }
+                html += `<li>${trimmed.substring(2)}</li>`;
+            } else {
+                if (inList) {
+                    html += '</ul>';
+                    inList = false;
+                }
+                if (trimmed) {
+                    html += `<p>${trimmed}</p>`;
+                }
+            }
+        }
+        if (inList) html += '</ul>';
+        return html;
+    }
+
+    // Check for special inline list format (e.g., "text... * item 1 * item 2")
+    const inlineParts = boldedText.split(/\s\*\s/);
+    if (inlineParts.length > 1) {
+        let html = `<p>${inlineParts[0]}</p><ul>`;
+        for (let i = 1; i < inlineParts.length; i++) {
+            html += `<li>${inlineParts[i]}</li>`;
+        }
+        html += '</ul>';
+        return html;
+    }
+
+    // Fallback: just paragraphs for newlines
+    return lines.filter(line => line.trim()).map(line => `<p>${line}</p>`).join('');
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -104,7 +154,53 @@ const ChatWidget: React.FC = () => {
       if (!response.ok) throw new Error("Network response was not ok.");
 
       const data = await response.json();
-      const responseText = data.text || "متاسفانه پاسخی دریافت نشد.";
+      
+      // --- Robustly extract text from potential N8N response structures ---
+      function extractTextFromN8N(responseData: any): string | null {
+          if (!responseData) return null;
+
+          if (typeof responseData === 'string') {
+              try {
+                  responseData = JSON.parse(responseData);
+              } catch (e) {
+                  return responseData;
+              }
+          }
+          
+          const findText = (d: any): string | null => {
+              if (!d) return null;
+              if (typeof d === 'string') return d;
+              if (typeof d !== 'object') return null;
+
+              const keys = ['text', 'output', 'answer', 'message'];
+              for (const key of keys) {
+                  if (typeof d[key] === 'string' && d[key].trim() !== '') {
+                      return d[key];
+                  }
+              }
+              
+              if (d.json) {
+                  const nestedText = findText(d.json);
+                  if (nestedText) return nestedText;
+              }
+
+              return null;
+          }
+
+          if (Array.isArray(responseData) && responseData.length > 0) {
+              const text = findText(responseData[0]);
+              if (text) return text;
+          }
+
+          if (typeof responseData === 'object' && !Array.isArray(responseData)) {
+              const text = findText(responseData);
+              if (text) return text;
+          }
+
+          return null;
+      }
+      
+      const responseText = extractTextFromN8N(data) || "پاسخ معتبری از سرور دریافت نشد. لطفا ساختار JSON خروجی وب‌هوک را بررسی کنید.";
 
       const botMsg: Message = {
         id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: Date.now()
@@ -114,7 +210,7 @@ const ChatWidget: React.FC = () => {
     } catch (err) {
       console.error("Error sending message:", err);
       const errorMsg: Message = {
-        id: (Date.now() + 1).toString(), role: 'model', text: "خطا در ارتباط با سرور.", timestamp: Date.now()
+        id: (Date.now() + 1).toString(), role: 'model', text: "خطا در ارتباط با سرور. لطفا از صحت آدرس وب‌هوک و تنظیمات CORS اطمینان حاصل کنید.", timestamp: Date.now()
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -182,11 +278,15 @@ const ChatWidget: React.FC = () => {
               className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm
                 ${msg.role === 'user' 
                   ? 'bg-white text-gray-800 rounded-bl-none border border-gray-100' 
-                  : 'text-white rounded-br-none'
+                  : 'text-white rounded-br-none chat-content'
                 }`}
               style={msg.role === 'model' ? { backgroundColor: config.primaryColor } : {}}
             >
-              {msg.text}
+              {msg.role === 'model' ? (
+                <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.text) }} />
+              ) : (
+                msg.text
+              )}
             </div>
           </div>
         ))}
