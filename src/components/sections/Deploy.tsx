@@ -10,14 +10,17 @@ const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
   const [copiedEmbed, setCopiedEmbed] = React.useState(false);
   const [copiedWebhook, setCopiedWebhook] = React.useState(false);
 
-  // Use window.location.origin to make the script portable across environments
+  // The base URL for frontend assets (e.g., chat.html, widget.js)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'YOUR_APP_URL';
+  // The URL for the backend API, fetched from environment variables
+  const apiUrl = process.env.DIRECTUS_CRM_URL || 'https://crm.megalive.ir';
 
   const embedCode = `<script src="${baseUrl}/widget.js"></script>
 <script>
   window.initMEGABot({
     botId: "${selectedChatbot?.id || 'YOUR_BOT_ID'}",
-    baseUrl: "${baseUrl}"
+    baseUrl: "${baseUrl}",
+    apiUrl: "${apiUrl}"
   });
 </script>`;
 

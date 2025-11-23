@@ -4,21 +4,21 @@
   // This will be called by the user's script tag
   window.initMEGABot = function (options) {
     // --- 1. Validate options ---
-    if (!options || !options.botId || !options.baseUrl) {
-      console.error("MEGABot: botId and baseUrl are required.");
+    if (!options || !options.botId || !options.baseUrl || !options.apiUrl) {
+      console.error("MEGABot: botId, baseUrl, and apiUrl are required.");
       return;
     }
 
     // --- 2. Widget creation logic (now async) ---
     const createWidget = async () => {
       try {
-        const { botId, baseUrl } = options;
+        const { botId, baseUrl, apiUrl } = options;
         
         // --- Fetch config for color and status ---
-        const configUrl = `${baseUrl}/items/chatbot?filter[id][_eq]=${botId}&fields=chatbot_color,chatbot_active`;
+        const configUrl = `${apiUrl}/items/chatbot?filter[id][_eq]=${botId}&fields=chatbot_color,chatbot_active`;
         const response = await fetch(configUrl);
         if (!response.ok) {
-          console.error(`MEGABot: Failed to fetch config (${response.status})`);
+          console.error(`MEGABot: Failed to fetch config (${response.status} ${response.statusText})`);
           return;
         }
         const jsonResponse = await response.json();
