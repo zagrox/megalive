@@ -10,7 +10,8 @@ const ChatWidget: React.FC = () => {
   const [config, setConfig] = useState<Partial<BotConfig>>({});
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [isConfigLoading, setIsConfigLoading] = useState(true);
+  const [isResponseLoading, setIsResponseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -71,7 +72,7 @@ const ChatWidget: React.FC = () => {
 
     if (!botId) {
       setError("Bot ID is missing.");
-      setLoading(false);
+      setIsConfigLoading(false);
       return;
     }
 
@@ -120,7 +121,7 @@ const ChatWidget: React.FC = () => {
         console.error(err);
         setError("Could not load bot configuration.");
       } finally {
-        setLoading(false);
+        setIsConfigLoading(false);
       }
     };
     fetchConfig();
@@ -130,18 +131,18 @@ const ChatWidget: React.FC = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isResponseLoading]);
 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
-    if (!textToSend.trim() || loading || !config.n8nWebhookUrl) return;
+    if (!textToSend.trim() || isResponseLoading || !config.n8nWebhookUrl) return;
 
     const userMsg: Message = {
       id: Date.now().toString(), role: 'user', text: textToSend, timestamp: Date.now()
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setLoading(true);
+    setIsResponseLoading(true);
 
     try {
       const response = await fetch(config.n8nWebhookUrl, {
@@ -217,7 +218,7 @@ const ChatWidget: React.FC = () => {
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
-      setLoading(false);
+      setIsResponseLoading(false);
     }
   };
 
@@ -231,8 +232,8 @@ const ChatWidget: React.FC = () => {
     }
   };
   
-  if (loading) {
-     return <div className="flex items-center justify-center h-full text-gray-400">Loading...</div>;
+  if (isConfigLoading) {
+     return <div className="flex items-center justify-center h-full text-gray-400">...Loading</div>;
   }
   
   if (error) {
@@ -293,8 +294,8 @@ const ChatWidget: React.FC = () => {
             </div>
           </div>
         ))}
-        {loading && messages.length > 0 && (
-          <div className="flex items-end gap-2">
+        {isResponseLoading && (
+          <div className="flex items-end gap-2 animate-fade-in-widget">
              <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs"
                   style={{ backgroundColor: config.primaryColor }}>
                 <Bot size={14} />
@@ -318,7 +319,7 @@ const ChatWidget: React.FC = () => {
                   <button
                      key={idx}
                      onClick={() => handleSend(suggestion)}
-                     disabled={loading}
+                     disabled={isResponseLoading}
                      className="flex-shrink-0 text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-600 px-3 py-1.5 rounded-full transition-all border border-gray-200 whitespace-nowrap flex items-center gap-1 group"
                   >
                       <Tag size={10} className="text-gray-400 group-hover:text-blue-400" />
@@ -336,17 +337,17 @@ const ChatWidget: React.FC = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
-                disabled={config.isActive === false}
+                disabled={config.isActive === false || isResponseLoading}
                 className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <button 
                 onClick={() => handleSend()}
-                disabled={!input.trim() || loading || config.isActive === false}
+                disabled={!input.trim() || isResponseLoading || config.isActive === false}
                 className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
                 style={{ backgroundColor: config.primaryColor }}
             >
-                <Send size={16} className={loading ? 'opacity-0' : 'rtl:rotate-180'} />
-                {loading && <Sparkles size={16} className="absolute top-2 left-2 animate-spin" />}
+                <Send size={16} className={isResponseLoading ? 'opacity-0' : 'rtl:rotate-180'} />
+                {isResponseLoading && <Sparkles size={16} className="absolute top-2 left-2 animate-spin" />}
             </button>
             </div>
             <div className="text-center mt-2">
