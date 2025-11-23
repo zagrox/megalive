@@ -20,6 +20,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["index.tsx", "src/**/*.ts", "src/**/*.tsx"],
+  "include": ["index.tsx", "chat-entry.tsx", "src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules"]
 }

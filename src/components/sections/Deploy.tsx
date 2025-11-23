@@ -10,11 +10,14 @@ const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
   const [copiedEmbed, setCopiedEmbed] = React.useState(false);
   const [copiedWebhook, setCopiedWebhook] = React.useState(false);
 
-  const embedCode = `<script src="https://cdn.n8n-chatbot.com/widget.js"></script>
+  // Use window.location.origin to make the script portable across environments
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'YOUR_APP_URL';
+
+  const embedCode = `<script src="${baseUrl}/widget.js"></script>
 <script>
-  window.initN8NBot({
-    id: "${selectedChatbot?.id || 'BOT_ID'}",
-    region: "ir-teh"
+  window.initMEGABot({
+    botId: "${selectedChatbot?.id || 'YOUR_BOT_ID'}",
+    baseUrl: "${baseUrl}"
   });
 </script>`;
 
@@ -52,7 +55,9 @@ const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
             </button>
         </div>
         <pre className="font-mono text-sm text-blue-300 overflow-x-auto dir-ltr text-left bg-black/30 p-4 rounded-lg border border-white/5">
-            {embedCode}
+            <code>
+              {embedCode}
+            </code>
         </pre>
       </div>
 
