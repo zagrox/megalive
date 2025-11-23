@@ -13,15 +13,11 @@ const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
   // The base URL for frontend assets (e.g., chat.html, widget.js)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'YOUR_APP_URL';
   
-  // The API URL for the backend data source (Directus)
-  const apiUrl = process.env.DIRECTUS_CRM_URL || 'YOUR_DIRECTUS_URL';
-
   const embedCode = `<script src="${baseUrl}/widget.js"></script>
 <script>
   window.initMEGABot({
     botId: "${selectedChatbot?.id || 'YOUR_BOT_ID'}",
-    baseUrl: "${baseUrl}",
-    apiUrl: "${apiUrl}"
+    baseUrl: "${baseUrl}"
   });
 </script>`;
 

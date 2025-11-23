@@ -1,21 +1,25 @@
 (function () {
   'use strict';
+  
+  // This constant is replaced by Vite's `define` config during the build process.
+  // It bakes the backend URL directly into the script for security and simplicity.
+  const API_URL = __API_URL__;
 
-  // This will be called by the user's script tag
   window.initMEGABot = function (options) {
     // --- 1. Validate options ---
-    if (!options || !options.botId || !options.baseUrl || !options.apiUrl) {
-      console.error("MEGABot: botId, baseUrl, and apiUrl are required.");
+    // The API URL is now internal to the script, so we don't need to check for it in options.
+    if (!options || !options.botId || !options.baseUrl) {
+      console.error("MEGABot: botId and baseUrl are required.");
       return;
     }
 
     // --- 2. Widget creation logic (now async) ---
     const createWidget = async () => {
       try {
-        const { botId, baseUrl, apiUrl } = options;
+        const { botId, baseUrl } = options;
         
-        // --- Fetch config for color and status ---
-        const configUrl = `${apiUrl}/items/chatbot?filter[id][_eq]=${botId}&fields=chatbot_color,chatbot_active`;
+        // --- Fetch config for color and status using the baked-in API URL ---
+        const configUrl = `${API_URL}/items/chatbot?filter[id][_eq]=${botId}&fields=chatbot_color,chatbot_active`;
         const response = await fetch(configUrl);
         if (!response.ok) {
           console.error(`MEGABot: Failed to fetch config (${response.status} ${response.statusText})`);

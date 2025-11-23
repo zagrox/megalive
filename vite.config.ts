@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
       'process.env.DIRECTUS_CRM_URL': JSON.stringify(env.VITE_DIRECTUS_CRM_URL),
+      // This is used to bake the API URL directly into widget.js
+      '__API_URL__': JSON.stringify(env.VITE_DIRECTUS_CRM_URL),
     },
     build: {
       rollupOptions: {
