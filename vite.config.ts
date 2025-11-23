@@ -32,6 +32,21 @@ export default defineConfig(({ mode }) => {
         input: {
           main: resolve(__dirname, 'index.html'),
           chat: resolve(__dirname, 'chat.html'),
+          widget: resolve(__dirname, 'widget.js'), // Add widget.js as a build entry point
+        },
+        output: {
+          // By default, Vite adds a hash to filenames for cache-busting.
+          // For the public embed script, we need a consistent, predictable filename.
+          // This function checks the entry point's name (the key from the 'input' object).
+          entryFileNames: chunkInfo => {
+            if (chunkInfo.name === 'widget') {
+              return '[name].js'; // Outputs 'widget.js' without a hash
+            }
+            // For all other JS entry points (like main, chat-entry), use a hashed name for better caching.
+            return 'assets/[name]-[hash].js';
+          },
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
         },
       },
     },
