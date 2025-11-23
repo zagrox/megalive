@@ -12,15 +12,14 @@ const Deploy: React.FC<DeployProps> = ({ selectedChatbot }) => {
 
   // The base URL for frontend assets (e.g., chat.html, widget.js)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'YOUR_APP_URL';
-  // The URL for the backend API, fetched from environment variables
-  const apiUrl = process.env.DIRECTUS_CRM_URL || 'https://crm.megalive.ir';
+  
+  // The API URL is now baked into widget.js, so it's no longer needed in the embed snippet.
 
   const embedCode = `<script src="${baseUrl}/widget.js"></script>
 <script>
   window.initMEGABot({
     botId: "${selectedChatbot?.id || 'YOUR_BOT_ID'}",
-    baseUrl: "${baseUrl}",
-    apiUrl: "${apiUrl}"
+    baseUrl: "${baseUrl}"
   });
 </script>`;
 

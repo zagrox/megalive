@@ -1,18 +1,29 @@
 (function () {
   'use strict';
 
+  // This value is replaced by Vite's `define` config during the build process.
+  // It effectively hardcodes the backend URL into the script, removing it from the user-facing embed code.
+  const API_URL = process.env.DIRECTUS_CRM_URL;
+
   // This will be called by the user's script tag
   window.initMEGABot = function (options) {
     // --- 1. Validate options ---
-    if (!options || !options.botId || !options.baseUrl || !options.apiUrl) {
-      console.error("MEGABot: botId, baseUrl, and apiUrl are required.");
+    if (!options || !options.botId || !options.baseUrl) {
+      console.error("MEGABot: botId and baseUrl are required.");
+      return;
+    }
+
+    // Check if the API_URL was correctly injected during the build.
+    if (!API_URL) {
+      console.error("MEGABot: API URL is not configured in the widget script. Please check the build process.");
       return;
     }
 
     // --- 2. Widget creation logic (now async) ---
     const createWidget = async () => {
       try {
-        const { botId, baseUrl, apiUrl } = options;
+        const { botId, baseUrl } = options;
+        const apiUrl = API_URL; // Use the injected constant
         
         // --- Fetch config for color and status ---
         const configUrl = `${apiUrl}/items/chatbot?filter[id][_eq]=${botId}&fields=chatbot_color,chatbot_active`;
