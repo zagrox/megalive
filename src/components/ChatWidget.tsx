@@ -342,7 +342,7 @@ const ChatWidget: React.FC = () => {
                 className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
                 style={{ backgroundColor: config.primaryColor }}
             >
-                <Send size={16} className={loading ? 'opacity-0' : 'rtl:-rotate-45'} />
+                <Send size={16} className={loading ? 'opacity-0' : 'rtl:rotate-180'} />
                 {loading && <Sparkles size={16} className="absolute top-2 left-2 animate-spin" />}
             </button>
             </div>
