@@ -334,7 +334,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
             </button>
             </div>
             <div className="text-center mt-2">
-                <span className="text-[10px] text-gray-400">قدرت گرفته از IR48</span>
+                <span className="text-[10px] text-gray-400">قدرت گرفته از MegaLive</span>
             </div>
         </div>
       </div>
