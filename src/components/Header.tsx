@@ -19,9 +19,10 @@ interface HeaderProps {
   setActiveTab: (tab: TabType) => void;
   isDark: boolean;
   toggleTheme: () => void;
+  toggleHelpCenter: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggleTheme }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggleTheme, toggleHelpCenter }) => {
   const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -74,7 +75,11 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
       <div className="flex items-center gap-3 ml-auto md:ml-0">
         
         {/* Help */}
-        <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" title="راهنما">
+        <button 
+          onClick={toggleHelpCenter}
+          className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" 
+          title="راهنما"
+        >
           <HelpCircle size={20} />
         </button>
 

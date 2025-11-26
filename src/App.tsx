@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -21,6 +22,7 @@ import { fetchUserChatbots, createChatbot, updateChatbot } from './services/chat
 import { useAuth } from './context/AuthContext';
 import { getAssetUrl } from './services/directus';
 import { Loader2 } from 'lucide-react';
+import HelpCenterPanel from './components/HelpCenterPanel';
 
 const App: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -29,6 +31,7 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<BotConfig>(DEFAULT_CONFIG);
   const [chatbots, setChatbots] = useState<Chatbot[]>([]);
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
+  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState(false);
   
   // Initialize sidebar collapsed state based on screen width
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -198,6 +201,10 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleHelpCenter = () => {
+    setIsHelpCenterOpen(prev => !prev);
+  };
+
   // 1. Loading State
   if (authLoading) {
     return (
@@ -242,6 +249,7 @@ const App: React.FC = () => {
           setActiveTab={setActiveTab}
           isDark={isDark}
           toggleTheme={toggleTheme}
+          toggleHelpCenter={toggleHelpCenter}
         />
 
         {/* Main Content & Preview */}
@@ -322,6 +330,9 @@ const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Help Center Panel */}
+      <HelpCenterPanel isOpen={isHelpCenterOpen} onClose={() => setIsHelpCenterOpen(false)} />
     </div>
   );
 };
