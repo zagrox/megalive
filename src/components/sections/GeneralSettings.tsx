@@ -21,6 +21,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
         chatbot_business: selectedChatbot.chatbot_business || '',
         chatbot_prompt: selectedChatbot.chatbot_prompt || '',
         chatbot_active: selectedChatbot.chatbot_active ?? true,
+        chatbot_human: selectedChatbot.chatbot_human || '',
       });
     }
   }, [selectedChatbot]);
@@ -165,6 +166,26 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
           <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
             <AlertCircle size={12} />
             این دستورالعمل شخصیت و نحوه پاسخگویی بات را تعیین می‌کند.
+          </p>
+        </div>
+
+        {/* Operator Handoff Message */}
+        <div className="grid gap-2 relative">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">پیام اتصال به اپراتور</label>
+          </div>
+          <textarea
+            value={formData.chatbot_human || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData(prev => ({ ...prev, chatbot_human: val }));
+            }}
+            rows={4}
+            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
+          />
+          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+            <AlertCircle size={12} />
+            این پیام زمانی نمایش داده می‌شود که کاربر درخواست صحبت با اپراتور را داشته باشد.
           </p>
         </div>
         

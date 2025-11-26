@@ -50,6 +50,7 @@ export interface Chatbot {
   chatbot_color?: string;
   chatbot_slug?: string;
   chatbot_vector?: number;
+  chatbot_human?: string;
 }
 
 export interface DirectusFile {
