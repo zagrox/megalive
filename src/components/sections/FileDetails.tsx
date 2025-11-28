@@ -45,10 +45,6 @@ const StatusBadge: React.FC<{ status: BuildStatus, error?: string | null }> = ({
 
 const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onDeleteRequest, onBuild, onPause, isBuilding, isPausing }) => {
 
-    const handleDeleteClick = () => {
-        onDeleteRequest(file);
-    };
-
     const ActionButton: React.FC = () => {
         if (isPausing) {
             return (
@@ -154,7 +150,7 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onDeleteRequest
                     با حذف این فایل، تمام داده‌های پردازش شده مرتبط با آن نیز برای همیشه پاک خواهد شد. این عمل قابل بازگشت نیست.
                 </p>
                 <button
-                    onClick={handleDeleteClick}
+                    onClick={() => onDeleteRequest(file)}
                     className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-500 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 font-medium transition-colors"
                 >
                     <Trash2 size={18} />
