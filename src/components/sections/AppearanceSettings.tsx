@@ -262,11 +262,26 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
             <div className="space-y-3 pt-2">
                <div className="flex items-center gap-2">
                   <div 
-                    className="w-10 h-10 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+                    className="w-10 h-10 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0"
                     style={{ backgroundColor: formData.chatbot_color || '#3b82f6' }}
                   ></div>
-                  <div className="text-sm dir-ltr font-mono text-gray-600 dark:text-gray-400">
-                    {formData.chatbot_color || '#3b82f6'}
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-sm pointer-events-none">#</span>
+                    <input
+                        type="text"
+                        value={(formData.chatbot_color || '').substring(1)}
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9a-fA-F]/g, '');
+                            const newColor = '#' + val;
+                            setFormData(prev => ({ ...prev, chatbot_color: newColor }));
+                            
+                            if (val.length === 6 || val.length === 3) {
+                                onPreviewUpdate?.({ chatbot_color: newColor });
+                            }
+                        }}
+                        maxLength={6}
+                        className="w-32 pr-7 pl-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all dir-ltr font-mono text-sm text-left"
+                    />
                   </div>
                </div>
                <p className="text-xs text-gray-500 max-w-[200px]">

@@ -85,7 +85,7 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
                   value={name}
                   onChange={handleNameChange}
                   placeholder="مثال: پشتیبانی فروش"
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all"
                   required
                />
             </div>
@@ -96,8 +96,8 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
                 type="text" 
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="مثال: آژانس برندینگ زاگروکس"
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all"
+                placeholder="مثال: شرکت بازرگانی پرشیا"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all"
                 required
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -111,8 +111,8 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
                   type="text" 
                   value={slug}
                   onChange={handleSlugChange}
-                  placeholder="examplebot"
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr font-mono text-sm"
+                  placeholder="mycompany"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr font-mono text-sm"
                   required
                   pattern="[a-z]+"
                   title="فقط حروف انگلیسی کوچک (بدون عدد یا نماد)"

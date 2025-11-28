@@ -47,8 +47,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'general', label: 'تنظیمات عمومی', icon: <Settings size={20} /> },
     { id: 'appearance', label: 'ظاهر چت‌بات', icon: <Palette size={20} /> },
     { id: 'knowledge', label: 'پایگاه دانش', icon: <Database size={20} /> },
-    { id: 'integrations', label: 'اتصال افزونه‌ها', icon: <Puzzle size={20} /> },
     { id: 'deploy', label: 'انتشار آنلاین', icon: <Rocket size={20} /> },
+    { id: 'integrations', label: 'اتصال افزونه‌ها', icon: <Puzzle size={20} /> },
   ];
 
   return (
@@ -147,7 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           className="w-full flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       >
                           <Plus size={14} />
-                          افزودن بات جدید
+                          ساخت چت‌بات جدید
                       </button>
                   </div>
               </div>

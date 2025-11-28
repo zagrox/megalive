@@ -40,7 +40,7 @@ const HelpCenterPanel: React.FC<HelpCenterPanelProps> = ({ isOpen, onClose }) =>
 
   const TABS = [
     { id: 'guide' as const, label: 'راهنمای شروع', icon: <BookOpen size={20} /> },
-    { id: 'faq' as const, label: 'سوالات متداول', icon: <FaqIcon size={20} /> },
+    { id: 'faq' as const, label: 'پرسش پاسخ', icon: <FaqIcon size={20} /> },
     { id: 'contact' as const, label: 'پشتیبانی', icon: <MessageSquare size={20} /> },
   ];
 

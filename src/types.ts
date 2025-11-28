@@ -100,3 +100,16 @@ export interface Message {
   text: string;
   timestamp: number;
 }
+
+export type BuildStatus = 'idle' | 'ready' | 'start' | 'building' | 'completed' | 'error';
+
+export interface ProcessedFile {
+  id: string;
+  name: string;
+  size: number;
+  uploadDate: string;
+  type: string;
+  buildStatus: BuildStatus;
+  errorMessage?: string | null;
+  llmJobId?: number;
+}

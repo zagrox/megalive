@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -223,7 +220,7 @@ const App: React.FC = () => {
 
   // 3. Authenticated Dashboard
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300" dir="rtl">
       
       {/* Sidebar */}
       <Sidebar 
@@ -253,7 +250,7 @@ const App: React.FC = () => {
         />
 
         {/* Main Content & Preview */}
-        <main className="flex-1 flex overflow-hidden relative">
+        <main className="flex-1 flex relative">
           
           {/* Settings/Dashboard Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-24 lg:pb-12">
@@ -262,9 +259,6 @@ const App: React.FC = () => {
                 <Dashboard 
                   setActiveTab={setActiveTab}
                   selectedChatbot={selectedChatbot}
-                  chatbots={chatbots}
-                  onSelectChatbot={handleSelectChatbot}
-                  onCreateChatbot={handleCreateChatbot}
                 />
               )}
               {activeTab === 'manage-bots' && (
@@ -323,7 +317,7 @@ const App: React.FC = () => {
               <div className="mb-6 text-center">
                 <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">پیش‌نمایش زنده</h3>
               </div>
-              <div className="transform scale-[0.95] hover:scale-100 transition-transform duration-500 ease-out">
+              <div className="transition-transform duration-500 ease-out">
                 <ChatPreview config={config} />
               </div>
             </div>

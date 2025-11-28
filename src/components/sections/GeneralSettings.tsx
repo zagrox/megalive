@@ -115,7 +115,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
 
         {/* Description / Title */}
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">توضیحات کوتاه (Title)</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">توضیحات کوتاه ربات</label>
           <textarea
             value={formData.chabot_title || ''}
             onChange={(e) => {
@@ -138,7 +138,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
               const val = e.target.value;
               setFormData(prev => ({ ...prev, chatbot_business: val }));
             }}
-            placeholder="مثال: آژانس برندینگ زاگروکس"
+            placeholder="مثال: مجموعه آموزشی ایران"
             className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all"
           />
           <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">

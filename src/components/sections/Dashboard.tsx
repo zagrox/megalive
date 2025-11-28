@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
-    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot
+    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot, RefreshCw
 } from 'lucide-react';
 import { TabType, Chatbot } from '../../types';
 import { getAssetUrl } from '../../services/directus';
@@ -9,16 +9,37 @@ import { getAssetUrl } from '../../services/directus';
 interface DashboardProps {
   setActiveTab: (tab: TabType) => void;
   selectedChatbot: Chatbot | null;
-  // Added purely to satisfy type checker if App.tsx hasn't updated perfectly in sync, though logic is removed
-  chatbots?: Chatbot[];
-  onSelectChatbot?: (bot: Chatbot) => void;
-  onCreateChatbot?: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   setActiveTab,
   selectedChatbot,
 }) => {
+  const [stats, setStats] = useState({
+    conversations: 1248,
+    tokens: 842000,
+    users: 3502,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const fetchStats = () => {
+    setLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      setStats({
+        conversations: Math.floor(Math.random() * 500) + 1000,
+        tokens: Math.floor(Math.random() * 200000) + 800000,
+        users: Math.floor(Math.random() * 200) + 3500,
+      });
+      setLoading(false);
+    }, 1000);
+  };
+
+  // Fetch stats when component mounts (i.e., when navigating to the tab)
+  useEffect(() => {
+    fetchStats();
+  }, [selectedChatbot]); // Re-fetch if the selected chatbot changes
+
   const logoUrl = selectedChatbot?.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : null;
   const vectorCount = selectedChatbot?.chatbot_vector ?? 0;
 
@@ -103,31 +124,21 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
         </div>
+        <button
+          onClick={fetchStats}
+          disabled={loading}
+          title={loading ? 'در حال بارگذاری...' : 'به‌روزرسانی آمار'}
+          className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-wait transition-colors"
+        >
+          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+        </button>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-            <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Activity size={60} />
-            </div>
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                    <Activity size={20} />
-                </div>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">مکالمات فعال</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">1,248</h3>
-                <span className="text-xs text-green-500 flex items-center font-mono">
-                    +12% <ArrowUpRight size={12} />
-                </span>
-            </div>
-        </div>
 
-        {/* Card 2 */}
-        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+        {/* Card 1 */}
+        <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group ${loading ? 'opacity-70' : ''}`}>
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Zap size={60} />
             </div>
@@ -138,34 +149,40 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">توکن مصرفی</span>
             </div>
              <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">842K</h3>
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
+                  {(stats.tokens / 1000).toFixed(0)}K
+                </h3>
                 <span className="text-xs text-gray-400 font-mono">/ 1M Limit</span>
             </div>
             <div className="w-full bg-gray-100 dark:bg-gray-800 h-1 mt-3 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full" style={{width: '84%'}}></div>
+                <div className="bg-amber-500 h-full" style={{width: `${(stats.tokens / 1000000) * 100}%`}}></div>
             </div>
         </div>
 
-        {/* Card 3 */}
-        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+        {/* Card 2 */}
+        <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group ${loading ? 'opacity-70' : ''}`}>
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Users size={60} />
+                <Activity size={60} />
             </div>
-             <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
-                    <Users size={20} />
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                      <Activity size={20} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">مکالمات فعال</span>
                 </div>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">کاربران یکتا</span>
             </div>
-             <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">3,502</h3>
+            <div className="flex items-baseline gap-2">
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
+                  {stats.conversations.toLocaleString('fa-IR')}
+                </h3>
                 <span className="text-xs text-green-500 flex items-center font-mono">
-                    +5% <ArrowUpRight size={12} />
+                    +12% <ArrowUpRight size={12} />
                 </span>
             </div>
         </div>
 
-        {/* Card 4 */}
+        {/* Card 3 */}
         <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Server size={60} />
@@ -181,6 +198,29 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-xs text-emerald-500 font-mono">وکتور</span>
             </div>
         </div>
+
+
+        {/* Card 4 */}
+        <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group ${loading ? 'opacity-70' : ''}`}>
+            <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Users size={60} />
+            </div>
+             <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
+                    <Users size={20} />
+                </div>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">کاربران یکتا</span>
+            </div>
+             <div className="flex items-baseline gap-2">
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
+                  {stats.users.toLocaleString('fa-IR')}
+                </h3>
+                <span className="text-xs text-green-500 flex items-center font-mono">
+                    +5% <ArrowUpRight size={12} />
+                </span>
+            </div>
+        </div>
+
       </div>
 
       {/* Manage App Section */}
@@ -220,7 +260,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Integrations Status Section */}
       <div className="pt-2">
-         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">اتصال پلتفرم‌ها</h3>
+         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">اتصال چت‌بات</h3>
          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {integrationStatus.map((item, index) => (
                 <button
