@@ -226,30 +226,30 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* Manage App Section */}
       <div className="pt-4">
         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">مدیریت چت‌بات</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
             {quickAccessCards.map((card) => (
                 <button 
                     key={card.id}
                     onClick={() => setActiveTab(card.id)}
                     className={`
-                        flex flex-col p-5 rounded-2xl border border-gray-200 dark:border-gray-800 
+                        flex flex-col p-3 sm:p-5 rounded-2xl border border-gray-200 dark:border-gray-800 
                         bg-white dark:bg-gray-900 transition-all duration-300 group
                         hover:shadow-lg ${card.border} hover:-translate-y-1
                     `}
                 >
-                    <div className="flex justify-between items-start w-full mb-4">
-                        <div className={`p-3 rounded-xl ${card.bg} ${card.color}`}>
-                            {card.icon}
+                    <div className="flex justify-between items-start w-full mb-3 sm:mb-4">
+                        <div className={`p-2.5 sm:p-3 rounded-xl ${card.bg} ${card.color}`}>
+                            {React.cloneElement(card.icon as React.ReactElement<any>, { size: 24, className: 'w-5 h-5 sm:w-6 sm:h-6' })}
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-full p-1.5 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
-                            <ArrowLeft size={14} className="rtl:rotate-0 rotate-180" />
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-full p-1 sm:p-1.5 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                            <ArrowLeft size={12} className="rtl:rotate-0 rotate-180 sm:w-[14px] sm:h-[14px]" />
                         </div>
                     </div>
-                    <div className="text-right">
-                        <h4 className="font-bold text-gray-800 dark:text-white text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-vazir">
+                    <div className="text-right w-full">
+                        <h4 className="font-bold text-gray-800 dark:text-white text-sm sm:text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-vazir truncate">
                             {card.title}
                         </h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                             {card.desc}
                         </p>
                     </div>

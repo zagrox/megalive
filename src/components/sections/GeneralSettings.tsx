@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Chatbot } from '../../types';
-import { Save, AlertCircle, Loader2, Check } from 'lucide-react';
+import { Save, AlertCircle, Loader2, Check, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { PROMPT_TEMPLATE } from '../../constants';
 
 interface Props {
   selectedChatbot: Chatbot | null;
@@ -12,6 +13,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
   const [formData, setFormData] = useState<Partial<Chatbot>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     if (selectedChatbot) {
@@ -39,6 +41,13 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadTemplate = () => {
+    const businessName = formData.chatbot_business || 'این کسب و کار';
+    const filledTemplate = PROMPT_TEMPLATE.replace(/{{chatbot_business}}/g, businessName);
+    setFormData(prev => ({ ...prev, chatbot_prompt: filledTemplate }));
+    onPreviewUpdate?.({ chatbot_prompt: filledTemplate });
   };
 
   if (!selectedChatbot) {
@@ -147,47 +156,70 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
           </p>
         </div>
 
-        {/* System Instruction */}
-        <div className="grid gap-2 relative">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">دستورالعمل سیستمی (System Prompt)</label>
-          </div>
-
-          <textarea
-            value={formData.chatbot_prompt || ''}
-            onChange={(e) => {
-              const val = e.target.value;
-              setFormData(prev => ({ ...prev, chatbot_prompt: val }));
-              onPreviewUpdate?.({ chatbot_prompt: val });
-            }}
-            rows={8}
-            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
-          />
-          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-            <AlertCircle size={12} />
-            این دستورالعمل شخصیت و نحوه پاسخگویی بات را تعیین می‌کند.
-          </p>
+        {/* Advanced Settings Toggle */}
+        <div className="pt-2">
+            <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            >
+                {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                <span>تنظیمات پیشرفته (دستورالعمل سیستم و پیام اپراتور)</span>
+            </button>
         </div>
 
-        {/* Operator Handoff Message */}
-        <div className="grid gap-2 relative">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">پیام اتصال به اپراتور</label>
-          </div>
-          <textarea
-            value={formData.chatbot_human || ''}
-            onChange={(e) => {
-              const val = e.target.value;
-              setFormData(prev => ({ ...prev, chatbot_human: val }));
-            }}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
-          />
-          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-            <AlertCircle size={12} />
-            این پیام زمانی نمایش داده می‌شود که کاربر درخواست صحبت با اپراتور را داشته باشد.
-          </p>
-        </div>
+        {/* Collapsible Advanced Section */}
+        {showAdvanced && (
+            <div className="space-y-6 pt-4 border-t border-gray-100 dark:border-gray-800 animate-fade-in">
+                {/* System Instruction */}
+                <div className="grid gap-2 relative">
+                <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">دستورالعمل سیستمی (System Prompt)</label>
+                    <button
+                    onClick={loadTemplate}
+                    className="flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                    >
+                    <Sparkles size={14} />
+                    استفاده از الگوی پیشنهادی
+                    </button>
+                </div>
+
+                <textarea
+                    value={formData.chatbot_prompt || ''}
+                    onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({ ...prev, chatbot_prompt: val }));
+                    onPreviewUpdate?.({ chatbot_prompt: val });
+                    }}
+                    rows={12}
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
+                />
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    این دستورالعمل شخصیت و نحوه پاسخگویی بات را تعیین می‌کند.
+                </p>
+                </div>
+
+                {/* Operator Handoff Message */}
+                <div className="grid gap-2 relative">
+                <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">پیام اتصال به اپراتور</label>
+                </div>
+                <textarea
+                    value={formData.chatbot_human || ''}
+                    onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({ ...prev, chatbot_human: val }));
+                    }}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all font-mono text-sm leading-relaxed"
+                />
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    این پیام زمانی نمایش داده می‌شود که کاربر درخواست صحبت با اپراتور را داشته باشد.
+                </p>
+                </div>
+            </div>
+        )}
         
         <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
              <button 

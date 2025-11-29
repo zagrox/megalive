@@ -19,7 +19,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeTab, 
   setActiveTab, 
-  isCollapsed,
+  isCollapsed, 
   toggleCollapse,
   appTitle = 'Mega Live AI',
   appSlogan = 'نسخه ۱.۰.۰',
@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className={`
-      relative h-screen z-40
+      relative h-full z-40
       bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800
       transition-all duration-300 ease-in-out shadow-xl lg:shadow-none
       flex flex-col flex-shrink-0

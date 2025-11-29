@@ -26,7 +26,7 @@ export const createChatbot = async (name: string, slug: string, businessName: st
       chabot_title: `دستار هوش مصنوعی ${name}`,
       chatbot_slug: slug,
       chatbot_business: businessName,
-      chatbot_active: true,
+      chatbot_active: false,
       status: 'published'
     }));
 
@@ -54,7 +54,7 @@ export const createChatbot = async (name: string, slug: string, businessName: st
         console.warn("Parent folder 'llm' not found. Skipping subfolder creation.");
       }
     } catch (folderError) {
-      // Log error but don't fail the whole process since the bot is already created
+      // Log error but don't fail the whole process since the bot is created
       console.error('Error creating folder for chatbot:', folderError);
     }
 

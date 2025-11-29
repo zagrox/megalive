@@ -12,6 +12,12 @@
       "src": "https://crm.megalive.ir/assets/e4e996c5-f5e3-440b-9e0d-bb99627476c2",
       "type": "image/png",
       "purpose": "any maskable",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://crm.megalive.ir/assets/e4e996c5-f5e3-440b-9e0d-bb99627476c2",
+      "type": "image/png",
+      "purpose": "any maskable",
       "sizes": "512x512"
     }
   ]

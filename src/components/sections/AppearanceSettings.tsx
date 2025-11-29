@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Chatbot } from '../../types';
 import { Save, Upload, Loader2, Check, AlertCircle, Plus, X } from 'lucide-react';
 import { directus, getAssetUrl } from '../../services/directus';
@@ -19,6 +20,10 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [suggestionInput, setSuggestionInput] = useState('');
+  
+  // Color Picker State
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedChatbot) {
@@ -31,6 +36,17 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
       });
     }
   }, [selectedChatbot]);
+
+  // Handle click outside to close color picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) {
+        setShowColorPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSave = async () => {
     if (!selectedChatbot) return;
@@ -138,6 +154,97 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
       </div>
 
       <div className="space-y-8">
+
+        {/* Color Theme */}
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">رنگ اصلی</label>
+          
+          <div className="flex items-start gap-4 relative" ref={colorPickerRef}>
+             {/* Color Trigger Button */}
+             <button 
+                type="button"
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className="w-12 h-12 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0 transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                style={{ backgroundColor: formData.chatbot_color || '#3b82f6' }}
+                title="تغییر رنگ"
+             ></button>
+             
+             {/* Hex Input & Description */}
+             <div className="space-y-2">
+                 <div className="relative w-32">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-sm pointer-events-none">#</span>
+                    <input
+                        type="text"
+                        value={(formData.chatbot_color || '').substring(1)}
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9a-fA-F]/g, '');
+                            const newColor = '#' + val;
+                            setFormData(prev => ({ ...prev, chatbot_color: newColor }));
+                            
+                            if (val.length === 6 || val.length === 3) {
+                                onPreviewUpdate?.({ chatbot_color: newColor });
+                            }
+                        }}
+                        maxLength={6}
+                        className="w-full pr-7 pl-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all dir-ltr font-mono text-sm text-left"
+                    />
+                 </div>
+                 <p className="text-xs text-gray-500 dark:text-gray-400">
+                    این رنگ برای هدر چت‌بات، دکمه‌ها و پیام‌های کاربر استفاده می‌شود.
+                 </p>
+             </div>
+
+             {/* Picker Popover */}
+             {showColorPicker && (
+                <div className="absolute top-14 right-0 z-20 p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-xl animate-fade-in">
+                  <HexColorPicker 
+                    color={formData.chatbot_color || '#3b82f6'} 
+                    onChange={(color) => {
+                        setFormData(prev => ({ ...prev, chatbot_color: color }));
+                        onPreviewUpdate?.({ chatbot_color: color });
+                    }} 
+                  />
+                </div>
+             )}
+          </div>
+        </div>
+
+
+        {/* Avatar Upload */}
+        <div className="grid gap-2">
+             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-3">آواتار ربات</label>
+             <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800">
+                 <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 overflow-hidden relative flex-shrink-0">
+                    {uploading ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Loader2 className="animate-spin text-blue-500" size={20} />
+                      </div>
+                    ) : (
+                      <img src={logoPreview} alt="Avatar" className="w-full h-full object-cover" />
+                    )}
+                 </div>
+                 <div className="flex-1">
+                    <button 
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      className="text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1.5 rounded-lg transition-colors w-full justify-center border border-blue-200 dark:border-blue-800 border-dashed"
+                      disabled={uploading}
+                    >
+                        <Upload size={16} />
+                        {uploading ? 'در حال آپلود...' : 'آپلود تصویر جدید'}
+                    </button>
+                    <input 
+                      id="avatar-upload" 
+                      type="file" 
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                 </div>
+             </div>
+        </div>
+
+
+
         {/* Welcome Message */}
         <div className="grid gap-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">پیام خوش‌آمدگویی</label>
@@ -213,83 +320,8 @@ const AppearanceSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot,
           />
         </div>
 
-        {/* Avatar Upload */}
-        <div>
-             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-3">آواتار ربات</label>
-             <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800">
-                 <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 overflow-hidden relative flex-shrink-0">
-                    {uploading ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Loader2 className="animate-spin text-blue-500" size={20} />
-                      </div>
-                    ) : (
-                      <img src={logoPreview} alt="Avatar" className="w-full h-full object-cover" />
-                    )}
-                 </div>
-                 <div className="flex-1">
-                    <button 
-                      onClick={() => document.getElementById('avatar-upload')?.click()}
-                      className="text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1.5 rounded-lg transition-colors w-full justify-center border border-blue-200 dark:border-blue-800 border-dashed"
-                      disabled={uploading}
-                    >
-                        <Upload size={16} />
-                        {uploading ? 'در حال آپلود...' : 'آپلود تصویر جدید'}
-                    </button>
-                    <input 
-                      id="avatar-upload" 
-                      type="file" 
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
-                 </div>
-             </div>
-        </div>
+        
 
-        {/* Color Theme */}
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">رنگ اصلی</label>
-          <div className="flex flex-col sm:flex-row gap-4 items-start">
-            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800">
-              <HexColorPicker 
-                color={formData.chatbot_color || '#3b82f6'} 
-                onChange={(color) => {
-                  setFormData(prev => ({ ...prev, chatbot_color: color }));
-                  onPreviewUpdate?.({ chatbot_color: color });
-                }} 
-              />
-            </div>
-            <div className="space-y-3 pt-2">
-               <div className="flex items-center gap-2">
-                  <div 
-                    className="w-10 h-10 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0"
-                    style={{ backgroundColor: formData.chatbot_color || '#3b82f6' }}
-                  ></div>
-                  <div className="relative">
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-sm pointer-events-none">#</span>
-                    <input
-                        type="text"
-                        value={(formData.chatbot_color || '').substring(1)}
-                        onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9a-fA-F]/g, '');
-                            const newColor = '#' + val;
-                            setFormData(prev => ({ ...prev, chatbot_color: newColor }));
-                            
-                            if (val.length === 6 || val.length === 3) {
-                                onPreviewUpdate?.({ chatbot_color: newColor });
-                            }
-                        }}
-                        maxLength={6}
-                        className="w-32 pr-7 pl-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all dir-ltr font-mono text-sm text-left"
-                    />
-                  </div>
-               </div>
-               <p className="text-xs text-gray-500 max-w-[200px]">
-                 این رنگ برای هدر چت‌بات، دکمه‌ها و پیام‌های کاربر استفاده می‌شود.
-               </p>
-            </div>
-          </div>
-        </div>
         
         <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
              <button 

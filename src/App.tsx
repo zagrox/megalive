@@ -38,6 +38,24 @@ const App: React.FC = () => {
     return false;
   });
 
+  // Handle responsive sidebar state on resize
+  useEffect(() => {
+    const handleResize = () => {
+      // Automatically collapse sidebar on screens smaller than 1024px (Tablets/Mobile)
+      if (window.innerWidth < 1024) {
+        setIsSidebarCollapsed(true);
+      }
+    };
+
+    // Attach listener
+    window.addEventListener('resize', handleResize);
+    
+    // Check immediately on mount to enforce state
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Initialize state based on storage or system preference
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -205,7 +223,7 @@ const App: React.FC = () => {
   // 1. Loading State
   if (authLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-950 text-blue-600 dark:text-blue-400">
+      <div className="fixed inset-0 w-full flex items-center justify-center bg-gray-50 dark:bg-gray-950 text-blue-600 dark:text-blue-400">
         <Loader2 className="animate-spin" size={48} />
       </div>
     );
@@ -220,7 +238,7 @@ const App: React.FC = () => {
 
   // 3. Authenticated Dashboard
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300" dir="rtl">
+    <div className="fixed inset-0 flex w-full bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
       
       {/* Sidebar */}
       <Sidebar 
@@ -238,7 +256,7 @@ const App: React.FC = () => {
       />
 
       {/* Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen">
+      <div className="flex-1 flex flex-col min-w-0 h-full">
         
         {/* Top Header */}
         <Header 
@@ -250,10 +268,10 @@ const App: React.FC = () => {
         />
 
         {/* Main Content & Preview */}
-        <main className="flex-1 flex relative">
+        <main className="flex-1 flex relative overflow-hidden">
           
           {/* Settings/Dashboard Scrollable Area */}
-          <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-24 lg:pb-12">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12 pb-24 lg:pb-12 scroll-smooth">
             <div className="max-w-7xl mx-auto">
               {activeTab === 'dashboard' && (
                 <Dashboard 
