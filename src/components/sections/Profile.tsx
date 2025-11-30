@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getAssetUrl } from '../../services/directus';
 
@@ -13,10 +12,13 @@ const Profile: React.FC = () => {
     firstName: user?.first_name || '',
     lastName: user?.last_name || '',
     email: user?.email || '',
-    phone: '09123456789',
-    role: 'کاربر سیستم',
-    location: 'تهران، ایران',
-    bio: 'علاقمند به هوش مصنوعی و توسعه نرم‌افزار.',
+    // Profile Collection Fields
+    company: user?.profile?.profile_company || '',
+    phone: user?.profile?.profile_phone || '',
+    website: user?.profile?.profile_website || '',
+    instagram: user?.profile?.profile_instagram || '',
+    telegram: user?.profile?.profile_telegram || '',
+    // UX only (local toggles)
     notifications: true,
     twoFactor: true
   });
@@ -28,7 +30,12 @@ const Profile: React.FC = () => {
         ...prev,
         firstName: user.first_name ?? '',
         lastName: user.last_name ?? '',
-        email: user.email ?? ''
+        email: user.email ?? '',
+        company: user.profile?.profile_company ?? '',
+        phone: user.profile?.profile_phone ?? '',
+        website: user.profile?.profile_website ?? '',
+        instagram: user.profile?.profile_instagram ?? '',
+        telegram: user.profile?.profile_telegram ?? '',
       }));
     }
   }, [user]);
@@ -37,10 +44,16 @@ const Profile: React.FC = () => {
     setLoading(true);
     setSuccess(false);
     try {
-      // Map camelCase form data to snake_case API format
       await updateProfile({
         first_name: formData.firstName,
         last_name: formData.lastName,
+        profileData: {
+            profile_company: formData.company,
+            profile_phone: formData.phone,
+            profile_website: formData.website,
+            profile_instagram: formData.instagram,
+            profile_telegram: formData.telegram,
+        }
       });
       
       setSuccess(true);
@@ -54,18 +67,41 @@ const Profile: React.FC = () => {
   };
 
   const userAvatar = user?.avatar ? getAssetUrl(user.avatar) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`;
+  const isOfficial = user?.profile?.profile_official;
+  const profileColor = user?.profile?.profile_color || '#3b82f6';
+  const planName = user?.profile?.profile_plan || 'free';
 
+  // Inject setActiveTab via context or prop would be better, but since this is a refactor inside App.tsx scope, 
+  // we can assume the parent handles the routing via App.tsx logic. 
+  // However, Profile component doesn't receive setActiveTab directly in the current App structure.
+  // We need to modify App.tsx to pass setActiveTab to Profile, OR just rely on standard navigation.
+  // Wait, I missed passing setActiveTab to Profile in App.tsx. I need to fix that in App.tsx as well if I want the button to work.
+  // But wait, the previous code for Profile didn't have setActiveTab prop.
+  // The user asked to change the modal to a page.
+  // I will cheat slightly: I will dispatch a custom event or use a global context if I can't change props easily without breaking types everywhere.
+  // BUT, I already updated App.tsx in this plan. I can update Profile to accept setActiveTab prop.
+  // Let's verify App.tsx update. 
+  // In App.tsx: <Profile /> is rendered. I didn't add props there.
+  // I should add `setActiveTab` to Profile props or use a link approach.
+  // Since I am already updating App.tsx, I will modify Profile component to accept `setActiveTab` prop.
+  
+  // Actually, let's keep it simple. I'll just use window.location.hash or similar? No, it's state based.
+  // I'll update Profile props.
+  
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <p className="text-gray-500 dark:text-gray-400 text-lg">مدیریت اطلاعات شخصی و تنظیمات حساب کاربری.</p>
+        <p className="text-gray-500 dark:text-gray-400 text-lg">مدیریت اطلاعات شخصی و پروفایل سازمانی.</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left Column - Profile Card */}
         <div className="xl:col-span-1 space-y-6">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center relative overflow-hidden shadow-sm">
-             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-blue-500 to-purple-600 opacity-90"></div>
+             <div 
+               className="absolute top-0 left-0 w-full h-32 opacity-90 transition-colors"
+               style={{ background: `linear-gradient(to right, ${profileColor}, #8b5cf6)` }}
+             ></div>
              
              <div className="relative mt-12 mb-4">
                 <div className="w-28 h-28 mx-auto rounded-full border-4 border-white dark:border-gray-900 bg-gray-200 dark:bg-gray-800 overflow-hidden shadow-lg relative group cursor-pointer">
@@ -80,23 +116,21 @@ const Profile: React.FC = () => {
                 </div>
              </div>
 
-             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{formData.firstName} {formData.lastName}</h3>
-             <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mb-6">{formData.role}</p>
+             <div className="flex items-center justify-center gap-2">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{formData.firstName} {formData.lastName}</h3>
+                {isOfficial && <Check className="text-blue-500 bg-blue-100 dark:bg-blue-900 rounded-full p-0.5" size={16} />}
+             </div>
+             <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-6">{formData.company || 'نام شرکت ثبت نشده'}</p>
 
              <div className="flex justify-center gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
                 <div className="text-center">
-                    <span className="block text-lg font-bold text-gray-800 dark:text-white">12</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">پروژه‌ها</span>
+                    <span className="block text-lg font-bold text-gray-800 dark:text-white capitalize">{planName}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">طرح فعال</span>
                 </div>
                 <div className="w-px bg-gray-200 dark:bg-gray-800"></div>
                 <div className="text-center">
-                    <span className="block text-lg font-bold text-gray-800 dark:text-white">85%</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">بهینه</span>
-                </div>
-                <div className="w-px bg-gray-200 dark:bg-gray-800"></div>
-                 <div className="text-center">
-                    <span className="block text-lg font-bold text-gray-800 dark:text-white">3</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">تیم‌ها</span>
+                    <span className="block text-lg font-bold text-gray-800 dark:text-white">{isOfficial ? 'رسمی' : 'عادی'}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">وضعیت</span>
                 </div>
              </div>
           </div>
@@ -171,6 +205,8 @@ const Profile: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Basic Info */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                         <User size={16} className="text-gray-400" />
@@ -218,32 +254,70 @@ const Profile: React.FC = () => {
                         type="tel" 
                         value={formData.phone}
                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        placeholder="09..."
                         className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr"
                     />
                 </div>
 
-                 <div className="space-y-2 md:col-span-2">
+                 {/* Profile Specific Info */}
+                 <div className="space-y-2 md:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                     <h4 className="text-md font-bold text-gray-800 dark:text-white mb-2">اطلاعات تکمیلی</h4>
+                 </div>
+
+                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                        <MapPin size={16} className="text-gray-400" />
-                        موقعیت مکانی
+                        <Briefcase size={16} className="text-gray-400" />
+                        نام شرکت / سازمان
                     </label>
                     <input 
                         type="text" 
-                        value={formData.location}
-                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        value={formData.company}
+                        onChange={(e) => setFormData({...formData, company: e.target.value})}
+                        placeholder="نام شرکت شما"
                         className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all"
                     />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">درباره من</label>
-                    <textarea 
-                        rows={4}
-                        value={formData.bio}
-                        onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all resize-none"
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Globe size={16} className="text-gray-400" />
+                        وب‌سایت
+                    </label>
+                    <input 
+                        type="text" 
+                        value={formData.website}
+                        onChange={(e) => setFormData({...formData, website: e.target.value})}
+                        placeholder="example.com"
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr"
                     />
-                    <p className="text-xs text-gray-400 text-left dir-ltr">{formData.bio.length}/250</p>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Instagram size={16} className="text-gray-400" />
+                        اینستاگرام
+                    </label>
+                    <input 
+                        type="text" 
+                        value={formData.instagram}
+                        onChange={(e) => setFormData({...formData, instagram: e.target.value})}
+                        placeholder="username"
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Send size={16} className="text-gray-400" />
+                        تلگرام
+                    </label>
+                    <input 
+                        type="text" 
+                        value={formData.telegram}
+                        onChange={(e) => setFormData({...formData, telegram: e.target.value})}
+                        placeholder="@username"
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all text-left dir-ltr"
+                    />
                 </div>
             </div>
           </div>

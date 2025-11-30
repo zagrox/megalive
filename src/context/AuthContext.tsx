@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react';
 import { directus } from '../services/directus';
-import { readMe, passwordRequest, passwordReset, createUser, readSingleton, updateMe } from '@directus/sdk';
+import { readMe, passwordRequest, passwordReset, createUser, readSingleton, updateMe, readItems, createItem, updateItem } from '@directus/sdk';
+import { UserProfile } from '../types';
 
 export interface User {
   id: string;
@@ -9,6 +11,7 @@ export interface User {
   email: string | null;
   avatar?: string | null;
   role?: any;
+  profile?: UserProfile; // Attached profile data
 }
 
 interface RegisterData {
@@ -25,7 +28,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   requestReset: (email: string) => Promise<void>;
   confirmReset: (token: string, password: string) => Promise<void>;
-  updateProfile: (data: Partial<User>) => Promise<void>;
+  updateProfile: (data: Partial<User> & { profileData?: Partial<UserProfile> }) => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -46,13 +49,42 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   const checkAuth = async () => {
     try {
-      // Try to fetch the current user
+      // 1. Fetch Basic User Data
       const currentUser = await directus.request(
         readMe({
           fields: ['id', 'first_name', 'last_name', 'email', 'avatar', 'role'],
         })
       );
-      setUser(currentUser as unknown as User);
+
+      // 2. Fetch User Profile (from 'profile' collection)
+      // We filter by 'user_created' which Directus automatically populates with the creator's ID
+      // @ts-ignore
+      const profiles = await directus.request(readItems('profile', {
+        filter: {
+            user_created: { _eq: currentUser.id }
+        },
+        limit: 1
+      }));
+
+      let userProfile = profiles[0] as UserProfile | undefined;
+
+      // 3. Auto Create Profile if not exists
+      if (!userProfile) {
+         try {
+             // @ts-ignore
+             userProfile = await directus.request(createItem('profile', {
+                 status: 'published',
+                 // user_created is handled automatically by Directus for the authenticated user
+                 profile_official: false,
+                 profile_company: 'My Company',
+                 profile_color: '#3b82f6'
+             }));
+         } catch (createErr) {
+             console.error("Failed to auto-create profile:", createErr);
+         }
+      }
+
+      setUser({ ...currentUser, profile: userProfile } as unknown as User);
     } catch (err) {
       // If this fails (401/403), the user is not logged in
       setUser(null);
@@ -169,12 +201,29 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
   };
 
-  const updateProfile = async (data: Partial<User>) => {
+  const updateProfile = async (data: Partial<User> & { profileData?: Partial<UserProfile> }) => {
     try {
-      // Update in Directus
-      const updatedUser = await directus.request(updateMe(data));
-      // Merge returned data into current user state
-      setUser(prev => prev ? { ...prev, ...updatedUser } as User : null);
+      // 1. Update Core User Data (directus_users)
+      const { profileData, ...userData } = data;
+      let updatedUser = user;
+
+      if (Object.keys(userData).length > 0) {
+          const res = await directus.request(updateMe(userData));
+          updatedUser = { ...updatedUser, ...res } as User;
+      }
+
+      // 2. Update Profile Collection Data (profile)
+      if (profileData && user?.profile?.id) {
+          // @ts-ignore
+          const updatedProfile = await directus.request(updateItem('profile', user.profile.id, profileData));
+          if (updatedUser) {
+              updatedUser = { ...updatedUser, profile: updatedProfile as UserProfile };
+          }
+      }
+
+      // Update state
+      setUser(updatedUser);
+      
     } catch (err: any) {
       console.error("Profile update failed:", err);
       throw err;

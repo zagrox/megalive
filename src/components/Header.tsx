@@ -114,6 +114,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
       case 'profile': return 'حساب کاربری';
       case 'manage-bots': return 'مدیریت چت‌بات‌ها';
       case 'create-bot': return 'ساخت ربات جدید';
+      case 'pricing': return 'طرح‌های اشتراک';
       default: return 'داشبورد';
     }
   };

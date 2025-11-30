@@ -10,6 +10,7 @@ import Deploy from './components/sections/Deploy';
 import Profile from './components/sections/Profile';
 import CreateBot from './components/sections/CreateBot';
 import ManageBots from './components/sections/ManageBots';
+import Pricing from './components/sections/Pricing';
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
@@ -290,8 +291,8 @@ const App: React.FC = () => {
               )}
               
               {/* Container for Centered Pages */}
-              {['general', 'appearance', 'knowledge', 'integrations', 'deploy', 'profile', 'create-bot'].includes(activeTab) && (
-                  <div className={`mx-auto ${activeTab === 'profile' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
+              {['general', 'appearance', 'knowledge', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing'].includes(activeTab) && (
+                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
                     {activeTab === 'create-bot' && (
                       <CreateBot 
                         onSubmit={handleSubmitCreateChatbot} 
@@ -323,6 +324,9 @@ const App: React.FC = () => {
                     )}
                     {activeTab === 'profile' && (
                       <Profile />
+                    )}
+                    {activeTab === 'pricing' && (
+                      <Pricing />
                     )}
                   </div>
               )}

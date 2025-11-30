@@ -1,4 +1,4 @@
-import { BotConfig } from '../types';
+import { BotConfig, Plan } from '../types';
 import { directus, getAssetUrl } from './directus';
 import { readSingleton } from '@directus/sdk';
 
@@ -47,5 +47,16 @@ export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
   } catch (error) {
     console.error('Error loading CRM configuration:', error);
     return {};
+  }
+};
+
+export const fetchPricingPlans = async (): Promise<Plan[]> => {
+  try {
+    // @ts-ignore
+    const result = await directus.request(readSingleton('plans'));
+    return result?.plans || [];
+  } catch (error) {
+    console.error('Error fetching pricing plans:', error);
+    return [];
   }
 };

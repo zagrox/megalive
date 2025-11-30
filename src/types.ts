@@ -76,6 +76,42 @@ export interface DirectusConfiguration {
   app_role?: string; // The ID of the role for new users
 }
 
+export interface UserProfile {
+  id: number;
+  status: string;
+  user_created: string;
+  date_created: string;
+  date_updated: string;
+  profile_official: boolean;
+  profile_color?: string;
+  profile_phone?: string;
+  profile_instagram?: string;
+  profile_telegram?: string;
+  profile_website?: string;
+  profile_company?: string;
+  // Subscription fields
+  profile_plan?: 'free' | 'starter' | 'business' | 'enterprise';
+  profile_chatbots?: number;
+  profile_messages?: string;
+  profile_storages?: string;
+  profile_vectors?: number;
+}
+
+export interface Plan {
+  plan_name: string;
+  plan_messages: string;
+  plan_llm: number;
+  plan_storage: string;
+  plan_monthly: number;
+  plan_yearly: number;
+  plan_bots: number;
+}
+
+export interface PricingConfig {
+  id: number;
+  plans: Plan[];
+}
+
 export interface LLMJob {
   id: number;
   llm_status: 'ready' | 'start' | 'building' | 'completed' | 'error';
@@ -90,9 +126,11 @@ export interface DirectusSchema {
   directus_files: DirectusFile;
   chatbot: Chatbot[];
   llm: LLMJob[];
+  profile: UserProfile[];
+  plans: PricingConfig;
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing';
 
 export interface Message {
   id: string;
