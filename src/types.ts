@@ -130,7 +130,7 @@ export interface DirectusSchema {
   plans: PricingConfig;
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout';
 
 export interface Message {
   id: string;

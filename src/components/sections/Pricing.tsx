@@ -5,7 +5,11 @@ import { Plan } from '../../types';
 import { fetchPricingPlans } from '../../services/configService';
 import { useAuth } from '../../context/AuthContext';
 
-const Pricing: React.FC = () => {
+interface PricingProps {
+  onSelectPlan?: (plan: Plan) => void;
+}
+
+const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
   const { user } = useAuth();
   const currentPlan = user?.profile?.profile_plan || 'free';
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -116,6 +120,7 @@ const Pricing: React.FC = () => {
                     </ul>
 
                     <button 
+                        onClick={() => !isCurrent && onSelectPlan && onSelectPlan(plan)}
                         className={`w-full py-3 rounded-xl font-bold transition-all ${
                             isCurrent 
                             ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-default' 

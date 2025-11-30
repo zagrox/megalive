@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -71,23 +72,6 @@ const Profile: React.FC = () => {
   const profileColor = user?.profile?.profile_color || '#3b82f6';
   const planName = user?.profile?.profile_plan || 'free';
 
-  // Inject setActiveTab via context or prop would be better, but since this is a refactor inside App.tsx scope, 
-  // we can assume the parent handles the routing via App.tsx logic. 
-  // However, Profile component doesn't receive setActiveTab directly in the current App structure.
-  // We need to modify App.tsx to pass setActiveTab to Profile, OR just rely on standard navigation.
-  // Wait, I missed passing setActiveTab to Profile in App.tsx. I need to fix that in App.tsx as well if I want the button to work.
-  // But wait, the previous code for Profile didn't have setActiveTab prop.
-  // The user asked to change the modal to a page.
-  // I will cheat slightly: I will dispatch a custom event or use a global context if I can't change props easily without breaking types everywhere.
-  // BUT, I already updated App.tsx in this plan. I can update Profile to accept setActiveTab prop.
-  // Let's verify App.tsx update. 
-  // In App.tsx: <Profile /> is rendered. I didn't add props there.
-  // I should add `setActiveTab` to Profile props or use a link approach.
-  // Since I am already updating App.tsx, I will modify Profile component to accept `setActiveTab` prop.
-  
-  // Actually, let's keep it simple. I'll just use window.location.hash or similar? No, it's state based.
-  // I'll update Profile props.
-  
   return (
     <div className="space-y-8 animate-fade-in">
       <div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -11,10 +12,11 @@ import Profile from './components/sections/Profile';
 import CreateBot from './components/sections/CreateBot';
 import ManageBots from './components/sections/ManageBots';
 import Pricing from './components/sections/Pricing';
+import Checkout from './components/sections/Checkout';
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
-import { BotConfig, TabType, Chatbot } from './types';
+import { BotConfig, TabType, Chatbot, Plan } from './types';
 import { fetchCrmConfig } from './services/configService';
 import { fetchUserChatbots, createChatbot, updateChatbot } from './services/chatbotService';
 import { useAuth } from './context/AuthContext';
@@ -30,6 +32,9 @@ const App: React.FC = () => {
   const [chatbots, setChatbots] = useState<Chatbot[]>([]);
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
   const [isHelpCenterOpen, setIsHelpCenterOpen] = useState(false);
+  
+  // Checkout State
+  const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
   
   // Initialize sidebar collapsed state based on screen width
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -205,6 +210,11 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleSelectPlan = (plan: Plan) => {
+    setCheckoutPlan(plan);
+    setActiveTab('checkout');
+  };
+
   const toggleTheme = () => {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
@@ -291,8 +301,8 @@ const App: React.FC = () => {
               )}
               
               {/* Container for Centered Pages */}
-              {['general', 'appearance', 'knowledge', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing'].includes(activeTab) && (
-                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
+              {['general', 'appearance', 'knowledge', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout'].includes(activeTab) && (
+                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' || activeTab === 'checkout' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
                     {activeTab === 'create-bot' && (
                       <CreateBot 
                         onSubmit={handleSubmitCreateChatbot} 
@@ -326,7 +336,10 @@ const App: React.FC = () => {
                       <Profile />
                     )}
                     {activeTab === 'pricing' && (
-                      <Pricing />
+                      <Pricing onSelectPlan={handleSelectPlan} />
+                    )}
+                    {activeTab === 'checkout' && (
+                      <Checkout plan={checkoutPlan} onBack={() => setActiveTab('pricing')} />
                     )}
                   </div>
               )}

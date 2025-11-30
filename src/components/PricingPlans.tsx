@@ -8,9 +8,10 @@ interface PricingPlansProps {
   isOpen: boolean;
   onClose: () => void;
   currentPlan?: string;
+  onSelectPlan?: (plan: Plan) => void;
 }
 
-const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPlan = 'free' }) => {
+const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPlan = 'free', onSelectPlan }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -130,6 +131,12 @@ const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPla
                     </ul>
 
                     <button 
+                        onClick={() => {
+                            if (!isCurrent && onSelectPlan) {
+                                onSelectPlan(plan);
+                                onClose();
+                            }
+                        }}
                         className={`w-full py-3 rounded-xl font-bold transition-all ${
                             isCurrent 
                             ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-default' 
