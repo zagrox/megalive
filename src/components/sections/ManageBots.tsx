@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bot, Settings, Globe, PlusCircle, Crown, MessageSquare, HardDrive, Cpu, AlertTriangle, ArrowUpCircle } from 'lucide-react';
 import { Chatbot, TabType, Plan } from '../../types';
@@ -65,91 +66,94 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
 
   const formatBigInt = (val?: string) => {
       if(!val) return '0';
-      return parseInt(val).toLocaleString('fa-IR');
+      return parseInt(val).toLocaleString('en-US');
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Subscription Stats Header */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-            <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border-2 ${getPlanColor(profile?.profile_plan)}`}>
                     <Crown size={28} />
                 </div>
                 <div>
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         پلن {getPlanLabel(profile?.profile_plan)}
-                        <button 
-                          onClick={() => setActiveTab('pricing')}
-                          className="px-2 py-0.5 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1 shadow-md shadow-blue-600/20"
-                        >
-                           <ArrowUpCircle size={12} />
-                           ارتقا
-                        </button>
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        وضعیت اشتراک و محدودیت‌های حساب
+                        وضعیت اشتراک و آمار مصرف
                     </p>
                 </div>
             </div>
             
-             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto flex-1 max-w-3xl">
-                 <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
-                        <Bot size={14} className="text-blue-500" />
-                        <span>ربات‌ها</span>
-                    </div>
-                    <span className={`text-lg font-bold font-mono ${isLimitReached ? 'text-red-500' : 'text-gray-800 dark:text-white'}`}>
-                        {currentChatbots} <span className="text-gray-400 text-sm">/ {limitChatbots}</span>
-                    </span>
-                 </div>
-                 
-                 <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-green-200 dark:hover:border-green-800 transition-colors">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
-                        <MessageSquare size={14} className="text-green-500" />
-                        <span>پیام‌ها</span>
-                    </div>
-                    <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
-                        {formatBigInt(profile?.profile_messages)} <span className="text-gray-400 text-sm">/ {limitMessages.toLocaleString('fa-IR')}</span>
-                    </span>
-                 </div>
-
-                 <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
-                        <HardDrive size={14} className="text-amber-500" />
-                        <span>فضا (MB)</span>
-                    </div>
-                    <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
-                         {formatBigInt(profile?.profile_storages)} <span className="text-gray-400 text-sm">/ {limitStorage.toLocaleString('fa-IR')}</span>
-                    </span>
-                 </div>
-
-                 <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-purple-200 dark:hover:border-purple-800 transition-colors">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
-                        <Cpu size={14} className="text-purple-500" />
-                        <span>پایگاه دانش</span>
-                    </div>
-                    <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
-                        {(profile?.profile_vectors || 0).toLocaleString('fa-IR')} <span className="text-gray-400 text-sm">/ {limitVectors.toLocaleString('fa-IR')}</span>
-                    </span>
-                 </div>
-             </div>
+            <button 
+                onClick={() => setActiveTab('pricing')}
+                className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md shadow-blue-600/20"
+            >
+                <ArrowUpCircle size={16} />
+                تغییر اشتراک
+            </button>
         </div>
         
-        {isLimitReached && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-pulse">
-                <AlertTriangle size={18} />
-                <span>شما به سقف مجاز ساخت ربات در پلن فعلی رسیده‌اید. برای ساخت ربات بیشتر لطفا پلن خود را ارتقا دهید.</span>
-                <button 
-                  onClick={() => setActiveTab('pricing')}
-                  className="mr-auto font-bold underline hover:text-amber-800 dark:hover:text-amber-300"
-                >
-                    مشاهده پلن‌ها
-                </button>
-            </div>
-        )}
+         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
+             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
+                    <Bot size={14} className="text-blue-500" />
+                    <span>ربات‌ها</span>
+                </div>
+                <span className={`text-lg font-bold font-mono ${isLimitReached ? 'text-red-500' : 'text-gray-800 dark:text-white'}`}>
+                    {currentChatbots} <span className="text-gray-400 text-sm">/ {limitChatbots}</span>
+                </span>
+             </div>
+             
+             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-green-200 dark:hover:border-green-800 transition-colors">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
+                    <MessageSquare size={14} className="text-green-500" />
+                    <span>پیام‌ها</span>
+                </div>
+                <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
+                    {formatBigInt(profile?.profile_messages)} <span className="text-gray-400 text-sm">/ {limitMessages.toLocaleString('en-US')}</span>
+                </span>
+             </div>
+
+             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
+                    <HardDrive size={14} className="text-amber-500" />
+                    <span>فضا (MB)</span>
+                </div>
+                <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
+                     {formatBigInt(profile?.profile_storages)} <span className="text-gray-400 text-sm">/ {limitStorage.toLocaleString('en-US')}</span>
+                </span>
+             </div>
+
+             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-purple-200 dark:hover:border-purple-800 transition-colors">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
+                    <Cpu size={14} className="text-purple-500" />
+                    <span>پایگاه دانش</span>
+                </div>
+                <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
+                    {(profile?.profile_vectors || 0).toLocaleString('en-US')} <span className="text-gray-400 text-sm">/ {limitVectors.toLocaleString('en-US')}</span>
+                </span>
+             </div>
+         </div>
       </div>
+      
+      {isLimitReached && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 px-6 py-4 rounded-2xl text-sm flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex items-center gap-3">
+                <AlertTriangle size={24} className="shrink-0" />
+                <span className="font-medium">شما به سقف مجاز ساخت ربات در پلن فعلی رسیده‌اید. برای ساخت ربات بیشتر لطفا پلن خود را ارتقا دهید.</span>
+            </div>
+            <button 
+              onClick={() => setActiveTab('pricing')}
+              className="mr-auto sm:mr-auto font-bold underline hover:text-amber-800 dark:hover:text-amber-300 whitespace-nowrap"
+            >
+                مشاهده پلن‌ها
+            </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
         <div>

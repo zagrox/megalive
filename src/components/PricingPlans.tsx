@@ -96,7 +96,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPla
                             ) : (
                                 <>
                                     <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                                        {plan.plan_monthly.toLocaleString('fa-IR')}
+                                        {plan.plan_monthly.toLocaleString('en-US')}
                                     </span>
                                     <span className="text-xs text-gray-500">تومان</span>
                                     <span className="text-xs text-gray-500">/ ماهانه</span>
@@ -105,7 +105,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPla
                         </div>
                         {plan.plan_yearly > 0 && (
                             <p className="text-xs text-gray-500 mt-1">
-                                {plan.plan_yearly.toLocaleString('fa-IR')} تومان سالانه
+                                {plan.plan_yearly.toLocaleString('en-US')} تومان سالانه
                             </p>
                         )}
                     </div>
@@ -117,11 +117,11 @@ const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPla
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <MessageSquare size={18} className="text-green-500 shrink-0" />
-                            <span><strong className="mx-1">{parseInt(plan.plan_messages).toLocaleString()}</strong> پیام در ماه</span>
+                            <span><strong className="mx-1">{parseInt(plan.plan_messages).toLocaleString('en-US')}</strong> پیام در ماه</span>
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Database size={18} className="text-amber-500 shrink-0" />
-                            <span><strong className="mx-1">{parseInt(plan.plan_storage).toLocaleString()}</strong> مگابایت فضا</span>
+                            <span><strong className="mx-1">{parseInt(plan.plan_storage).toLocaleString('en-US')}</strong> مگابایت فضا</span>
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Cpu size={18} className="text-purple-500 shrink-0" />

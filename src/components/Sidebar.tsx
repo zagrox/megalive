@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <button 
         onClick={toggleCollapse}
         className={`
-          flex absolute -left-3 top-6 z-50
+          flex absolute -left-3 top-5 z-50
           w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
           rounded-full items-center justify-center
           text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400
@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </button>
 
       {/* Header */}
-      <div className={`p-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 h-[65px] ${isCollapsed ? 'justify-center' : ''}`}>
+      <div className={`p-4 flex items-center gap-4 border-b border-gray-200 dark:border-gray-800 h-[65px] ${isCollapsed ? 'justify-center' : ''}`}>
         {appLogoUrl ? (
            <div className="w-9 h-9 rounded-lg overflow-hidden shadow-lg shadow-blue-600/20 flex-shrink-0 bg-white dark:bg-gray-800 p-0.5">
               <img 

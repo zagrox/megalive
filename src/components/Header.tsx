@@ -129,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
   
   return (
     <>
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-20 px-6 flex items-center justify-between transition-colors duration-300 sticky top-0 z-30">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-[65px] px-4 flex items-center justify-between transition-colors duration-300 sticky top-0 z-30">
         
         {/* Left Side: Page Title */}
         <div className="hidden md:flex items-center gap-4">
@@ -139,7 +139,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
         </div>
 
         {/* Right Side: Actions */}
-        <div className="flex items-center gap-3 ml-auto md:ml-0">
+        <div className="flex items-center gap-3 mr-auto md:mr-0">
           
           {/* Help */}
           <button 

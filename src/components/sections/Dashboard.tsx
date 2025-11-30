@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
     Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
@@ -174,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-baseline gap-2">
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
-                  {stats.conversations.toLocaleString('fa-IR')}
+                  {stats.conversations.toLocaleString('en-US')}
                 </h3>
                 <span className="text-xs text-green-500 flex items-center font-mono">
                     +12% <ArrowUpRight size={12} />
@@ -194,7 +195,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">وضعیت وکتور</span>
             </div>
              <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">{vectorCount.toLocaleString('fa-IR')}</h3>
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">{vectorCount.toLocaleString('en-US')}</h3>
                 <span className="text-xs text-emerald-500 font-mono">وکتور</span>
             </div>
         </div>
@@ -213,7 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
              <div className="flex items-baseline gap-2">
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
-                  {stats.users.toLocaleString('fa-IR')}
+                  {stats.users.toLocaleString('en-US')}
                 </h3>
                 <span className="text-xs text-green-500 flex items-center font-mono">
                     +5% <ArrowUpRight size={12} />

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Check, Crown, Zap, MessageSquare, Database, Cpu, Bot, ArrowLeft } from 'lucide-react';
 import { Plan } from '../../types';
@@ -37,7 +38,7 @@ const Pricing: React.FC = () => {
   };
 
   const formatPrice = (price: number) => {
-      return price.toLocaleString('fa-IR');
+      return price.toLocaleString('en-US');
   };
 
   return (
@@ -102,11 +103,11 @@ const Pricing: React.FC = () => {
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <MessageSquare size={18} className="text-green-500 shrink-0" />
-                            <span><strong className="mx-1">{parseInt(plan.plan_messages).toLocaleString('fa-IR')}</strong> پیام در ماه</span>
+                            <span><strong className="mx-1">{parseInt(plan.plan_messages).toLocaleString('en-US')}</strong> پیام در ماه</span>
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Database size={18} className="text-amber-500 shrink-0" />
-                            <span><strong className="mx-1">{parseInt(plan.plan_storage).toLocaleString('fa-IR')}</strong> مگابایت فضا</span>
+                            <span><strong className="mx-1">{parseInt(plan.plan_storage).toLocaleString('en-US')}</strong> مگابایت فضا</span>
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Cpu size={18} className="text-purple-500 shrink-0" />
