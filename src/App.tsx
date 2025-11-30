@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -194,6 +193,15 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRefreshChatbots = async () => {
+    const bots = await fetchUserChatbots();
+    setChatbots(bots);
+    if (selectedChatbot) {
+      const updatedBot = bots.find(b => b.id === selectedChatbot.id);
+      if (updatedBot) setSelectedChatbot(updatedBot);
+    }
+  };
+
   const handlePreviewUpdate = (data: Partial<Chatbot>) => {
     setConfig(prev => ({
       ...prev,
@@ -264,6 +272,7 @@ const App: React.FC = () => {
         selectedChatbot={selectedChatbot}
         onSelectChatbot={handleSelectChatbot}
         onCreateChatbot={handleCreateChatbot}
+        user={user}
       />
 
       {/* Content Wrapper */}
@@ -288,6 +297,7 @@ const App: React.FC = () => {
                 <Dashboard 
                   setActiveTab={setActiveTab}
                   selectedChatbot={selectedChatbot}
+                  onRefresh={handleRefreshChatbots}
                 />
               )}
               {activeTab === 'manage-bots' && (
@@ -324,7 +334,10 @@ const App: React.FC = () => {
                       />
                     )}
                     {activeTab === 'knowledge' && (
-                      <KnowledgeBase selectedChatbot={selectedChatbot} />
+                      <KnowledgeBase 
+                        selectedChatbot={selectedChatbot} 
+                        onUpdateChatbot={handleUpdateChatbot}
+                      />
                     )}
                     {activeTab === 'integrations' && (
                       <Integrations />

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chatbot, DirectusFile, LLMJob, ProcessedFile, BuildStatus } from '../../types';
 import { directus } from '../../services/directus';
@@ -7,12 +6,16 @@ import { uploadFiles, readFiles, deleteFile, readFolders, createItem, readItems,
 import { UploadCloud, FileText, CheckCircle2, Loader2, Search, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, Trash2 } from 'lucide-react';
 import FileDetails from './FileDetails';
 import ConfirmationModal from '../ConfirmationModal';
+import { useAuth } from '../../context/AuthContext';
+import { syncProfileStats } from '../../services/chatbotService';
 
 interface KnowledgeBaseProps {
   selectedChatbot: Chatbot | null;
+  onUpdateChatbot: (id: number, data: Partial<Chatbot>) => Promise<void>;
 }
 
-const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
+const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdateChatbot }) => {
+  const { user, refreshUser } = useAuth();
   const [files, setFiles] = useState<DirectusFile[]>([]);
   const [llmJobs, setLlmJobs] = useState<LLMJob[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -77,14 +80,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
     };
 
     resolveFolder();
-  }, [selectedChatbot]);
+  }, [selectedChatbot?.chatbot_slug]);
 
   // 2. Fetch initial files and jobs when folderId is set
   useEffect(() => {
-    if (folderId && selectedChatbot) {
+    if (folderId && selectedChatbot?.id) {
         loadFilesAndJobs(folderId, selectedChatbot.id);
     }
-  }, [folderId, selectedChatbot]);
+  }, [folderId, selectedChatbot?.id]);
 
   // 3. Polling for job status updates
   useEffect(() => {
@@ -105,7 +108,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
     const intervalId = setInterval(pollJobs, 5000); // Poll every 5 seconds
     
     return () => clearInterval(intervalId);
-  }, [selectedChatbot]);
+  }, [selectedChatbot?.id]);
 
 
   const loadFilesAndJobs = async (targetFolderId: string, botId: number) => {
@@ -123,13 +126,53 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
         }))
       ]);
 
-      setFiles(filesResult as DirectusFile[]);
+      const fetchedFiles = filesResult as DirectusFile[];
+      const fileCount = fetchedFiles.length;
+
+      setFiles(fetchedFiles);
       setLlmJobs(jobsResult as LLMJob[]);
+
+      // Auto-Sync: Check if the file count matches the chatbot's DB stats
+      if (selectedChatbot && selectedChatbot.chatbot_llm !== fileCount) {
+          console.log(`Syncing LLM count from ${selectedChatbot.chatbot_llm} to ${fileCount}`);
+          await onUpdateChatbot(selectedChatbot.id, { chatbot_llm: fileCount });
+          
+          if (user?.id) {
+             await syncProfileStats(user.id);
+             await refreshUser();
+          }
+      }
+
     } catch (err) {
       console.error("Failed to load files and jobs:", err);
       setError("عدم توانایی در دریافت لیست فایل‌ها و پردازش‌ها.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateBotStats = async () => {
+    if (!folderId || !selectedChatbot || !user?.id) return;
+    try {
+        // Fetch actual file count from server to be precise
+        const filesList = await directus.request(readFiles({
+            filter: { folder: { _eq: folderId } },
+            limit: -1,
+            fields: ['id']
+        })) as { id: string }[];
+        
+        const count = filesList.length;
+
+        // Update Chatbot (DB + Local State via prop)
+        await onUpdateChatbot(selectedChatbot.id, {
+            chatbot_llm: count
+        });
+
+        // Sync Profile Stats
+        await syncProfileStats(user.id);
+        await refreshUser();
+    } catch (error) {
+        console.error("Failed to update bot stats:", error);
     }
   };
 
@@ -199,6 +242,9 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
       setLlmJobs(prev => [newJob, ...prev]);
       
       setFiles(prev => [uploadedFile, ...prev.filter(f => f.id !== optimisticFileId)]);
+      
+      // Update stats after successful upload
+      await updateBotStats();
 
     } catch (err) {
       console.error("Upload failed:", err);
@@ -295,6 +341,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
         if (viewingFile?.id === file.id) {
             setViewingFile(null);
         }
+        // Update stats after delete
+        await updateBotStats();
     } catch (err: any) {
         let errorMessage = "خطا در حذف فایل. لطفاً سطح دسترسی خود را بررسی کنید.";
         if (err?.errors?.[0]?.message) errorMessage = err.errors[0].message;
@@ -344,6 +392,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
       alert('تمام وکتورها با موفقیت پاکسازی شدند. وضعیت فایل‌ها به‌روزرسانی می‌شود.');
       if (folderId && selectedChatbot) {
         await loadFilesAndJobs(folderId, selectedChatbot.id);
+        // Sync stats after mass clear
+        await updateBotStats();
       }
     } catch (err: any) {
       setError(err.message || "خطا در ارتباط با سرویس پاکسازی.");

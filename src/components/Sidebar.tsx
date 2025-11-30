@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List } from 'lucide-react';
-import { TabType, Chatbot } from '../types';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare } from 'lucide-react';
+import { TabType, Chatbot, Plan } from '../types';
+import { User } from '../context/AuthContext';
+import { fetchPricingPlans } from '../services/configService';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -14,6 +16,7 @@ interface SidebarProps {
   selectedChatbot: Chatbot | null;
   onSelectChatbot: (bot: Chatbot) => void;
   onCreateChatbot: () => void;
+  user: User | null;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -27,10 +30,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   chatbots,
   selectedChatbot,
   onSelectChatbot,
-  onCreateChatbot
+  onCreateChatbot,
+  user
 }) => {
   const [isBotDropdownOpen, setIsBotDropdownOpen] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchPricingPlans().then(data => setPlans(data));
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,6 +59,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'deploy', label: 'انتشار آنلاین', icon: <Rocket size={20} /> },
     { id: 'integrations', label: 'اتصال افزونه‌ها', icon: <Puzzle size={20} /> },
   ];
+
+  // Calculate Message Usage
+  const profile = user?.profile;
+  const currentPlan = plans.find(p => p.plan_name === profile?.profile_plan);
+  
+  // Default to 100 if plan not loaded yet
+  const limitMessages = currentPlan?.plan_messages ? parseInt(currentPlan.plan_messages) : 100;
+  const currentMessages = profile?.profile_messages ? parseInt(profile.profile_messages) : 0;
+  
+  const usagePercent = Math.min((currentMessages / limitMessages) * 100, 100);
 
   return (
     <div className={`
@@ -190,25 +209,30 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </nav>
 
-      {/* Footer Actions (Storage only) */}
+      {/* Footer Actions (Messages Usage) */}
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
         
-        {/* Storage Widget */}
-        <div className={`bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-800 dark:to-gray-800 rounded-xl border border-blue-100 dark:border-gray-700 overflow-hidden transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
+        {/* Messages Widget */}
+        <div className={`bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
           {!isCollapsed ? (
             <div className="overflow-hidden">
-              <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-1 whitespace-nowrap">فضای ذخیره‌سازی</p>
-              <div className="w-full bg-white dark:bg-gray-950 rounded-full h-2 mb-2 overflow-hidden">
-                <div className="bg-blue-500 h-full rounded-full" style={{ width: '45%' }}></div>
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-2 whitespace-nowrap flex items-center gap-2">
+                <MessageSquare size={16} className="text-gray-400" />
+                پیام‌های مصرفی
+              </p>
+              <div className="w-full bg-white dark:bg-gray-900 rounded-full h-1.5 mb-2 overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${usagePercent}%` }}></div>
               </div>
-              <p className="text-xs text-blue-600 dark:text-blue-400 text-left dir-ltr whitespace-nowrap">450MB / 1GB</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-left dir-ltr whitespace-nowrap font-mono">
+                {currentMessages.toLocaleString('en-US')} / {limitMessages.toLocaleString('en-US')}
+              </p>
             </div>
           ) : (
               <div className="flex flex-col items-center gap-1">
-                <div className="w-2 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
-                    <div className="absolute bottom-0 w-full bg-blue-500" style={{ height: '45%' }}></div>
+                <div className="w-1.5 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
+                    <div className="absolute bottom-0 w-full bg-blue-600 transition-all duration-500" style={{ height: `${usagePercent}%` }}></div>
                 </div>
-                <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">45%</span>
+                <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">{Math.round(usagePercent)}%</span>
               </div>
           )}
         </div>

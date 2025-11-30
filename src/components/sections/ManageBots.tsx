@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Bot, Settings, Globe, PlusCircle, Crown, MessageSquare, HardDrive, Cpu, AlertTriangle, ArrowUpCircle } from 'lucide-react';
+import { Bot, Settings, Globe, PlusCircle, Crown, MessageSquare, HardDrive, Cpu, AlertTriangle, ArrowUpCircle, FileText, Server } from 'lucide-react';
 import { Chatbot, TabType, Plan } from '../../types';
 import { getAssetUrl } from '../../services/directus';
 import { useAuth } from '../../context/AuthContext';
@@ -213,68 +213,124 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {chatbots.map(bot => (
-          <div key={bot.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col transition-shadow hover:shadow-lg group">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100 dark:border-gray-700">
-                {bot.chatbot_logo ? (
-                  <img src={getAssetUrl(bot.chatbot_logo)} alt={bot.chatbot_name} className="w-full h-full object-cover" />
-                ) : (
-                  <Bot size={24} className="text-gray-400" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{bot.chatbot_name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{bot.chabot_title}</p>
-              </div>
-            </div>
+        {chatbots.map(bot => {
+          // Parse Bot Stats
+          const botMsgCount = bot.chatbot_messages ? parseInt(bot.chatbot_messages) : 0;
+          const botStorageSize = bot.chatbot_storage ? parseInt(bot.chatbot_storage) : 0;
+          const botFileCount = bot.chatbot_llm || 0;
+          const botVectorCount = bot.chatbot_vector || 0;
 
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2 text-sm">
-                   <div className={`w-2.5 h-2.5 rounded-full ${bot.chatbot_active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                   <span className={bot.chatbot_active ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>
-                    {bot.chatbot_active ? 'فعال' : 'غیرفعال'}
-                   </span>
+          return (
+            <div key={bot.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col transition-shadow hover:shadow-lg group">
+              {/* Header */}
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
+                  {bot.chatbot_logo ? (
+                    <img src={getAssetUrl(bot.chatbot_logo)} alt={bot.chatbot_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Bot size={28} className="text-gray-400" />
+                  )}
                 </div>
-                
-                <div className="flex items-center">
-                    <span className="text-xs text-gray-400 mr-2">تغییر وضعیت</span>
-                    <button
-                        onClick={(e) => handleToggleActive(e, bot)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            bot.chatbot_active ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
-                    >
-                        <span
-                            className={`${
-                                bot.chatbot_active ? '-translate-x-6' : '-translate-x-1'
-                            } inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out`}
-                        />
-                    </button>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1">{bot.chatbot_name}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{bot.chabot_title}</p>
                 </div>
-            </div>
+              </div>
 
-            <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center gap-3">
-              <button 
-                onClick={() => handleManage(bot)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-              >
-                <Settings size={16} />
-                <span>مدیریت</span>
-              </button>
-              <a 
-                href={bot.chatbot_site || '#'} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                title={bot.chatbot_site || 'سایت متصل نشده'}
-                onClick={(e) => !bot.chatbot_site && e.preventDefault()}
-                className={`p-2.5 rounded-lg transition-colors ${bot.chatbot_site ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
-              >
-                <Globe size={16} />
-              </a>
+              {/* Bot Usage Stats Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                  {/* Messages */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50 flex items-center gap-2.5">
+                      <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
+                          <MessageSquare size={14} />
+                      </div>
+                      <div className="min-w-0">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">مکالمات</p>
+                          <p className="font-bold text-gray-800 dark:text-white font-mono text-sm">{botMsgCount.toLocaleString('en-US')}</p>
+                      </div>
+                  </div>
+
+                  {/* Storage */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50 flex items-center gap-2.5">
+                      <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg shrink-0">
+                          <HardDrive size={14} />
+                      </div>
+                      <div className="min-w-0">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">فضا (MB)</p>
+                          <p className="font-bold text-gray-800 dark:text-white font-mono text-sm">{botStorageSize.toLocaleString('en-US')}</p>
+                      </div>
+                  </div>
+
+                  {/* Files */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50 flex items-center gap-2.5">
+                      <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg shrink-0">
+                          <FileText size={14} />
+                      </div>
+                      <div className="min-w-0">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">فایل‌ها</p>
+                          <p className="font-bold text-gray-800 dark:text-white font-mono text-sm">{botFileCount.toLocaleString('en-US')}</p>
+                      </div>
+                  </div>
+
+                  {/* Vectors */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50 flex items-center gap-2.5">
+                      <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0">
+                          <Server size={14} />
+                      </div>
+                      <div className="min-w-0">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">وکتور</p>
+                          <p className="font-bold text-gray-800 dark:text-white font-mono text-sm">{botVectorCount.toLocaleString('en-US')}</p>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2 text-sm">
+                     <div className={`w-2.5 h-2.5 rounded-full ${bot.chatbot_active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                     <span className={bot.chatbot_active ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-500 dark:text-gray-400'}>
+                      {bot.chatbot_active ? 'فعال' : 'غیرفعال'}
+                     </span>
+                  </div>
+                  
+                  <div className="flex items-center">
+                      <span className="text-xs text-gray-400 mr-2">تغییر وضعیت</span>
+                      <button
+                          onClick={(e) => handleToggleActive(e, bot)}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              bot.chatbot_active ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                          }`}
+                      >
+                          <span
+                              className={`${
+                                  bot.chatbot_active ? '-translate-x-4' : '-translate-x-1'
+                              } inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200 ease-in-out`}
+                          />
+                      </button>
+                  </div>
+              </div>
+
+              <div className="mt-auto flex items-center gap-3">
+                <button 
+                  onClick={() => handleManage(bot)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors shadow-sm"
+                >
+                  <Settings size={16} />
+                  <span>مدیریت</span>
+                </button>
+                <a 
+                  href={bot.chatbot_site || '#'} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  title={bot.chatbot_site || 'سایت متصل نشده'}
+                  onClick={(e) => !bot.chatbot_site && e.preventDefault()}
+                  className={`p-2.5 rounded-xl transition-colors border ${bot.chatbot_site ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 border-gray-100 dark:border-gray-800 cursor-not-allowed'}`}
+                >
+                  <Globe size={18} />
+                </a>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         
         {chatbots.length === 0 && (
            <div className="col-span-full py-16 flex flex-col items-center justify-center text-center text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">

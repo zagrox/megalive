@@ -1,6 +1,4 @@
-
-
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
     MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot, RefreshCw, FileText, HardDrive
@@ -11,12 +9,15 @@ import { getAssetUrl } from '../../services/directus';
 interface DashboardProps {
   setActiveTab: (tab: TabType) => void;
   selectedChatbot: Chatbot | null;
+  onRefresh: () => Promise<void>;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   setActiveTab,
   selectedChatbot,
+  onRefresh
 }) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const logoUrl = selectedChatbot?.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : null;
   
   // Real Stats mapping
@@ -24,6 +25,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   const messagesCount = selectedChatbot?.chatbot_messages ? parseInt(selectedChatbot.chatbot_messages) : 0;
   const storageUsage = selectedChatbot?.chatbot_storage ? parseInt(selectedChatbot.chatbot_storage) : 0;
   const vectorCount = selectedChatbot?.chatbot_vector || 0;
+
+  const handleRefreshClick = async () => {
+    setIsRefreshing(true);
+    try {
+        await onRefresh();
+    } finally {
+        setTimeout(() => setIsRefreshing(false), 500); // Minimum spin time for visual feedback
+    }
+  };
 
   const quickAccessCards = [
     { 
@@ -107,11 +117,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </div>
         <button
-          onClick={() => window.location.reload()}
+          onClick={handleRefreshClick}
           title='به‌روزرسانی آمار'
-          className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          disabled={isRefreshing}
+          className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50"
         >
-          <RefreshCw size={18} />
+          <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
       </div>
 
@@ -135,9 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </h3>
                 <span className="text-xs text-gray-400 font-mono">Files</span>
             </div>
-            <div className="w-full bg-gray-100 dark:bg-gray-800 h-1 mt-3 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full" style={{width: `${Math.min(llmFilesCount * 10, 100)}%`}}></div>
-            </div>
+            
         </div>
 
         {/* Card 2: Conversations */}
