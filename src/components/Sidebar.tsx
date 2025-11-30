@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus } from 'lucide-react';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List } from 'lucide-react';
 import { TabType, Chatbot } from '../types';
 
 interface SidebarProps {
@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab, 
   isCollapsed, 
   toggleCollapse,
-  appTitle = 'Mega Live AI',
+  appTitle = 'MegaLive AI',
   appSlogan = 'نسخه ۱.۰.۰',
   appLogoUrl,
   chatbots,
@@ -141,13 +141,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                          <div className="p-3 text-xs text-gray-400 text-center">لیست خالی</div>
                       )}
                   </div>
-                  <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950">
+                  <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950 flex flex-col gap-1">
                       <button 
                           onClick={() => { onCreateChatbot(); setIsBotDropdownOpen(false); }}
                           className="w-full flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       >
                           <Plus size={14} />
                           ساخت چت‌بات جدید
+                      </button>
+                      <button 
+                          onClick={() => { setActiveTab('manage-bots'); setIsBotDropdownOpen(false); }}
+                          className="w-full flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 py-2 rounded-lg transition-colors"
+                      >
+                          <List size={14} />
+                          مدیریت چت‌بات‌ها
                       </button>
                   </div>
               </div>

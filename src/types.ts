@@ -49,8 +49,12 @@ export interface Chatbot {
   chatbot_input?: string;
   chatbot_color?: string;
   chatbot_slug?: string;
-  chatbot_vector?: number;
+  chatbot_llm?: number; // Renamed from chatbot_vector (Files count)
+  chatbot_vector?: number; // NEW: Actual vector count from Qdrant
   chatbot_human?: string;
+  // Usage stats per bot
+  chatbot_messages?: string; // Stored as string/bigint in DB
+  chatbot_storage?: string; // Stored as string/bigint in DB
 }
 
 export interface DirectusFile {
@@ -94,7 +98,7 @@ export interface UserProfile {
   profile_chatbots?: number;
   profile_messages?: string;
   profile_storages?: string;
-  profile_vectors?: number;
+  profile_llm?: number; // Renamed from profile_vectors
 }
 
 export interface Plan {

@@ -60,7 +60,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                     >
                         <div>
                             <span className="font-bold text-gray-700 dark:text-gray-200 block text-right">سالانه</span>
-                            <span className="text-xs text-green-600 dark:text-green-400 block text-right mt-1">به صرفه‌تر</span>
+                            <span className="text-xs text-green-600 dark:text-green-400 block text-right mt-1">2 ماه اشتراک رایگان</span>
                         </div>
                         {billingCycle === 'yearly' && <Check size={20} className="text-blue-600" />}
                     </button>

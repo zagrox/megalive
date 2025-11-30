@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Bot, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Chatbot } from '../../types';
+import { syncProfileStats } from '../../services/chatbotService';
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
   onSubmit: (name: string, slug: string, businessName: string) => Promise<Chatbot | null>;
@@ -10,6 +12,7 @@ interface Props {
 }
 
 const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
+  const { user, refreshUser } = useAuth();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -46,7 +49,12 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel }) => {
     setLoading(true);
     setError(null);
     try {
-      await onSubmit(name, slug, businessName);
+      const newBot = await onSubmit(name, slug, businessName);
+      if (newBot && user) {
+        // Sync stats after creation (e.g. increase bot count)
+        await syncProfileStats(user.id);
+        await refreshUser();
+      }
     } catch (err: any) {
       // Directus unique constraint error code is usually RECORD_NOT_UNIQUE
       if (err?.errors?.[0]?.extensions?.code === 'RECORD_NOT_UNIQUE') {

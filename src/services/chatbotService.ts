@@ -17,6 +17,68 @@ export const fetchUserChatbots = async (): Promise<Chatbot[]> => {
   }
 };
 
+/**
+ * Calculates the total stats from all chatbots belonging to the current user
+ * and updates the single Profile item for that user.
+ */
+export const syncProfileStats = async (userId: string): Promise<void> => {
+  try {
+    // 1. Fetch all chatbots for this user (user_created is automatically handled by permissions, 
+    // but explicit filtering ensures we get the right list context)
+    // @ts-ignore
+    const bots = await directus.request(readItems('chatbot', {
+      filter: { user_created: { _eq: userId } },
+      fields: ['chatbot_llm', 'chatbot_messages', 'chatbot_storage']
+    })) as Chatbot[];
+
+    // 2. Aggregate Stats
+    let totalLlm = 0;
+    let totalMessages = 0;
+    let totalStorage = 0;
+
+    bots.forEach(bot => {
+      // LLM (Vectors)
+      if (bot.chatbot_llm) {
+        totalLlm += bot.chatbot_llm;
+      }
+      
+      // Messages (stored as string/bigint)
+      if (bot.chatbot_messages) {
+        totalMessages += parseInt(bot.chatbot_messages);
+      }
+
+      // Storage (stored as string/bigint)
+      if (bot.chatbot_storage) {
+        totalStorage += parseInt(bot.chatbot_storage);
+      }
+    });
+
+    // 3. Find the user's profile item
+    // @ts-ignore
+    const profiles = await directus.request(readItems('profile', {
+      filter: { user_created: { _eq: userId } },
+      limit: 1,
+      fields: ['id']
+    }));
+
+    if (profiles && profiles.length > 0) {
+      const profileId = profiles[0].id;
+
+      // 4. Update Profile with aggregated data
+      // @ts-ignore
+      await directus.request(updateItem('profile', profileId, {
+        profile_chatbots: bots.length,
+        profile_llm: totalLlm,
+        profile_messages: totalMessages.toString(),
+        profile_storages: totalStorage.toString()
+      }));
+    }
+
+  } catch (error) {
+    console.error("Failed to sync profile stats:", error);
+  }
+};
+
 export const createChatbot = async (name: string, slug: string, businessName: string): Promise<Chatbot | null> => {
   try {
     // 1. Create the Chatbot item
@@ -27,7 +89,10 @@ export const createChatbot = async (name: string, slug: string, businessName: st
       chatbot_slug: slug,
       chatbot_business: businessName,
       chatbot_active: false,
-      status: 'published'
+      status: 'published',
+      chatbot_messages: "0",
+      chatbot_storage: "0",
+      chatbot_llm: 0
     }));
 
     // 2. Create the corresponding folder in Directus

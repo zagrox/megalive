@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { 
     Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
-    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot, RefreshCw
+    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot, RefreshCw, FileText, HardDrive
 } from 'lucide-react';
 import { TabType, Chatbot } from '../../types';
 import { getAssetUrl } from '../../services/directus';
@@ -16,33 +17,13 @@ const Dashboard: React.FC<DashboardProps> = ({
   setActiveTab,
   selectedChatbot,
 }) => {
-  const [stats, setStats] = useState({
-    conversations: 1248,
-    tokens: 842000,
-    users: 3502,
-  });
-  const [loading, setLoading] = useState(false);
-
-  const fetchStats = () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setStats({
-        conversations: Math.floor(Math.random() * 500) + 1000,
-        tokens: Math.floor(Math.random() * 200000) + 800000,
-        users: Math.floor(Math.random() * 200) + 3500,
-      });
-      setLoading(false);
-    }, 1000);
-  };
-
-  // Fetch stats when component mounts (i.e., when navigating to the tab)
-  useEffect(() => {
-    fetchStats();
-  }, [selectedChatbot]); // Re-fetch if the selected chatbot changes
-
   const logoUrl = selectedChatbot?.chatbot_logo ? getAssetUrl(selectedChatbot.chatbot_logo) : null;
-  const vectorCount = selectedChatbot?.chatbot_vector ?? 0;
+  
+  // Real Stats mapping
+  const llmFilesCount = selectedChatbot?.chatbot_llm || 0;
+  const messagesCount = selectedChatbot?.chatbot_messages ? parseInt(selectedChatbot.chatbot_messages) : 0;
+  const storageUsage = selectedChatbot?.chatbot_storage ? parseInt(selectedChatbot.chatbot_storage) : 0;
+  const vectorCount = selectedChatbot?.chatbot_vector || 0;
 
   const quickAccessCards = [
     { 
@@ -126,42 +107,41 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </div>
         <button
-          onClick={fetchStats}
-          disabled={loading}
-          title={loading ? 'در حال بارگذاری...' : 'به‌روزرسانی آمار'}
-          className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-wait transition-colors"
+          onClick={() => window.location.reload()}
+          title='به‌روزرسانی آمار'
+          className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
-          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={18} />
         </button>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
-        {/* Card 1 */}
-        <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group ${loading ? 'opacity-70' : ''}`}>
+        {/* Card 1: LLM Files */}
+        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Zap size={60} />
+                <FileText size={60} />
             </div>
              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
-                    <Zap size={20} />
+                    <FileText size={20} />
                 </div>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">توکن مصرفی</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">فایل‌های آموزشی</span>
             </div>
              <div className="flex items-baseline gap-2">
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
-                  {(stats.tokens / 1000).toFixed(0)}K
+                  {llmFilesCount.toLocaleString('en-US')}
                 </h3>
-                <span className="text-xs text-gray-400 font-mono">/ 1M Limit</span>
+                <span className="text-xs text-gray-400 font-mono">Files</span>
             </div>
             <div className="w-full bg-gray-100 dark:bg-gray-800 h-1 mt-3 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full" style={{width: `${(stats.tokens / 1000000) * 100}%`}}></div>
+                <div className="bg-amber-500 h-full" style={{width: `${Math.min(llmFilesCount * 10, 100)}%`}}></div>
             </div>
         </div>
 
-        {/* Card 2 */}
-        <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group ${loading ? 'opacity-70' : ''}`}>
+        {/* Card 2: Conversations */}
+        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Activity size={60} />
             </div>
@@ -170,12 +150,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
                       <Activity size={20} />
                   </div>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">مکالمات فعال</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">مکالمات</span>
                 </div>
             </div>
             <div className="flex items-baseline gap-2">
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
-                  {stats.conversations.toLocaleString('en-US')}
+                  {messagesCount.toLocaleString('en-US')}
                 </h3>
                 <span className="text-xs text-green-500 flex items-center font-mono">
                     +12% <ArrowUpRight size={12} />
@@ -183,7 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </div>
 
-        {/* Card 3 */}
+        {/* Card 3: Vector Index */}
         <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Server size={60} />
@@ -192,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
                     <Server size={20} />
                 </div>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">وضعیت وکتور</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">ایندکس وکتور</span>
             </div>
              <div className="flex items-baseline gap-2">
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">{vectorCount.toLocaleString('en-US')}</h3>
@@ -201,24 +181,22 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
 
-        {/* Card 4 */}
-        <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group ${loading ? 'opacity-70' : ''}`}>
+        {/* Card 4: Storage */}
+        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Users size={60} />
+                <HardDrive size={60} />
             </div>
              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
-                    <Users size={20} />
+                    <HardDrive size={20} />
                 </div>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">کاربران یکتا</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">فضای ذخیره‌سازی</span>
             </div>
              <div className="flex items-baseline gap-2">
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white font-mono">
-                  {stats.users.toLocaleString('en-US')}
+                  {storageUsage.toLocaleString('en-US')}
                 </h3>
-                <span className="text-xs text-green-500 flex items-center font-mono">
-                    +5% <ArrowUpRight size={12} />
-                </span>
+                <span className="text-sm text-gray-400 font-mono">MB</span>
             </div>
         </div>
 

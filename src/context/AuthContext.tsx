@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react';
 import { directus } from '../services/directus';
 import { readMe, passwordRequest, passwordReset, createUser, readSingleton, updateMe, readItems, createItem, updateItem } from '@directus/sdk';
@@ -29,6 +30,7 @@ interface AuthContextType {
   requestReset: (email: string) => Promise<void>;
   confirmReset: (token: string, password: string) => Promise<void>;
   updateProfile: (data: Partial<User> & { profileData?: Partial<UserProfile> }) => Promise<void>;
+  refreshUser: () => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -77,7 +79,11 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
                  // user_created is handled automatically by Directus for the authenticated user
                  profile_official: false,
                  profile_company: 'My Company',
-                 profile_color: '#3b82f6'
+                 profile_color: '#3b82f6',
+                 profile_chatbots: 0,
+                 profile_messages: "0",
+                 profile_storages: "0",
+                 profile_llm: 0
              }));
          } catch (createErr) {
              console.error("Failed to auto-create profile:", createErr);
@@ -230,8 +236,12 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
   };
 
+  const refreshUser = async () => {
+    await checkAuth();
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, requestReset, confirmReset, updateProfile, loading, error }}>
+    <AuthContext.Provider value={{ user, login, register, logout, requestReset, confirmReset, updateProfile, refreshUser, loading, error }}>
       {children}
     </AuthContext.Provider>
   );

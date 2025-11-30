@@ -1,10 +1,12 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Bot, Settings, Globe, PlusCircle, Crown, MessageSquare, HardDrive, Cpu, AlertTriangle, ArrowUpCircle } from 'lucide-react';
 import { Chatbot, TabType, Plan } from '../../types';
 import { getAssetUrl } from '../../services/directus';
 import { useAuth } from '../../context/AuthContext';
 import { fetchPricingPlans } from '../../services/configService';
+import { syncProfileStats } from '../../services/chatbotService';
 
 interface Props {
   chatbots: Chatbot[];
@@ -15,7 +17,7 @@ interface Props {
 }
 
 const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbot, setActiveTab, onCreateChatbot }) => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const profile = user?.profile;
   const [plans, setPlans] = useState<Plan[]>([]);
 
@@ -23,15 +25,34 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
     fetchPricingPlans().then(data => setPlans(data));
   }, []);
 
+  // Sync profile stats on mount to ensure aggregation is up to date
+  useEffect(() => {
+    const sync = async () => {
+      if (user?.id) {
+        try {
+            await syncProfileStats(user.id);
+            await refreshUser();
+        } catch (err) {
+            console.error("Failed to sync profile stats:", err);
+        }
+      }
+    };
+    sync();
+  }, []);
+
   const handleManage = (bot: Chatbot) => {
     onSelectChatbot(bot);
     setActiveTab('dashboard');
   };
   
-  const handleToggleActive = (bot: Chatbot) => {
-    // Prevent event bubbling to parent link elements
-    event?.stopPropagation();
-    onUpdateChatbot(bot.id, { chatbot_active: !bot.chatbot_active });
+  const handleToggleActive = async (e: React.MouseEvent, bot: Chatbot) => {
+    e.stopPropagation();
+    await onUpdateChatbot(bot.id, { chatbot_active: !bot.chatbot_active });
+    // Sync stats after update to ensure integrity
+    if (user) {
+        await syncProfileStats(user.id);
+        await refreshUser();
+    }
   };
 
   const getPlanLabel = (plan?: string) => {
@@ -62,11 +83,21 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
   const limitVectors = currentPlanConfig?.plan_llm || 1;
 
   const currentChatbots = chatbots.length;
+  // Parse current usage for calculations
+  const currentMessages = profile?.profile_messages ? parseInt(profile.profile_messages) : 0;
+  const currentStorage = profile?.profile_storages ? parseInt(profile.profile_storages) : 0;
+  const currentVectors = profile?.profile_llm || 0;
+
   const isLimitReached = currentChatbots >= limitChatbots;
 
   const formatBigInt = (val?: string) => {
       if(!val) return '0';
       return parseInt(val).toLocaleString('en-US');
+  };
+
+  const getPercentage = (current: number, limit: number) => {
+      if (limit === 0) return 100;
+      return Math.min((current / limit) * 100, 100);
   };
 
   return (
@@ -106,6 +137,9 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                 <span className={`text-lg font-bold font-mono ${isLimitReached ? 'text-red-500' : 'text-gray-800 dark:text-white'}`}>
                     {currentChatbots} <span className="text-gray-400 text-sm">/ {limitChatbots}</span>
                 </span>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${getPercentage(currentChatbots, limitChatbots)}%` }}></div>
+                </div>
              </div>
              
              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-green-200 dark:hover:border-green-800 transition-colors">
@@ -116,6 +150,9 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                 <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
                     {formatBigInt(profile?.profile_messages)} <span className="text-gray-400 text-sm">/ {limitMessages.toLocaleString('en-US')}</span>
                 </span>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div className="bg-green-500 h-full rounded-full transition-all duration-500" style={{ width: `${getPercentage(currentMessages, limitMessages)}%` }}></div>
+                </div>
              </div>
 
              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
@@ -126,6 +163,9 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                 <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
                      {formatBigInt(profile?.profile_storages)} <span className="text-gray-400 text-sm">/ {limitStorage.toLocaleString('en-US')}</span>
                 </span>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${getPercentage(currentStorage, limitStorage)}%` }}></div>
+                </div>
              </div>
 
              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 text-center group hover:border-purple-200 dark:hover:border-purple-800 transition-colors">
@@ -134,8 +174,11 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                     <span>پایگاه دانش</span>
                 </div>
                 <span className="text-lg font-bold font-mono text-gray-800 dark:text-white">
-                    {(profile?.profile_vectors || 0).toLocaleString('en-US')} <span className="text-gray-400 text-sm">/ {limitVectors.toLocaleString('en-US')}</span>
+                    {(profile?.profile_llm || 0).toLocaleString('en-US')} <span className="text-gray-400 text-sm">/ {limitVectors.toLocaleString('en-US')}</span>
                 </span>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div className="bg-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${getPercentage(currentVectors, limitVectors)}%` }}></div>
+                </div>
              </div>
          </div>
       </div>
@@ -197,7 +240,7 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                 <div className="flex items-center">
                     <span className="text-xs text-gray-400 mr-2">تغییر وضعیت</span>
                     <button
-                        onClick={() => handleToggleActive(bot)}
+                        onClick={(e) => handleToggleActive(e, bot)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                             bot.chatbot_active ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
                         }`}

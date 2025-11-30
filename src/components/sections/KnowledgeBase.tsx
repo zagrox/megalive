@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chatbot, DirectusFile, LLMJob, ProcessedFile, BuildStatus } from '../../types';
 import { directus } from '../../services/directus';
@@ -328,7 +330,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot }) => {
         chatbot_name: selectedChatbot.chatbot_name,
         chatbot_id: selectedChatbot.id,
         chatbot_slug: selectedChatbot.chatbot_slug,
-        chatbot_vector: selectedChatbot.chatbot_vector,
+        chatbot_llm: selectedChatbot.chatbot_llm,
       };
       const response = await fetch('https://auto.ir48.com/webhook/clearllm', {
         method: 'POST',
