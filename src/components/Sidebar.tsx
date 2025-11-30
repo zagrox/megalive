@@ -160,19 +160,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                          <div className="p-3 text-xs text-gray-400 text-center">لیست خالی</div>
                       )}
                   </div>
-                  <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950 flex flex-col gap-1">
+                  <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950 flex flex-col gap-2">
                       <button 
                           onClick={() => { onCreateChatbot(); setIsBotDropdownOpen(false); }}
-                          className="w-full flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                          className="w-full flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors shadow-sm"
                       >
                           <Plus size={14} />
                           ساخت چت‌بات جدید
                       </button>
                       <button 
                           onClick={() => { setActiveTab('manage-bots'); setIsBotDropdownOpen(false); }}
-                          className="w-full flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 py-2 rounded-lg transition-colors"
+                          className="w-full flex items-center justify-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-2.5 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm group"
                       >
-                          <List size={14} />
+                          <List size={14} className="text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors" />
                           مدیریت چت‌بات‌ها
                       </button>
                   </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -317,6 +318,8 @@ const App: React.FC = () => {
                       <CreateBot 
                         onSubmit={handleSubmitCreateChatbot} 
                         onCancel={chatbots.length > 0 ? () => setActiveTab('dashboard') : undefined} 
+                        currentChatbotCount={chatbots.length}
+                        onShowPricing={() => setActiveTab('pricing')}
                       />
                     )}
                     {activeTab === 'general' && (

@@ -1,5 +1,4 @@
 
-
 export interface UploadedFile {
   id: string;
   name: string;
@@ -99,6 +98,10 @@ export interface UserProfile {
   profile_messages?: string;
   profile_storages?: string;
   profile_llm?: number; // Renamed from profile_vectors
+  // Subscription timing
+  profile_duration?: 'monthly' | 'yearly';
+  profile_start?: string;
+  profile_end?: string;
 }
 
 export interface Plan {

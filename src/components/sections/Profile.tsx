@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight, Calendar, Clock, Infinity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getAssetUrl } from '../../services/directus';
 
@@ -71,6 +71,31 @@ const Profile: React.FC = () => {
   const isOfficial = user?.profile?.profile_official;
   const profileColor = user?.profile?.profile_color || '#3b82f6';
   const planName = user?.profile?.profile_plan || 'free';
+  const planDuration = user?.profile?.profile_duration;
+  const startDate = user?.profile?.profile_start;
+  const endDate = user?.profile?.profile_end;
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('fa-IR');
+  };
+
+  const getRemainingDays = () => {
+    if (planName === 'free' || !endDate) return null;
+
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return <span className="text-xs text-red-500 mt-0.5 font-medium">منقضی شده</span>;
+    } else if (diffDays === 0) {
+        return <span className="text-xs text-amber-500 mt-0.5 font-medium">کمتر از یک روز</span>;
+    } else {
+        return <span className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 font-medium">{diffDays} روز باقی‌مانده</span>;
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -115,6 +140,49 @@ const Profile: React.FC = () => {
                 <div className="text-center">
                     <span className="block text-lg font-bold text-gray-800 dark:text-white">{isOfficial ? 'رسمی' : 'عادی'}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">وضعیت</span>
+                </div>
+             </div>
+
+             {/* Subscription Details Section */}
+             <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Clock size={16} />
+                        <span>دوره اشتراک:</span>
+                    </div>
+                    {planDuration ? (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${planDuration === 'yearly' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                            {planDuration === 'yearly' ? 'سالانه' : 'ماهانه'}
+                        </span>
+                    ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                    )}
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Calendar size={16} />
+                        <span>تاریخ شروع:</span>
+                    </div>
+                    <span className="font-mono text-gray-800 dark:text-gray-200">{formatDate(startDate)}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Calendar size={16} />
+                        <span>تاریخ پایان:</span>
+                    </div>
+                    {planName === 'free' ? (
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                            <Infinity size={14} />
+                            نامحدود
+                        </span>
+                    ) : (
+                        <div className="flex flex-col items-end">
+                            <span className="font-mono text-gray-800 dark:text-gray-200">{formatDate(endDate)}</span>
+                            {getRemainingDays()}
+                        </div>
+                    )}
                 </div>
              </div>
           </div>

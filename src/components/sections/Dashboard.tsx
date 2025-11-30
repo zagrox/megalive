@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
     Activity, Zap, Users, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
-    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot, RefreshCw, FileText, HardDrive
+    MessageSquare, Send, Table, LayoutTemplate, Mail, Phone, Bot, RefreshCw, FileText, HardDrive, List
 } from 'lucide-react';
 import { TabType, Chatbot } from '../../types';
 import { getAssetUrl } from '../../services/directus';
@@ -116,14 +116,24 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
         </div>
-        <button
-          onClick={handleRefreshClick}
-          title='به‌روزرسانی آمار'
-          disabled={isRefreshing}
-          className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-        </button>
+        
+        <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('manage-bots')}
+              title='لیست ربات‌ها'
+              className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              <List size={18} />
+            </button>
+            <button
+              onClick={handleRefreshClick}
+              title='به‌روزرسانی آمار'
+              disabled={isRefreshing}
+              className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
+        </div>
       </div>
 
       {/* Stats Grid */}

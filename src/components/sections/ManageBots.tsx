@@ -73,6 +73,31 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
     }
   };
 
+  const getSubscriptionStatusText = () => {
+    const plan = profile?.profile_plan || 'free';
+    
+    if (plan === 'free') {
+        return "اعتبار زمانی نامحدود";
+    }
+
+    if (!profile?.profile_end) {
+        return "وضعیت اشتراک و آمار مصرف";
+    }
+
+    const end = new Date(profile.profile_end);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return "اشتراک منقضی شده";
+    } else if (diffDays === 0) {
+        return "کمتر از یک روز باقی‌مانده";
+    } else {
+        return `${diffDays.toLocaleString('en-US')} روز باقی‌مانده از اشتراک`;
+    }
+  };
+
   // Find current plan details from the fetched plans list
   const currentPlanConfig = plans.find(p => p.plan_name === profile?.profile_plan);
 
@@ -114,7 +139,7 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                         پلن {getPlanLabel(profile?.profile_plan)}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        وضعیت اشتراک و آمار مصرف
+                        {getSubscriptionStatusText()}
                     </p>
                 </div>
             </div>
@@ -183,20 +208,7 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
          </div>
       </div>
       
-      {isLimitReached && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 px-6 py-4 rounded-2xl text-sm flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex items-center gap-3">
-                <AlertTriangle size={24} className="shrink-0" />
-                <span className="font-medium">شما به سقف مجاز ساخت ربات در پلن فعلی رسیده‌اید. برای ساخت ربات بیشتر لطفا پلن خود را ارتقا دهید.</span>
-            </div>
-            <button 
-              onClick={() => setActiveTab('pricing')}
-              className="mr-auto sm:mr-auto font-bold underline hover:text-amber-800 dark:hover:text-amber-300 whitespace-nowrap"
-            >
-                مشاهده پلن‌ها
-            </button>
-        </div>
-      )}
+      
 
       <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
         <div>
@@ -211,6 +223,21 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
           <span>ساخت ربات جدید</span>
         </button>
       </div>
+
+      {isLimitReached && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 px-6 py-4 rounded-2xl text-sm flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex items-center gap-3">
+                <AlertTriangle size={24} className="shrink-0" />
+                <span className="font-medium">شما به سقف مجاز ساخت ربات در پلن فعلی رسیده‌اید. برای ساخت ربات بیشتر لطفا پلن خود را ارتقا دهید.</span>
+            </div>
+            <button 
+              onClick={() => setActiveTab('pricing')}
+              className="mr-auto sm:mr-auto font-bold underline hover:text-amber-800 dark:hover:text-amber-300 whitespace-nowrap"
+            >
+                مشاهده پلن‌ها
+            </button>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {chatbots.map(bot => {
@@ -293,7 +320,7 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
                   </div>
                   
                   <div className="flex items-center">
-                      <span className="text-xs text-gray-400 mr-2">تغییر وضعیت</span>
+                      
                       <button
                           onClick={(e) => handleToggleActive(e, bot)}
                           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
