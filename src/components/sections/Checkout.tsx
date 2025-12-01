@@ -141,10 +141,10 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                             <Bot size={14} /> <span>{plan.plan_bots} ربات</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                            <MessageSquare size={14} /> <span>{parseInt(plan.plan_messages).toLocaleString('en-US')} پیام</span>
+                            <MessageSquare size={14} /> <span>{plan.plan_messages.toLocaleString('en-US')} پیام</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                            <Database size={14} /> <span>{parseInt(plan.plan_storage).toLocaleString('en-US')} مگابایت</span>
+                            <Database size={14} /> <span>{plan.plan_storage.toLocaleString('en-US')} مگابایت</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                             <Cpu size={14} /> <span>{plan.plan_llm} پایگاه دانش</span>

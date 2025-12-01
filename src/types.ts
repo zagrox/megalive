@@ -93,7 +93,7 @@ export interface UserProfile {
   profile_website?: string;
   profile_company?: string;
   // Subscription fields
-  profile_plan?: 'free' | 'starter' | 'business' | 'enterprise';
+  profile_plan?: string | number | any; // Relaxed type to handle ID, String, or Relation Object
   profile_chatbots?: number;
   profile_messages?: string;
   profile_storages?: string;
@@ -105,18 +105,16 @@ export interface UserProfile {
 }
 
 export interface Plan {
+  id: number;
   plan_name: string;
-  plan_messages: string;
+  plan_messages: number;
   plan_llm: number;
-  plan_storage: string;
+  plan_storage: number;
   plan_monthly: number;
   plan_yearly: number;
   plan_bots: number;
-}
-
-export interface PricingConfig {
-  id: number;
-  plans: Plan[];
+  plan_vector?: string; // Kept as string to match DB if needed, though mostly unused in UI math
+  plan_copyright?: boolean;
 }
 
 export interface LLMJob {
@@ -134,7 +132,7 @@ export interface DirectusSchema {
   chatbot: Chatbot[];
   llm: LLMJob[];
   profile: UserProfile[];
-  plans: PricingConfig;
+  plan: Plan[];
 }
 
 export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout';

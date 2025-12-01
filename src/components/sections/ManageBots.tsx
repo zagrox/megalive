@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Bot, Settings, Globe, PlusCircle, Crown, MessageSquare, HardDrive, Cpu, AlertTriangle, ArrowUpCircle, FileText, Server } from 'lucide-react';
 import { Chatbot, TabType, Plan } from '../../types';
@@ -56,7 +54,7 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
   };
 
   const getPlanLabel = (plan?: string) => {
-    switch(plan) {
+    switch(String(plan || '').toLowerCase()) {
         case 'enterprise': return 'سازمانی';
         case 'business': return 'تجاری';
         case 'starter': return 'استارتر';
@@ -65,7 +63,7 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
   };
 
   const getPlanColor = (plan?: string) => {
-    switch(plan) {
+    switch(String(plan || '').toLowerCase()) {
         case 'enterprise': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800';
         case 'business': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800';
         case 'starter': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800';
@@ -74,9 +72,15 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
   };
 
   const getSubscriptionStatusText = () => {
-    const plan = profile?.profile_plan || 'free';
+    // Resolve plan name for this check
+    const currentPlan = plans.find(p => 
+      p.id === Number(profile?.profile_plan) || 
+      (typeof profile?.profile_plan === 'object' && (profile?.profile_plan as any)?.id === p.id) ||
+      String(p.plan_name || '').toLowerCase() === String(profile?.profile_plan || '').toLowerCase()
+    );
+    const planName = currentPlan?.plan_name || 'free';
     
-    if (plan === 'free') {
+    if (String(planName).toLowerCase() === 'free') {
         return "اعتبار زمانی نامحدود";
     }
 
@@ -98,13 +102,17 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
     }
   };
 
-  // Find current plan details from the fetched plans list
-  const currentPlanConfig = plans.find(p => p.plan_name === profile?.profile_plan);
+  // Resolve Plan: Check by ID first (Relation), then Name (Legacy)
+  const currentPlanConfig = plans.find(p => 
+    p.id === Number(profile?.profile_plan) || 
+    (typeof profile?.profile_plan === 'object' && (profile?.profile_plan as any)?.id === p.id) ||
+    String(p.plan_name || '').toLowerCase() === String(profile?.profile_plan || '').toLowerCase()
+  );
 
   // Limits from Plan (fallback to profile defaults if plan not loaded yet)
   const limitChatbots = currentPlanConfig?.plan_bots || 1;
-  const limitMessages = parseInt(currentPlanConfig?.plan_messages || '100');
-  const limitStorage = parseInt(currentPlanConfig?.plan_storage || '10000');
+  const limitMessages = currentPlanConfig?.plan_messages || 100;
+  const limitStorage = currentPlanConfig?.plan_storage || 10000;
   const limitVectors = currentPlanConfig?.plan_llm || 1;
 
   const currentChatbots = chatbots.length;
@@ -125,18 +133,20 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
       return Math.min((current / limit) * 100, 100);
   };
 
+  const planNameForDisplay = currentPlanConfig?.plan_name || 'free';
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Subscription Stats Header */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border-2 ${getPlanColor(profile?.profile_plan)}`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border-2 ${getPlanColor(planNameForDisplay)}`}>
                     <Crown size={28} />
                 </div>
                 <div>
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        پلن {getPlanLabel(profile?.profile_plan)}
+                        پلن {getPlanLabel(planNameForDisplay)}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {getSubscriptionStatusText()}

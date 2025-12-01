@@ -1,6 +1,7 @@
+
 import { BotConfig, Plan } from '../types';
 import { directus, getAssetUrl } from './directus';
-import { readSingleton } from '@directus/sdk';
+import { readSingleton, readItems } from '@directus/sdk';
 
 export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
   try {
@@ -53,8 +54,20 @@ export const fetchCrmConfig = async (): Promise<Partial<BotConfig>> => {
 export const fetchPricingPlans = async (): Promise<Plan[]> => {
   try {
     // @ts-ignore
-    const result = await directus.request(readSingleton('plans'));
-    return result?.plans || [];
+    const result = await directus.request(readItems('plan', {
+        sort: ['id']
+    }));
+    
+    // Normalize data: ensure numeric fields are numbers, even if DB returns strings
+    return result.map((item: any) => ({
+        ...item,
+        plan_messages: Number(item.plan_messages),
+        plan_storage: Number(item.plan_storage),
+        plan_monthly: Number(item.plan_monthly),
+        plan_yearly: Number(item.plan_yearly),
+        plan_bots: Number(item.plan_bots),
+        plan_llm: Number(item.plan_llm)
+    })) as Plan[];
   } catch (error) {
     console.error('Error fetching pricing plans:', error);
     return [];

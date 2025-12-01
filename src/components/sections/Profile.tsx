@@ -1,13 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight, Calendar, Clock, Infinity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getAssetUrl } from '../../services/directus';
+import { fetchPricingPlans } from '../../services/configService';
+import { Plan } from '../../types';
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
   
   const [formData, setFormData] = useState({
     firstName: user?.first_name || '',
@@ -23,6 +25,11 @@ const Profile: React.FC = () => {
     notifications: true,
     twoFactor: true
   });
+
+  // Load plans for mapping IDs to Names
+  useEffect(() => {
+    fetchPricingPlans().then(setPlans);
+  }, []);
 
   // Update form data when user context changes (e.g. initial load or after save)
   useEffect(() => {
@@ -70,7 +77,28 @@ const Profile: React.FC = () => {
   const userAvatar = user?.avatar ? getAssetUrl(user.avatar) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`;
   const isOfficial = user?.profile?.profile_official;
   const profileColor = user?.profile?.profile_color || '#3b82f6';
-  const planName = user?.profile?.profile_plan || 'free';
+  
+  // Safely resolve Plan Name
+  const getPlanDisplay = () => {
+      const rawPlan = user?.profile?.profile_plan;
+      if (!rawPlan) return 'free';
+
+      // 1. Resolve Plan by ID or Name
+      const matched = plans.find(p => 
+          p.id === Number(rawPlan) || 
+          (typeof rawPlan === 'object' && (rawPlan as any)?.id === p.id) ||
+          String(p.plan_name || '').toLowerCase() === String(rawPlan || '').toLowerCase()
+      );
+
+      // 2. Return formatted name if matched
+      if (matched) return matched.plan_name;
+      
+      // Fallback: If it's a legacy string, return it, otherwise default to free
+      return typeof rawPlan === 'string' ? rawPlan : 'free';
+  };
+
+  const displayPlanName = getPlanDisplay();
+  
   const planDuration = user?.profile?.profile_duration;
   const startDate = user?.profile?.profile_start;
   const endDate = user?.profile?.profile_end;
@@ -81,7 +109,7 @@ const Profile: React.FC = () => {
   };
 
   const getRemainingDays = () => {
-    if (planName === 'free' || !endDate) return null;
+    if (displayPlanName.toLowerCase() === 'free' || !endDate) return null;
 
     const end = new Date(endDate);
     const now = new Date();
@@ -133,7 +161,7 @@ const Profile: React.FC = () => {
 
              <div className="flex justify-center gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
                 <div className="text-center">
-                    <span className="block text-lg font-bold text-gray-800 dark:text-white capitalize">{planName}</span>
+                    <span className="block text-lg font-bold text-gray-800 dark:text-white capitalize">{displayPlanName}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">طرح فعال</span>
                 </div>
                 <div className="w-px bg-gray-200 dark:bg-gray-800"></div>
@@ -172,7 +200,7 @@ const Profile: React.FC = () => {
                         <Calendar size={16} />
                         <span>تاریخ پایان:</span>
                     </div>
-                    {planName === 'free' ? (
+                    {displayPlanName.toLowerCase() === 'free' ? (
                         <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
                             <Infinity size={14} />
                             نامحدود

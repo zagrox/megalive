@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bot, ArrowLeft, Loader2, AlertCircle, Crown, ArrowUpCircle } from 'lucide-react';
 import { Chatbot, Plan } from '../../types';
@@ -37,7 +36,13 @@ const CreateBot: React.FC<Props> = ({ onSubmit, onCancel, currentChatbotCount, o
 
   // Determine Limit
   const profile = user?.profile;
-  const currentPlanConfig = plans.find(p => p.plan_name === profile?.profile_plan);
+  // Resolve Plan: Check by ID first (Relation), then Name (Legacy)
+  const currentPlanConfig = plans.find(p => 
+    p.id === Number(profile?.profile_plan) || 
+    (typeof profile?.profile_plan === 'object' && (profile?.profile_plan as any)?.id === p.id) ||
+    String(p.plan_name || '').toLowerCase() === String(profile?.profile_plan || '').toLowerCase()
+  );
+  
   const limitChatbots = currentPlanConfig?.plan_bots || 1; // Default to 1 if loading or not found
   const isLimitReached = currentChatbotCount >= limitChatbots;
 

@@ -62,10 +62,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Calculate Message Usage
   const profile = user?.profile;
-  const currentPlan = plans.find(p => p.plan_name === profile?.profile_plan);
   
-  // Default to 100 if plan not loaded yet
-  const limitMessages = currentPlan?.plan_messages ? parseInt(currentPlan.plan_messages) : 100;
+  // Resolve Plan: Check by ID first (Relation), then Name (Legacy)
+  const currentPlan = plans.find(p => 
+    p.id === Number(profile?.profile_plan) || 
+    (typeof profile?.profile_plan === 'object' && (profile?.profile_plan as any)?.id === p.id) ||
+    String(p.plan_name || '').toLowerCase() === String(profile?.profile_plan || '').toLowerCase()
+  );
+  
+  // Default to 100 if plan not loaded yet or free
+  const limitMessages = currentPlan?.plan_messages || 100;
   const currentMessages = profile?.profile_messages ? parseInt(profile.profile_messages) : 0;
   
   const usagePercent = Math.min((currentMessages / limitMessages) * 100, 100);

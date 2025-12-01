@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Check, Crown, Zap, MessageSquare, Database, Cpu, Bot, ArrowLeft } from 'lucide-react';
 import { Plan } from '../../types';
@@ -11,7 +10,7 @@ interface PricingProps {
 
 const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
   const { user } = useAuth();
-  const currentPlan = user?.profile?.profile_plan || 'free';
+  const profilePlan = user?.profile?.profile_plan;
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +23,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
   }, []);
 
   const getPlanColor = (name: string) => {
-    switch (name.toLowerCase()) {
+    switch (String(name || '').toLowerCase()) {
       case 'enterprise': return 'border-purple-500 bg-purple-50 dark:bg-purple-900/20';
       case 'business': return 'border-amber-500 bg-amber-50 dark:bg-amber-900/20';
       case 'starter': return 'border-blue-500 bg-blue-50 dark:bg-blue-900/20';
@@ -33,7 +32,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
   };
 
   const getPlanIcon = (name: string) => {
-    switch (name.toLowerCase()) {
+    switch (String(name || '').toLowerCase()) {
       case 'enterprise': return <Crown size={24} className="text-purple-600 dark:text-purple-400" />;
       case 'business': return <Zap size={24} className="text-amber-600 dark:text-amber-400" />;
       case 'starter': return <Bot size={24} className="text-blue-600 dark:text-blue-400" />;
@@ -58,7 +57,12 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
               {plans.map((plan, idx) => {
-                const isCurrent = currentPlan.toLowerCase() === plan.plan_name.toLowerCase();
+                // Robust check for current plan (ID match or fallback to name match)
+                const isCurrent = 
+                    plan.id === Number(profilePlan) || 
+                    (typeof profilePlan === 'object' && (profilePlan as any)?.id === plan.id) ||
+                    String(plan.plan_name || '').toLowerCase() === String(profilePlan || '').toLowerCase();
+
                 return (
                   <div 
                     key={idx}
@@ -107,11 +111,11 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <MessageSquare size={18} className="text-green-500 shrink-0" />
-                            <span><strong className="mx-1">{parseInt(plan.plan_messages).toLocaleString('en-US')}</strong> پیام در ماه</span>
+                            <span><strong className="mx-1">{plan.plan_messages.toLocaleString('en-US')}</strong> پیام در ماه</span>
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Database size={18} className="text-amber-500 shrink-0" />
-                            <span><strong className="mx-1">{parseInt(plan.plan_storage).toLocaleString('en-US')}</strong> مگابایت فضا</span>
+                            <span><strong className="mx-1">{plan.plan_storage.toLocaleString('en-US')}</strong> مگابایت فضا</span>
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Cpu size={18} className="text-purple-500 shrink-0" />
