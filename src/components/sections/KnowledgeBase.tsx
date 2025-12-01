@@ -36,10 +36,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
   } | null>(null);
 
 
-  // 1. Resolve Folder ID based on selectedChatbot.chatbot_slug
+  // 1. Resolve Folder ID based on selectedChatbot
   useEffect(() => {
     const resolveFolder = async () => {
-      if (!selectedChatbot?.chatbot_slug) {
+      // Clear state if no chatbot selected
+      if (!selectedChatbot) {
         setFolderId(null);
         setFolderName(null);
         setFiles([]);
@@ -50,7 +51,22 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
       setIsLoading(true);
       setError(null);
+
+      // Strategy A: Use direct folder relation if available
+      if (selectedChatbot.chatbot_folder) {
+          setFolderId(selectedChatbot.chatbot_folder);
+          setFolderName(`llm/${selectedChatbot.chatbot_slug}`);
+          setIsLoading(false);
+          return;
+      }
       
+      // Strategy B: Fallback to searching by slug name inside 'llm' folder
+      if (!selectedChatbot.chatbot_slug) {
+          setError("شناسه بات (Slug) نامعتبر است.");
+          setIsLoading(false);
+          return;
+      }
+
       try {
         const llmFolders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } } }));
         const llmFolderId = llmFolders[0]?.id;
@@ -80,7 +96,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     };
 
     resolveFolder();
-  }, [selectedChatbot?.chatbot_slug]);
+  }, [selectedChatbot?.chatbot_slug, selectedChatbot?.chatbot_folder, selectedChatbot?.id]);
 
   // 2. Fetch initial files and jobs when folderId is set
   useEffect(() => {

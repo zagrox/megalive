@@ -51,6 +51,7 @@ export interface Chatbot {
   chatbot_llm?: number; // Renamed from chatbot_vector (Files count)
   chatbot_vector?: number; // NEW: Actual vector count from Qdrant
   chatbot_human?: string;
+  chatbot_folder?: string; // UUID of the related folder
   // Usage stats per bot
   chatbot_messages?: string; // Stored as string/bigint in DB
   chatbot_storage?: string; // Stored as string/bigint in DB

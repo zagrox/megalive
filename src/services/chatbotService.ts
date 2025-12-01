@@ -1,5 +1,4 @@
 
-
 import { directus } from './directus';
 import { readItems, createItem, updateItem, readFolders, createFolder } from '@directus/sdk';
 import { Chatbot } from '../types';
@@ -111,10 +110,23 @@ export const createChatbot = async (name: string, slug: string, businessName: st
         const parentId = folders[0].id;
         
         // @ts-ignore
-        await directus.request(createFolder({
+        const newFolder = await directus.request(createFolder({
           name: slug,
           parent: parentId
         }));
+
+        // 3. Update the chatbot with the new folder ID
+        if (newFolder && newFolder.id) {
+            // @ts-ignore
+            await directus.request(updateItem('chatbot', result.id, {
+                chatbot_folder: newFolder.id
+            }));
+            
+            // Update the local result object to return the complete data
+            // @ts-ignore
+            result.chatbot_folder = newFolder.id;
+        }
+
       } else {
         console.warn("Parent folder 'llm' not found. Skipping subfolder creation.");
       }
