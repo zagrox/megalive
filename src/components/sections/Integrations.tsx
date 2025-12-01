@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   MessageCircle, 
@@ -18,7 +19,8 @@ import {
   Droplet,
   Server,
   HardDrive,
-  BookOpen
+  BookOpen,
+  Info
 } from 'lucide-react';
 
 interface Integration {
@@ -46,7 +48,7 @@ const Integrations: React.FC = () => {
       description: 'اتصال ربات به تلگرام برای پاسخگویی خودکار به پیام‌های کاربران در گروه‌ها و چت‌های خصوصی.',
       icon: <MessageCircle size={24} />,
       category: 'communication',
-      connected: true,
+      connected: false,
     },
     {
       id: 'whatsapp',
@@ -94,7 +96,7 @@ const Integrations: React.FC = () => {
       description: 'ذخیره اطلاعات کاربران یا خواندن دیتابیس محصولات از گوگل شیت.',
       icon: <Table size={24} />,
       category: 'data',
-      connected: true,
+      connected: false,
     },
     {
       id: 'docs',
@@ -179,9 +181,11 @@ const Integrations: React.FC = () => {
   ]);
 
   const toggleIntegration = (id: string) => {
-    setIntegrations(prev => prev.map(item => 
-      item.id === id ? { ...item, connected: !item.connected } : item
-    ));
+    // Disabled for now as indicated by the banner
+    // setIntegrations(prev => prev.map(item => 
+    //   item.id === id ? { ...item, connected: !item.connected } : item
+    // ));
+    alert('این قابلیت به زودی در دسترس خواهد بود.');
   };
 
   const categories = [
@@ -201,6 +205,17 @@ const Integrations: React.FC = () => {
     <div className="space-y-8 animate-fade-in">
       <div>
         <p className="text-gray-500 dark:text-gray-400 text-lg">قابلیت‌های چت‌بات خود را با اتصال به سرویس‌های خارجی گسترش دهید.</p>
+      </div>
+
+      {/* Coming Soon Banner */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start gap-3">
+        <Info className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" size={20} />
+        <div>
+            <h4 className="font-bold text-blue-800 dark:text-blue-300 text-sm mb-1">به زودی...</h4>
+            <p className="text-sm text-blue-700 dark:text-blue-200/80">
+                این بخش در حال توسعه است. تمامی افزونه‌ها و ادغام‌ها به زودی برای استفاده در دسترس خواهند بود. از صبر و شکیبایی شما سپاسگزاریم.
+            </p>
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -226,7 +241,7 @@ const Integrations: React.FC = () => {
           <div 
             key={item.id}
             className={`
-              relative flex flex-col p-6 rounded-2xl border transition-all duration-300 group
+              relative flex flex-col p-6 rounded-2xl border transition-all duration-300 group opacity-80 hover:opacity-100
               ${item.connected 
                 ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm' 
                 : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md'
@@ -253,7 +268,7 @@ const Integrations: React.FC = () => {
                 <button
                     onClick={() => toggleIntegration(item.id)}
                     className={`
-                        relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                        relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-not-allowed opacity-60
                         ${item.connected ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}
                     `}
                 >
@@ -282,9 +297,9 @@ const Integrations: React.FC = () => {
                 }`}>
                     {item.connected ? 'فعال' : 'غیرفعال'}
                 </span>
-                <a href="#" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 opacity-50 cursor-not-allowed">
                     مستندات <ExternalLink size={10} />
-                </a>
+                </span>
             </div>
           </div>
         ))}

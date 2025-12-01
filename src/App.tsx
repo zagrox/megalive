@@ -18,14 +18,14 @@ import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
 import { BotConfig, TabType, Chatbot, Plan } from './types';
 import { fetchCrmConfig } from './services/configService';
-import { fetchUserChatbots, createChatbot, updateChatbot } from './services/chatbotService';
+import { fetchUserChatbots, createChatbot, updateChatbot, recalculateChatbotStats } from './services/chatbotService';
 import { useAuth } from './context/AuthContext';
 import { getAssetUrl } from './services/directus';
 import { Loader2 } from 'lucide-react';
 import HelpCenterPanel from './components/HelpCenterPanel';
 
 const App: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [config, setConfig] = useState<BotConfig>(DEFAULT_CONFIG);
@@ -195,6 +195,13 @@ const App: React.FC = () => {
   };
 
   const handleRefreshChatbots = async () => {
+    // If a bot is selected, verify and sync its stats (LLM/Files) before fetching list
+    if (selectedChatbot) {
+        await recalculateChatbotStats(selectedChatbot.id);
+        // Also refresh user profile to update global usage bars
+        await refreshUser();
+    }
+
     const bots = await fetchUserChatbots();
     setChatbots(bots);
     if (selectedChatbot) {

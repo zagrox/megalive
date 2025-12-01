@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Chatbot, DirectusFile, LLMJob, ProcessedFile, BuildStatus } from '../../types';
 import { directus } from '../../services/directus';
 import { uploadFiles, readFiles, deleteFile, readFolders, createItem, readItems, deleteItem, updateItem } from '@directus/sdk';
-import { UploadCloud, FileText, CheckCircle2, Loader2, Search, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, Trash2 } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, Loader2, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, Trash2, Clock, HardDrive, Search } from 'lucide-react';
 import FileDetails from './FileDetails';
 import ConfirmationModal from '../ConfirmationModal';
 import { useAuth } from '../../context/AuthContext';
@@ -148,10 +148,19 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       setFiles(fetchedFiles);
       setLlmJobs(jobsResult as LLMJob[]);
 
-      // Auto-Sync: Check if the file count matches the chatbot's DB stats
-      if (selectedChatbot && selectedChatbot.chatbot_llm !== fileCount) {
-          console.log(`Syncing LLM count from ${selectedChatbot.chatbot_llm} to ${fileCount}`);
-          await onUpdateChatbot(selectedChatbot.id, { chatbot_llm: fileCount });
+      // Calculate Total Size in MB for Storage Sync
+      const currentTotalBytes = fetchedFiles.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
+      const currentTotalMB = Math.ceil(currentTotalBytes / (1024 * 1024));
+      
+      const dbStorage = selectedChatbot?.chatbot_storage ? parseInt(selectedChatbot.chatbot_storage) : 0;
+
+      // Auto-Sync: Check if the file count OR storage matches the chatbot's DB stats
+      if (selectedChatbot && (selectedChatbot.chatbot_llm !== fileCount || dbStorage !== currentTotalMB)) {
+          console.log(`Syncing Stats: LLM ${selectedChatbot.chatbot_llm}->${fileCount}, Storage ${dbStorage}->${currentTotalMB}`);
+          await onUpdateChatbot(selectedChatbot.id, { 
+              chatbot_llm: fileCount,
+              chatbot_storage: currentTotalMB.toString()
+          });
           
           if (user?.id) {
              await syncProfileStats(user.id);
@@ -174,14 +183,17 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         const filesList = await directus.request(readFiles({
             filter: { folder: { _eq: folderId } },
             limit: -1,
-            fields: ['id']
-        })) as { id: string }[];
+            fields: ['id', 'filesize']
+        })) as { id: string, filesize: string }[];
         
         const count = filesList.length;
+        const totalBytes = filesList.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
+        const totalMB = Math.ceil(totalBytes / (1024 * 1024));
 
         // Update Chatbot (DB + Local State via prop)
         await onUpdateChatbot(selectedChatbot.id, {
-            chatbot_llm: count
+            chatbot_llm: count,
+            chatbot_storage: totalMB.toString()
         });
 
         // Sync Profile Stats
@@ -207,6 +219,21 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       };
     });
   }, [files, llmJobs]);
+
+  const stats = useMemo(() => {
+    return {
+      total: processedFiles.length,
+      ready: processedFiles.filter(f => f.buildStatus === 'ready').length,
+      processing: processedFiles.filter(f => f.buildStatus === 'start' || f.buildStatus === 'building').length,
+      completed: processedFiles.filter(f => f.buildStatus === 'completed').length,
+      error: processedFiles.filter(f => f.buildStatus === 'error').length,
+      idle: processedFiles.filter(f => f.buildStatus === 'idle').length,
+    };
+  }, [processedFiles]);
+
+  const totalSizeBytes = useMemo(() => {
+    return files.reduce((acc, file) => acc + Number(file.filesize), 0);
+  }, [files]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -534,10 +561,74 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       <div className="space-y-8 animate-fade-in">
         <div>
           <p className="text-gray-500 dark:text-gray-400 text-lg">فایل‌های دانشی خود را آپلود و برای استفاده ربات پردازش (Build) کنید.</p>
-          {folderName && <div className="mt-2 flex items-center gap-2 text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr"><FolderOpen size={14} />Target Folder: {folderName}</div>}
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            {folderName && (
+                <div className="flex items-center gap-2 text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr">
+                    <FolderOpen size={14} />
+                    Target Folder: {folderName}
+                </div>
+            )}
+            {files.length > 0 && (
+                <div className="flex items-center gap-2 text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr">
+                    <HardDrive size={14} />
+                    Total Size: {formatSize(totalSizeBytes)}
+                </div>
+            )}
+          </div>
         </div>
 
         {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400"><AlertCircle size={20} /><p className="text-sm">{error}</p></div>}
+
+        {/* File Stats Summary */}
+        {!isLoading && files.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                        <FileText size={18} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">کل فایل‌ها</span>
+                        <span className="block font-bold text-gray-800 dark:text-white">{stats.total}</span>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                        <Layers size={18} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">آماده پردازش</span>
+                        <span className="block font-bold text-gray-800 dark:text-white">{stats.ready + stats.idle}</span>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+                        <Loader2 size={18} className={stats.processing > 0 ? "animate-spin" : ""} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">در حال پردازش</span>
+                        <span className="block font-bold text-gray-800 dark:text-white">{stats.processing}</span>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                        <CheckCircle2 size={18} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">تکمیل شده</span>
+                        <span className="block font-bold text-gray-800 dark:text-white">{stats.completed}</span>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                        <AlertCircle size={18} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">خطا</span>
+                        <span className="block font-bold text-gray-800 dark:text-white">{stats.error}</span>
+                    </div>
+                </div>
+            </div>
+        )}
 
         <div className={`relative border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'} ${!folderId ? 'opacity-50 pointer-events-none grayscale' : ''}`} onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop} onClick={() => folderId && document.getElementById('file-upload')?.click()}>
           <input id="file-upload" type="file" className="hidden" multiple={false} onChange={handleChange} accept=".pdf,.docx,.txt,.md,.csv" />
