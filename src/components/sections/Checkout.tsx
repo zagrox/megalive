@@ -115,9 +115,11 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                 {paymentMethod === 'offline' && (
                     <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm text-amber-800 dark:text-amber-200">
                         <p className="font-bold mb-2">اطلاعات حساب:</p>
-                        <p className="font-mono dir-ltr text-left mb-1">Bank Mellat</p>
-                        <p className="font-mono dir-ltr text-left">Card: 6104-3378-1234-5678</p>
-                        <p className="mt-2 text-xs opacity-80">لطفا پس از واریز، تصویر فیش را به پشتیبانی ارسال کنید.</p>
+                        <p className="font-mono dir-ltr text-right mb-1">بانک پاسارگاد</p>
+                        <p className="font-mono dir-ltr text-right">کارت: 5022.2910.8932.4477</p>
+                        <p className="font-mono dir-ltr text-right">شبا: 290570033880012263512101</p>
+                        <p className="font-mono dir-ltr text-right">نام: حمید چمانچی</p>
+                        <p className="mt-2 text-xs opacity-80">لطفا پس از واریز،اطلاعات پردخت را در سفارش مربوطه ثبت کنید.</p>
                     </div>
                 )}
             </div>

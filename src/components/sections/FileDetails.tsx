@@ -1,11 +1,11 @@
+
 import React, { useState } from 'react';
-import { ArrowRight, FileText, Trash2, Layers, CheckCircle2, Loader2, AlertCircle, Clock, RefreshCw, PauseCircle } from 'lucide-react';
+import { ArrowRight, FileText, Layers, CheckCircle2, Loader2, AlertCircle, Clock, RefreshCw, PauseCircle } from 'lucide-react';
 import { ProcessedFile, BuildStatus } from '../../types';
 
 interface FileDetailsProps {
   file: ProcessedFile;
   onBack: () => void;
-  onDeleteRequest: (file: ProcessedFile) => void;
   onBuild: (fileId: string, llmJobId?: number) => void;
   onPause: (file: ProcessedFile) => void;
   isBuilding: boolean;
@@ -43,7 +43,7 @@ const StatusBadge: React.FC<{ status: BuildStatus, error?: string | null }> = ({
     }
 };
 
-const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onDeleteRequest, onBuild, onPause, isBuilding, isPausing }) => {
+const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onBuild, onPause, isBuilding, isPausing }) => {
 
     const ActionButton: React.FC = () => {
         if (isPausing) {
@@ -69,6 +69,8 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onDeleteRequest
                 );
             
             case 'completed':
+                return null;
+
             case 'error':
                  return (
                     <button
@@ -136,27 +138,15 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onDeleteRequest
                 </dl>
             </div>
 
-            <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
-                <h4 className="font-semibold text-gray-800 dark:text-white">عملیات فایل</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
-                    عملیات مورد نظر را بر روی این فایل اجرا کنید.
-                </p>
-                <ActionButton />
-            </div>
-
-            <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
-                <h4 className="font-semibold text-red-600 dark:text-red-500">حذف فایل</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
-                    با حذف این فایل، تمام داده‌های پردازش شده مرتبط با آن نیز برای همیشه پاک خواهد شد. این عمل قابل بازگشت نیست.
-                </p>
-                <button
-                    onClick={() => onDeleteRequest(file)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-500 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 font-medium transition-colors"
-                >
-                    <Trash2 size={18} />
-                    <span>حذف این فایل</span>
-                </button>
-            </div>
+            {file.buildStatus !== 'completed' && (
+                <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <h4 className="font-semibold text-gray-800 dark:text-white">عملیات فایل</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
+                        عملیات مورد نظر را بر روی این فایل اجرا کنید.
+                    </p>
+                    <ActionButton />
+                </div>
+            )}
         </div>
     );
 };

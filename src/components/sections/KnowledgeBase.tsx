@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chatbot, DirectusFile, LLMJob, ProcessedFile, BuildStatus } from '../../types';
 import { directus } from '../../services/directus';
-import { uploadFiles, readFiles, deleteFile, readFolders, createItem, readItems, deleteItem, updateItem } from '@directus/sdk';
-import { UploadCloud, FileText, CheckCircle2, Loader2, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, Trash2, Clock, HardDrive, Search } from 'lucide-react';
+import { uploadFiles, readFiles, readFolders, createItem, readItems, updateItem } from '@directus/sdk';
+import { UploadCloud, FileText, CheckCircle2, Loader2, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, HardDrive, Search } from 'lucide-react';
 import FileDetails from './FileDetails';
 import ConfirmationModal from '../ConfirmationModal';
 import { useAuth } from '../../context/AuthContext';
@@ -24,10 +24,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
   const [folderId, setFolderId] = useState<string | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
   const [buildingFileId, setBuildingFileId] = useState<string | null>(null);
-  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [pausingFileId, setPausingFileId] = useState<string | null>(null);
   const [viewingFile, setViewingFile] = useState<ProcessedFile | null>(null);
-  const [isClearingVectors, setIsClearingVectors] = useState(false);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     title: string;
@@ -356,96 +354,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     }
   };
 
-  const requestDelete = (file: ProcessedFile) => {
-    setModalState({
-      isOpen: true,
-      title: "حذف فایل",
-      message: (
-        <p>
-          آیا از حذف دائمی فایل <strong>{file.name}</strong> و تمام داده‌های پردازش شده آن مطمئن هستید؟ این عمل قابل بازگشت نیست.
-        </p>
-      ),
-      onConfirm: () => {
-        performDelete(file);
-        setModalState(null);
-      },
-    });
-  };
-
-  const performDelete = async (file: ProcessedFile) => {
-    if (deletingFileId) return;
-    setDeletingFileId(file.id);
-    try {
-        await directus.request(deleteFile(file.id));
-        setFiles(prev => prev.filter(f => f.id !== file.id));
-        if (file.llmJobId) {
-             setLlmJobs(prev => prev.filter(j => j.id !== file.llmJobId));
-        }
-        if (viewingFile?.id === file.id) {
-            setViewingFile(null);
-        }
-        // Update stats after delete
-        await updateBotStats();
-    } catch (err: any) {
-        let errorMessage = "خطا در حذف فایل. لطفاً سطح دسترسی خود را بررسی کنید.";
-        if (err?.errors?.[0]?.message) errorMessage = err.errors[0].message;
-        alert(`حذف ناموفق بود: ${errorMessage}`);
-    } finally {
-        setDeletingFileId(null);
-    }
-  };
-
-  const requestClearAllVectors = () => {
-    if (!selectedChatbot) return;
-    setModalState({
-      isOpen: true,
-      title: 'پاکسازی تمام وکتورها',
-      message: (
-        <p>
-          آیا از حذف دائمی تمام داده‌های پردازش شده برای چت‌بات <strong>"{selectedChatbot.chatbot_name}"</strong> مطمئن هستید؟<br/><br/>این عمل قابل بازگشت نیست و تمام فایل‌ها باید مجددا پردازش شوند.
-        </p>
-      ),
-      onConfirm: () => {
-        performClearAllVectors();
-        setModalState(null);
-      }
-    });
-  };
-  
-  const performClearAllVectors = async () => {
-    if (!selectedChatbot) return;
-    setIsClearingVectors(true);
-    setError(null);
-    try {
-      const payload = {
-        chatbot_name: selectedChatbot.chatbot_name,
-        chatbot_id: selectedChatbot.id,
-        chatbot_slug: selectedChatbot.chatbot_slug,
-        chatbot_llm: selectedChatbot.chatbot_llm,
-      };
-      const response = await fetch('https://auto.ir48.com/webhook/clearllm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Server responded with an error.' }));
-        throw new Error(errorData.message || 'Server responded with an error.');
-      }
-      alert('تمام وکتورها با موفقیت پاکسازی شدند. وضعیت فایل‌ها به‌روزرسانی می‌شود.');
-      if (folderId && selectedChatbot) {
-        await loadFilesAndJobs(folderId, selectedChatbot.id);
-        // Sync stats after mass clear
-        await updateBotStats();
-      }
-    } catch (err: any) {
-      setError(err.message || "خطا در ارتباط با سرویس پاکسازی.");
-    } finally {
-      setIsClearingVectors(false);
-    }
-  };
-
-
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -495,14 +403,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
               <CheckCircle2 size={14} />
               آماده
             </span>
-            <button
-                onClick={onBuildClick}
-                disabled={isBuildingThis}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-            >
-                <RefreshCw size={12} />
-                پردازش مجدد
-            </button>
           </div>
         );
       case 'error':
@@ -546,7 +446,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     return <FileDetails 
       file={viewingFile} 
       onBack={() => setViewingFile(null)} 
-      onDeleteRequest={requestDelete}
       onBuild={handleBuild}
       onPause={handlePause}
       isBuilding={buildingFileId === viewingFile.id}
@@ -646,11 +545,10 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
             {isLoading ? <div className="p-8 flex justify-center items-center gap-2 text-gray-400"><Loader2 className="animate-spin" size={18} />در حال بارگذاری...</div>
             : processedFiles.length === 0 ? <div className="p-8 text-center text-gray-400 dark:text-gray-500">هیچ فایلی در این پوشه یافت نشد.</div>
             : processedFiles.map((file) => {
-                const isDeleting = deletingFileId === file.id;
                 const isPausing = pausingFileId === file.id;
                 const isProcessing = file.buildStatus === 'start' || file.buildStatus === 'building';
                 return (
-                  <div key={file.id} onClick={() => setViewingFile(file)} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-all duration-300 cursor-pointer ${isDeleting ? 'opacity-40 bg-red-50 dark:bg-red-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
+                  <div key={file.id} onClick={() => setViewingFile(file)} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-all duration-300 cursor-pointer ${isPausing ? 'opacity-70 bg-amber-50 dark:bg-amber-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"><FileText size={20} /></div>
                       <div className="min-w-0">
@@ -664,10 +562,10 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
                   </div>
 
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                      {isDeleting || isPausing ? (
+                      {isPausing ? (
                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 px-4 py-1.5">
                             <Loader2 size={14} className="animate-spin" />
-                            {isDeleting ? 'در حال حذف...' : 'در حال توقف...'}
+                            {'در حال توقف...'}
                          </div>
                       ) : (
                          <>
@@ -690,22 +588,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
           </div>
         </div>
         
-        {/* Danger Zone */}
-        <div className="pt-8 mt-8 border-t border-gray-200 dark:border-gray-800">
-          <h4 className="font-bold text-red-600 dark:text-red-500">منطقه خطر</h4>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
-            این عملیات غیرقابل بازگشت است. با کلیک بر روی این دکمه, تمام داده‌های وکتور پردازش شده برای این چت‌بات حذف خواهد شد و باید تمام فایل‌ها را مجدداً پردازش کنید.
-          </p>
-          <button
-            onClick={requestClearAllVectors}
-            disabled={isClearingVectors || !folderId}
-            className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-500 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isClearingVectors ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-            <span>{isClearingVectors ? 'در حال پاکسازی...' : 'پاکسازی تمام وکتورها'}</span>
-          </button>
-        </div>
-
       </div>
       {modalState && (
         <ConfirmationModal 
