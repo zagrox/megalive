@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Chatbot } from '../../types';
-import { Save, AlertCircle, Loader2, Check, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Save, AlertCircle, Loader2, Check, Sparkles, ChevronDown, ChevronUp, Phone, Instagram, Send, MessageCircle } from 'lucide-react';
 import { PROMPT_TEMPLATE } from '../../constants';
 
 interface Props {
@@ -24,6 +25,10 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
         chatbot_prompt: selectedChatbot.chatbot_prompt || '',
         chatbot_active: selectedChatbot.chatbot_active ?? true,
         chatbot_human: selectedChatbot.chatbot_human || '',
+        chatbot_phone: selectedChatbot.chatbot_phone || '',
+        chatbot_instagram: selectedChatbot.chatbot_instagram || '',
+        chatbot_whatsapp: selectedChatbot.chatbot_whatsapp || '',
+        chatbot_telegram: selectedChatbot.chatbot_telegram || '',
       });
     }
   }, [selectedChatbot]);
@@ -48,6 +53,35 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
     const filledTemplate = PROMPT_TEMPLATE.replace(/{{chatbot_business}}/g, businessName);
     setFormData(prev => ({ ...prev, chatbot_prompt: filledTemplate }));
     onPreviewUpdate?.({ chatbot_prompt: filledTemplate });
+  };
+
+  // Helper to clean social handles (remove url parts, @, etc)
+  const cleanSocialInput = (value: string, type: 'instagram' | 'telegram' | 'whatsapp') => {
+    let cleaned = value.trim();
+    
+    if (type === 'instagram') {
+        // Remove url
+        cleaned = cleaned.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '');
+        // Remove @
+        cleaned = cleaned.replace('@', '');
+        // Remove query params
+        cleaned = cleaned.split('?')[0];
+    } else if (type === 'telegram') {
+        // Remove url
+        cleaned = cleaned.replace(/^(https?:\/\/)?(www\.)?t\.me\//, '');
+        cleaned = cleaned.replace(/^(https?:\/\/)?(www\.)?telegram\.me\//, '');
+        // Remove @
+        cleaned = cleaned.replace('@', '');
+    } else if (type === 'whatsapp') {
+        // Remove url
+        cleaned = cleaned.replace(/^(https?:\/\/)?(www\.)?wa\.me\//, '');
+        cleaned = cleaned.replace(/^(https?:\/\/)?(www\.)?api\.whatsapp\.com\/send\?phone=/, '');
+    }
+
+    // Remove trailing slashes
+    cleaned = cleaned.replace(/\/$/, '');
+    
+    return cleaned;
   };
 
   if (!selectedChatbot) {
@@ -102,7 +136,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
               const newName = e.target.value;
               const currentName = formData.chatbot_name || '';
               const currentTitle = formData.chabot_title || '';
-              const prefix = 'دستار هوش مصنوعی ';
+              const prefix = 'دستیار هوش مصنوعی ';
               
               const newFormState: Partial<Chatbot> = { ...formData, chatbot_name: newName };
               const previewUpdateState: Partial<Chatbot> = { chatbot_name: newName };
@@ -156,6 +190,108 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
           </p>
         </div>
 
+        {/* Contact Info Section */}
+        <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+             <h3 className="text-sm font-bold text-gray-800 dark:text-white">راه‌های ارتباطی (اختیاری)</h3>
+             <p className="text-xs text-gray-500 dark:text-gray-400">
+                 این اطلاعات در منوی تنظیمات چت‌بات برای دسترسی سریع کاربر نمایش داده می‌شود.
+             </p>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {/* Support Phone */}
+                <div className="grid gap-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Phone size={14} className="text-gray-400"/>
+                        شماره تماس
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.chatbot_phone || ''}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData(prev => ({ ...prev, chatbot_phone: val }));
+                            onPreviewUpdate?.({ chatbot_phone: val });
+                        }}
+                        placeholder="02188888888"
+                        dir="ltr"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all text-left"
+                    />
+                </div>
+
+                {/* Instagram */}
+                <div className="grid gap-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Instagram size={14} className="text-gray-400"/>
+                        اینستاگرام
+                    </label>
+                    <div dir="ltr" className="flex items-stretch rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-900 focus-within:border-blue-500 transition-all">
+                        <span className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-700 flex items-center select-none">
+                            instagram.com/
+                        </span>
+                        <input
+                            type="text"
+                            value={formData.chatbot_instagram || ''}
+                            onChange={(e) => {
+                                const val = cleanSocialInput(e.target.value, 'instagram');
+                                setFormData(prev => ({ ...prev, chatbot_instagram: val }));
+                                onPreviewUpdate?.({ chatbot_instagram: val });
+                            }}
+                            placeholder="username"
+                            className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none text-left"
+                        />
+                    </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div className="grid gap-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <MessageCircle size={14} className="text-gray-400"/>
+                        واتس‌اپ
+                    </label>
+                    <div dir="ltr" className="flex items-stretch rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-900 focus-within:border-blue-500 transition-all">
+                        <span className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-700 flex items-center select-none">
+                            wa.me/
+                        </span>
+                        <input
+                            type="text"
+                            value={formData.chatbot_whatsapp || ''}
+                            onChange={(e) => {
+                                const val = cleanSocialInput(e.target.value, 'whatsapp');
+                                setFormData(prev => ({ ...prev, chatbot_whatsapp: val }));
+                                onPreviewUpdate?.({ chatbot_whatsapp: val });
+                            }}
+                            placeholder="+98912..."
+                            className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none text-left"
+                        />
+                    </div>
+                </div>
+
+                 {/* Telegram */}
+                 <div className="grid gap-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Send size={14} className="text-gray-400"/>
+                        تلگرام
+                    </label>
+                    <div dir="ltr" className="flex items-stretch rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-900 focus-within:border-blue-500 transition-all">
+                        <span className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-700 flex items-center select-none">
+                            t.me/
+                        </span>
+                        <input
+                            type="text"
+                            value={formData.chatbot_telegram || ''}
+                            onChange={(e) => {
+                                const val = cleanSocialInput(e.target.value, 'telegram');
+                                setFormData(prev => ({ ...prev, chatbot_telegram: val }));
+                                onPreviewUpdate?.({ chatbot_telegram: val });
+                            }}
+                            placeholder="username"
+                            className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none text-left"
+                        />
+                    </div>
+                </div>
+             </div>
+        </div>
+
         {/* Advanced Settings Toggle */}
         <div className="pt-2">
             <button
@@ -163,7 +299,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
                 className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
                 {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                <span>تنظیمات پیشرفته (دستورالعمل سیستم و پیام اپراتور)</span>
+                <span>تنظیمات پیشرفته چت‌بات</span>
             </button>
         </div>
 

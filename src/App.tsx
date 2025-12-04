@@ -160,6 +160,10 @@ const App: React.FC = () => {
         chatInputPlaceholder: selectedChatbot.chatbot_input || prev.chatInputPlaceholder,
         isActive: selectedChatbot.chatbot_active ?? prev.isActive,
         suggestions: selectedChatbot.chatbot_suggestion || prev.suggestions,
+        phone: selectedChatbot.chatbot_phone || prev.phone,
+        instagram: selectedChatbot.chatbot_instagram || prev.instagram,
+        whatsapp: selectedChatbot.chatbot_whatsapp || prev.whatsapp,
+        telegram: selectedChatbot.chatbot_telegram || prev.telegram,
       }));
     }
   }, [selectedChatbot]);
@@ -223,6 +227,10 @@ const App: React.FC = () => {
       isActive: data.chatbot_active !== undefined ? data.chatbot_active : prev.isActive,
       logoUrl: data.chatbot_logo ? getAssetUrl(data.chatbot_logo) : prev.logoUrl,
       suggestions: data.chatbot_suggestion !== undefined ? data.chatbot_suggestion : prev.suggestions,
+      phone: data.chatbot_phone !== undefined ? data.chatbot_phone : prev.phone,
+      instagram: data.chatbot_instagram !== undefined ? data.chatbot_instagram : prev.instagram,
+      whatsapp: data.chatbot_whatsapp !== undefined ? data.chatbot_whatsapp : prev.whatsapp,
+      telegram: data.chatbot_telegram !== undefined ? data.chatbot_telegram : prev.telegram,
     }));
   };
 

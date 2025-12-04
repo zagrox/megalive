@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, RefreshCw, Sparkles, Tag } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle } from 'lucide-react';
 import { BotConfig, Message } from '../types';
 
 interface ChatPreviewProps {
@@ -11,8 +11,37 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Customization State (Visual Simulation)
+  const [showSettings, setShowSettings] = useState(false);
+  const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('sm');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef<string>(`preview_session_${Date.now()}`);
+
+  const isDark = theme === 'dark';
+
+  // Initialize theme based on current dashboard theme to blend in, 
+  // but allow toggling within the preview component context
+  useEffect(() => {
+    if (document.documentElement.classList.contains('dark')) {
+        setTheme('dark');
+    }
+  }, []);
+
+  // Click Outside Settings
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Simple markdown to HTML parser for AI responses
   const markdownToHtml = (text: string): string => {
@@ -81,7 +110,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, fontSize]); // Scroll when messages OR font size changes
 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
@@ -208,6 +237,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
   };
 
   const handleRestart = () => {
+    // 1. Reset Chat
     if (config.welcomeMessage) {
         setMessages([{
         id: 'welcome',
@@ -218,19 +248,45 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
     } else {
         setMessages([]);
     }
-    // Also reset session on manual restart
     sessionIdRef.current = `preview_session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    
+    // 2. Reset UI Settings
+    setTheme('light');
+    setFontSize('sm');
+    setIsFullscreen(false);
+    
+    // Close settings dropdown
+    setShowSettings(false);
   };
 
+  const getMessageTextSize = () => {
+    if (fontSize === 'lg') return 'text-base';
+    if (fontSize === 'base') return 'text-sm';
+    return 'text-xs';
+  };
+
+  // Helpers for Social Links (Construct from ID)
+  // Assumes input is an ID since GeneralSettings enforces it, but handles full URLs gracefully just in case
+  const getInstagramUrl = (handle: string) => handle.startsWith('http') ? handle : `https://instagram.com/${handle.replace('@', '')}`;
+  const getTelegramUrl = (handle: string) => handle.startsWith('http') ? handle : `https://t.me/${handle.replace('@', '')}`;
+  const getWhatsAppUrl = (number: string) => number.startsWith('http') ? number : `https://wa.me/${number.replace(/[^0-9+]/g, '')}`;
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[600px] w-full max-w-sm mx-auto relative transition-colors duration-300">
+    <div className={`h-full w-full flex flex-col items-center justify-center`}>
+    <div className={`
+      ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}
+      rounded-[2rem] shadow-2xl border 
+      overflow-hidden flex flex-col 
+      w-full max-w-sm mx-auto relative transition-all duration-300
+      ${isFullscreen ? 'h-[700px] max-w-md' : 'h-[600px]'}
+    `}>
       {/* Header */}
       <div 
-        className="p-4 flex items-center justify-between text-white"
+        className="p-4 flex items-center justify-between text-white transition-all"
         style={{ backgroundColor: config.primaryColor }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm overflow-hidden border border-white/10">
              <img src={config.logoUrl} alt="Bot" className="w-full h-full object-cover" />
           </div>
           <div>
@@ -241,28 +297,143 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
             </p>
           </div>
         </div>
-        <button onClick={handleRestart} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="شروع مجدد">
-          <RefreshCw size={18} />
-        </button>
+        
+        {/* Header Actions */}
+        <div className="flex items-center gap-1">
+            <div className="relative" ref={settingsRef}>
+                <button 
+                    onClick={() => setShowSettings(!showSettings)} 
+                    className={`p-2 hover:bg-white/20 rounded-full transition-colors ${showSettings ? 'bg-white/20' : ''}`}
+                >
+                    <MoreVertical size={18} />
+                </button>
+                
+                {/* Settings Dropdown */}
+                {showSettings && (
+                    <div className={`absolute left-0 top-full mt-2 w-52 rounded-xl shadow-xl border p-2 z-50 flex flex-col gap-2 animate-fade-in
+                        ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'}
+                    `}>
+                        
+                        {/* Phone Number (First Item) */}
+                        {config.phone && (
+                            <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                                <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.phone}</span>
+                                <a 
+                                    href={`tel:${config.phone}`} 
+                                    className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-green-900/30 hover:text-green-400' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-600'}`}
+                                >
+                                    <Phone size={14} />
+                                </a>
+                            </div>
+                        )}
+
+                        {/* Social Media Links */}
+                        {(config.instagram || config.whatsapp || config.telegram) && (
+                           <>
+                             {config.instagram && (
+                                <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
+                                    <a 
+                                        href={getInstagramUrl(config.instagram)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-pink-900/30 hover:text-pink-400' : 'bg-gray-100 text-gray-600 hover:bg-pink-100 hover:text-pink-600'}`}
+                                    >
+                                        <Instagram size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             {config.whatsapp && (
+                                <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
+                                    <a 
+                                        href={getWhatsAppUrl(config.whatsapp)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-green-900/30 hover:text-green-400' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-600'}`}
+                                    >
+                                        <MessageCircle size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             {config.telegram && (
+                                <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
+                                    <a 
+                                        href={getTelegramUrl(config.telegram)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-blue-900/30 hover:text-blue-400' : 'bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600'}`}
+                                    >
+                                        <Send size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             <div className={`h-px my-1 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}></div>
+                           </>
+                        )}
+
+                        {/* Theme Toggle */}
+                        <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                             <span className="text-xs font-medium">حالت نمایش</span>
+                             <button 
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                                className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                             >
+                                {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                             </button>
+                        </div>
+                        
+                        {/* Fullscreen Toggle */}
+                         <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                             <span className="text-xs font-medium">اندازه پنجره</span>
+                             <button 
+                                onClick={() => setIsFullscreen(!isFullscreen)} 
+                                className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                             >
+                                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                             </button>
+                        </div>
+
+                        {/* Font Size Control */}
+                        <div className="p-2">
+                            <span className={`text-xs font-medium block mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>اندازه متن</span>
+                            <div className={`flex rounded-lg p-1 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                <button onClick={() => setFontSize('sm')} className={`flex-1 flex items-center justify-center py-1 rounded-md text-[10px] transition-all ${fontSize === 'sm' ? (isDark ? 'bg-gray-600 text-blue-400' : 'bg-white text-blue-600 shadow-sm font-bold') : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}>A-</button>
+                                <button onClick={() => setFontSize('base')} className={`flex-1 flex items-center justify-center py-1 rounded-md text-xs transition-all ${fontSize === 'base' ? (isDark ? 'bg-gray-600 text-blue-400' : 'bg-white text-blue-600 shadow-sm font-bold') : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}>A</button>
+                                <button onClick={() => setFontSize('lg')} className={`flex-1 flex items-center justify-center py-1 rounded-md text-sm transition-all ${fontSize === 'lg' ? (isDark ? 'bg-gray-600 text-blue-400' : 'bg-white text-blue-600 shadow-sm font-bold') : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}>A+</button>
+                            </div>
+                        </div>
+
+                        <div className={`h-px my-1 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}></div>
+                        
+                        <button onClick={handleRestart} className={`flex items-center gap-2 p-2 text-xs font-medium rounded-lg w-full transition-colors ${isDark ? 'hover:bg-red-900/20 text-red-400' : 'hover:bg-red-50 text-red-600'}`}>
+                             <RefreshCw size={14} />
+                             <span>تنظیمات پایه</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" ref={scrollRef}>
+      <div className={`flex-1 overflow-y-auto p-4 space-y-4 transition-colors scroll-smooth ${isDark ? 'bg-gray-950' : 'bg-gray-50'}`} ref={scrollRef}>
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
           >
-            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs
-              ${msg.role === 'user' ? 'bg-gray-400' : ''}`}
+            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs border border-transparent
+              ${msg.role === 'user' ? (isDark ? 'bg-gray-600' : 'bg-gray-400') : ''}`}
               style={msg.role === 'model' ? { backgroundColor: config.primaryColor } : {}}
             >
               {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
             </div>
             <div
-              className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm
+              className={`max-w-[80%] p-3 rounded-2xl leading-relaxed shadow-sm transition-all duration-200 ${getMessageTextSize()}
                 ${msg.role === 'user' 
-                  ? 'bg-white text-gray-800 rounded-bl-none border border-gray-100' 
+                  ? (isDark ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-gray-100') + ' rounded-bl-none border'
                   : 'text-white rounded-br-none chat-content'
                 }`}
               style={msg.role === 'model' ? { backgroundColor: config.primaryColor } : {}}
@@ -281,11 +452,11 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                   style={{ backgroundColor: config.primaryColor }}>
                 <Bot size={14} />
              </div>
-             <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-br-none shadow-sm">
+             <div className={`border p-3 rounded-2xl rounded-br-none shadow-sm ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                <div className="flex gap-1">
-                 <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                 <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                 <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                 <span className={`w-2 h-2 rounded-full animate-bounce ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} style={{ animationDelay: '0ms' }}></span>
+                 <span className={`w-2 h-2 rounded-full animate-bounce ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} style={{ animationDelay: '150ms' }}></span>
+                 <span className={`w-2 h-2 rounded-full animate-bounce ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} style={{ animationDelay: '300ms' }}></span>
                </div>
              </div>
           </div>
@@ -293,19 +464,24 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
       </div>
 
       {/* Suggestion Chips & Input */}
-      <div className="bg-white border-t border-gray-100">
+      <div className={`border-t transition-colors ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
         
         {/* Suggestions (Tag Style) */}
-        {config.suggestions && config.suggestions.length > 0 && (
+        {config.suggestions && config.suggestions.length > 0 && messages.length <= 1 && (
            <div className="px-4 pt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar mask-gradient-right">
               {config.suggestions.map((suggestion, idx) => (
                   <button
                      key={idx}
                      onClick={() => handleSend(suggestion)}
                      disabled={loading}
-                     className="flex-shrink-0 text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-600 px-3 py-1.5 rounded-full transition-all border border-gray-200 whitespace-nowrap flex items-center gap-1 group"
+                     className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full transition-all border whitespace-nowrap flex items-center gap-1 group
+                       ${isDark 
+                         ? 'bg-gray-800 hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-800 text-gray-300 border-gray-700' 
+                         : 'bg-gray-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-600 border-gray-200'
+                       }
+                     `}
                   >
-                      <Tag size={10} className="text-gray-400 group-hover:text-blue-400" />
+                      <Tag size={10} className={`group-hover:text-blue-400 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                       {suggestion}
                   </button>
               ))}
@@ -322,22 +498,28 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
                 disabled={config.isActive === false}
-                className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className={`w-full rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none transition-all
+                  ${isDark 
+                    ? 'bg-gray-800 border-gray-700 focus:border-blue-500 focus:ring-blue-900/50 text-gray-100 disabled:bg-gray-800 placeholder:text-gray-500' 
+                    : 'bg-gray-50 border-gray-200 focus:border-blue-400 focus:ring-blue-100 text-gray-800 disabled:bg-gray-100 placeholder:text-gray-400'
+                  } border focus:ring-2`}
             />
             <button 
                 onClick={() => handleSend()}
                 disabled={!input.trim() || loading || config.isActive === false}
-                className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-2 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-600/20"
+                style={{ backgroundColor: config.primaryColor }}
             >
                 <Send size={16} className={loading ? 'opacity-0' : 'rtl:rotate-180'} />
                 {loading && <Sparkles size={16} className="absolute top-2 left-2 animate-spin" />}
             </button>
             </div>
             <div className="text-center mt-2">
-                <span className="text-[10px] text-gray-400">قدرت گرفته از MegaLive.ir</span>
+                <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>قدرت گرفته از MegaLive.ir</span>
             </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

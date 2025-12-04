@@ -22,6 +22,10 @@ export interface BotConfig {
   chatInputPlaceholder: string;
   isActive?: boolean;
   suggestions: string[];
+  phone?: string;
+  instagram?: string;
+  whatsapp?: string;
+  telegram?: string;
 }
 
 // --- Directus Schema Definitions ---
@@ -37,7 +41,7 @@ export interface Chatbot {
   chabot_title: string; // Note: typo from DB schema maintained
   chatbot_business?: string;
   chatbot_site?: string;
-  chatbot_telegram?: string;
+  chatbot_telegram?: string; // This was existing but maybe unused, now used for contact
   chatbot_webhook?: string;
   chatbot_welcome?: string;
   chatbot_logo?: string;
@@ -52,6 +56,9 @@ export interface Chatbot {
   chatbot_vector?: number; // NEW: Actual vector count from Qdrant
   chatbot_human?: string;
   chatbot_folder?: string; // UUID of the related folder
+  chatbot_phone?: string; // Contact phone number
+  chatbot_instagram?: string; // Contact Instagram
+  chatbot_whatsapp?: string; // Contact WhatsApp
   // Usage stats per bot
   chatbot_messages?: string; // Stored as string/bigint in DB
   chatbot_storage?: string; // Stored as string/bigint in DB

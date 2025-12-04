@@ -154,7 +154,7 @@ export const createChatbot = async (name: string, slug: string, businessName: st
     // @ts-ignore
     const result = await directus.request(createItem('chatbot', {
       chatbot_name: name,
-      chabot_title: `دستار هوش مصنوعی ${name}`,
+      chabot_title: `دستیار هوش مصنوعی ${name}`,
       chatbot_slug: slug,
       chatbot_business: businessName,
       chatbot_active: false,

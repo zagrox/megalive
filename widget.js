@@ -96,7 +96,7 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             overflow: hidden;
             transform-origin: bottom right;
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out, width 0.3s, height 0.3s, bottom 0.3s, right 0.3s;
             transform: scale(0.9);
             opacity: 0;
             pointer-events: none;
@@ -106,6 +106,16 @@
             transform: scale(1);
             opacity: 1;
             pointer-events: auto;
+          }
+          .chatbot-container.fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            bottom: 0 !important;
+            right: 0 !important;
+            border-radius: 0 !important;
+            max-width: none !important;
+            max-height: none !important;
+            transform: none !important;
           }
           .chatbot-iframe {
             width: 100%;
@@ -146,6 +156,18 @@
         launcher.addEventListener('click', () => {
           container.classList.toggle('open');
         });
+
+        // --- Event Listener for Messages from Iframe ---
+        window.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'MEGALIVE_TOGGLE_FULLSCREEN') {
+            if (event.data.value) {
+              container.classList.add('fullscreen');
+            } else {
+              container.classList.remove('fullscreen');
+            }
+          }
+        });
+
       } catch (error) {
         console.error("MEGABot: Error initializing widget.", error);
       }

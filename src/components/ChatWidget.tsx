@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, RefreshCw, Sparkles, Tag } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle } from 'lucide-react';
 import { BotConfig, Message } from '../types';
 import { getAssetUrl } from '../services/directus';
 
@@ -14,8 +14,67 @@ const ChatWidget: React.FC = () => {
   const [isResponseLoading, setIsResponseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Customization State
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('sm');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef<string>(`session_${Date.now()}_${Math.random().toString(36).substring(2)}`);
+
+  // Load Preferences
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('megalive_client_theme') as 'light' | 'dark';
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+    }
+
+    const savedSize = localStorage.getItem('megalive_client_fontsize') as 'sm' | 'base' | 'lg';
+    if (savedSize) setFontSize(savedSize);
+  }, []);
+
+  // Apply Theme
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('megalive_client_theme', theme);
+  }, [theme]);
+
+  // Apply Font Size Persistence
+  useEffect(() => {
+    localStorage.setItem('megalive_client_fontsize', fontSize);
+  }, [fontSize]);
+
+  // Click Outside Settings
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleFullscreen = () => {
+    const newState = !isFullscreen;
+    setIsFullscreen(newState);
+    // Send message to parent
+    window.parent.postMessage({ type: 'MEGALIVE_TOGGLE_FULLSCREEN', value: newState }, '*');
+  };
+
+  const getMessageTextSize = () => {
+    if (fontSize === 'lg') return 'text-base';
+    if (fontSize === 'base') return 'text-sm';
+    return 'text-xs';
+  };
 
   // Simple markdown to HTML parser for AI responses
   const markdownToHtml = (text: string): string => {
@@ -80,7 +139,8 @@ const ChatWidget: React.FC = () => {
       try {
         const publicFields = [
           'chatbot_name', 'chabot_title', 'chatbot_welcome', 'chatbot_logo', 
-          'chatbot_color', 'chatbot_input', 'chatbot_suggestion', 'chatbot_active', 'chatbot_webhook'
+          'chatbot_color', 'chatbot_input', 'chatbot_suggestion', 'chatbot_active', 'chatbot_webhook',
+          'chatbot_phone', 'chatbot_instagram', 'chatbot_whatsapp', 'chatbot_telegram'
         ].join(',');
         
         // Fetch from the collection endpoint with a filter. This is often more reliable
@@ -107,6 +167,10 @@ const ChatWidget: React.FC = () => {
           suggestions: data.chatbot_suggestion,
           isActive: data.chatbot_active,
           n8nWebhookUrl: data.chatbot_webhook,
+          phone: data.chatbot_phone,
+          instagram: data.chatbot_instagram,
+          whatsapp: data.chatbot_whatsapp,
+          telegram: data.chatbot_telegram,
         };
 
         setConfig(fetchedConfig);
@@ -223,6 +287,7 @@ const ChatWidget: React.FC = () => {
   };
 
   const handleRestart = () => {
+    // 1. Reset Chat History
     if (config.welcomeMessage) {
         setMessages([{
         id: 'welcome_restart', role: 'model', text: config.welcomeMessage, timestamp: Date.now()
@@ -230,58 +295,195 @@ const ChatWidget: React.FC = () => {
     } else {
         setMessages([]);
     }
+    sessionIdRef.current = `session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+
+    // 2. Reset UI Preferences to Default
+    setTheme('light');
+    setFontSize('sm');
+    localStorage.removeItem('megalive_client_theme');
+    localStorage.removeItem('megalive_client_fontsize');
+
+    // 3. Reset Window Size
+    if (isFullscreen) {
+        setIsFullscreen(false);
+        window.parent.postMessage({ type: 'MEGALIVE_TOGGLE_FULLSCREEN', value: false }, '*');
+    }
+    
+    // Close settings menu
+    setShowSettings(false);
   };
   
   if (isConfigLoading) {
-     return <div className="flex items-center justify-center h-full text-gray-400">...Loading</div>;
+     return <div className="flex items-center justify-center h-full text-gray-400 bg-white dark:bg-gray-900">...Loading</div>;
   }
   
   if (error) {
-     return <div className="flex items-center justify-center h-full text-red-500 p-4 text-center">{error}</div>;
+     return <div className="flex items-center justify-center h-full text-red-500 p-4 text-center bg-white dark:bg-gray-900">{error}</div>;
   }
 
+  // Helpers for Social Links (Construct from ID)
+  // Assumes input is an ID since GeneralSettings enforces it, but handles full URLs gracefully just in case
+  const getInstagramUrl = (handle: string) => handle.startsWith('http') ? handle : `https://instagram.com/${handle.replace('@', '')}`;
+  const getTelegramUrl = (handle: string) => handle.startsWith('http') ? handle : `https://t.me/${handle.replace('@', '')}`;
+  const getWhatsAppUrl = (number: string) => number.startsWith('http') ? number : `https://wa.me/${number.replace(/[^0-9+]/g, '')}`;
+
   return (
-    <div className="bg-white rounded-t-[1.5rem] flex flex-col h-full w-full max-w-sm mx-auto relative font-vazir" dir="rtl">
+    <div className={`rounded-t-[1.5rem] flex flex-col h-full w-full max-w-sm mx-auto relative font-vazir transition-colors bg-white dark:bg-gray-900 ${isFullscreen ? 'max-w-none rounded-none' : ''}`} dir="rtl">
       {/* Header */}
       <div 
-        className="p-4 flex items-center justify-between text-white rounded-t-[1.5rem]"
+        className={`p-4 flex items-center justify-between text-white transition-all ${isFullscreen ? '' : 'rounded-t-[1.5rem]'}`}
         style={{ backgroundColor: config.primaryColor || '#3b82f6' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm overflow-hidden border border-white/10">
              {config.logoUrl ? <img src={config.logoUrl} alt="Bot" className="w-full h-full object-cover" /> : <Bot size={20}/>}
           </div>
           <div>
             <h3 className="font-bold text-sm">{config.name || 'Chatbot'}</h3>
-            <p className="text-xs text-white/80 flex items-center gap-1">
+            <div className="flex items-center gap-1.5 opacity-90">
               <span className={`w-1.5 h-1.5 rounded-full ${config.isActive !== false ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></span>
-              {config.isActive !== false ? 'آنلاین' : 'آفلاین'}
-            </p>
+              <p className="text-xs">{config.isActive !== false ? 'آنلاین' : 'آفلاین'}</p>
+            </div>
           </div>
         </div>
-        <button onClick={handleRestart} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="شروع مجدد">
-          <RefreshCw size={18} />
-        </button>
+
+        {/* Header Controls */}
+        <div className="flex items-center gap-1">
+            <div className="relative" ref={settingsRef}>
+                <button 
+                    onClick={() => setShowSettings(!showSettings)} 
+                    className={`p-2 hover:bg-white/20 rounded-full transition-colors ${showSettings ? 'bg-white/20' : ''}`} 
+                    title="تنظیمات"
+                >
+                    <MoreVertical size={18} />
+                </button>
+                
+                {/* Settings Popover */}
+                {showSettings && (
+                    <div className="absolute left-0 top-full mt-2 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 text-gray-800 dark:text-white flex flex-col gap-2 animate-fade-in-widget">
+                        
+                        {/* Phone Number */}
+                        {config.phone && (
+                            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.phone}</span>
+                                <a 
+                                    href={`tel:${config.phone}`} 
+                                    className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400 transition-colors"
+                                    title="تماس"
+                                >
+                                    <Phone size={14} />
+                                </a>
+                            </div>
+                        )}
+
+                        {/* Social Media Links */}
+                        {(config.instagram || config.whatsapp || config.telegram) && (
+                           <>
+                             {config.instagram && (
+                                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
+                                    <a 
+                                        href={getInstagramUrl(config.instagram)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-pink-100 hover:text-pink-600 dark:hover:bg-pink-900/30 dark:hover:text-pink-400 transition-colors"
+                                    >
+                                        <Instagram size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             {config.whatsapp && (
+                                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
+                                    <a 
+                                        href={getWhatsAppUrl(config.whatsapp)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400 transition-colors"
+                                    >
+                                        <MessageCircle size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             {config.telegram && (
+                                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
+                                    <a 
+                                        href={getTelegramUrl(config.telegram)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-colors"
+                                    >
+                                        <Send size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                           </>
+                        )}
+
+                        {/* Theme */}
+                        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                             <span className="text-xs font-medium">حالت نمایش</span>
+                             <button 
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                                className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                             >
+                                {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                             </button>
+                        </div>
+
+                        {/* Fullscreen Toggle */}
+                        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                             <span className="text-xs font-medium">اندازه پنجره</span>
+                             <button 
+                                onClick={toggleFullscreen} 
+                                className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                             >
+                                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                             </button>
+                        </div>
+
+                        {/* Font Size */}
+                        <div className="p-2">
+                            <span className="text-xs font-medium block mb-2 text-gray-600 dark:text-gray-400">اندازه متن</span>
+                            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                <button onClick={() => setFontSize('sm')} className={`flex-1 flex items-center justify-center py-1 rounded-md text-[10px] transition-all ${fontSize === 'sm' ? 'bg-white dark:bg-gray-600 shadow-sm font-bold text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>A-</button>
+                                <button onClick={() => setFontSize('base')} className={`flex-1 flex items-center justify-center py-1 rounded-md text-xs transition-all ${fontSize === 'base' ? 'bg-white dark:bg-gray-600 shadow-sm font-bold text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>A</button>
+                                <button onClick={() => setFontSize('lg')} className={`flex-1 flex items-center justify-center py-1 rounded-md text-sm transition-all ${fontSize === 'lg' ? 'bg-white dark:bg-gray-600 shadow-sm font-bold text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>A+</button>
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                        
+                        <button onClick={handleRestart} className="flex items-center gap-2 p-2 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg w-full transition-colors">
+                             <RefreshCw size={14} />
+                             <span>تنظیمات پایه</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-950 transition-colors" ref={scrollRef}>
         {messages.map((msg, index) => (
           <div
             key={msg.id}
             className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-fade-in-widget`}
             style={{ animationDelay: `${index * 50}ms`}}
           >
-            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs
-              ${msg.role === 'user' ? 'bg-gray-400' : ''}`}
+            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs border border-transparent
+              ${msg.role === 'user' ? 'bg-gray-400 dark:bg-gray-600' : ''}`}
               style={msg.role === 'model' ? { backgroundColor: config.primaryColor } : {}}
             >
               {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
             </div>
             <div
-              className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm
+              className={`max-w-[85%] p-3 rounded-2xl leading-relaxed shadow-sm ${getMessageTextSize()}
                 ${msg.role === 'user' 
-                  ? 'bg-white text-gray-800 rounded-bl-none border border-gray-100' 
+                  ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700' 
                   : 'text-white rounded-br-none chat-content'
                 }`}
               style={msg.role === 'model' ? { backgroundColor: config.primaryColor } : {}}
@@ -300,11 +502,11 @@ const ChatWidget: React.FC = () => {
                   style={{ backgroundColor: config.primaryColor }}>
                 <Bot size={14} />
              </div>
-             <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-br-none shadow-sm">
+             <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl rounded-br-none shadow-sm">
                <div className="flex gap-1">
-                 <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                 <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                 <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                 <span className="w-2 h-2 bg-gray-300 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                 <span className="w-2 h-2 bg-gray-300 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                 <span className="w-2 h-2 bg-gray-300 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                </div>
              </div>
           </div>
@@ -312,7 +514,7 @@ const ChatWidget: React.FC = () => {
       </div>
 
       {/* Suggestion Chips & Input */}
-      <div className="bg-white border-t border-gray-100">
+      <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors">
         {config.suggestions && config.suggestions.length > 0 && messages.length <= 1 && (
            <div className="px-4 pt-3 flex gap-2 overflow-x-auto pb-1" style={{scrollbarWidth: 'none'}}>
               {config.suggestions.map((suggestion, idx) => (
@@ -320,9 +522,9 @@ const ChatWidget: React.FC = () => {
                      key={idx}
                      onClick={() => handleSend(suggestion)}
                      disabled={isResponseLoading}
-                     className="flex-shrink-0 text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-600 px-3 py-1.5 rounded-full transition-all border border-gray-200 whitespace-nowrap flex items-center gap-1 group"
+                     className="flex-shrink-0 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-full transition-all border border-gray-200 dark:border-gray-700 whitespace-nowrap flex items-center gap-1 group"
                   >
-                      <Tag size={10} className="text-gray-400 group-hover:text-blue-400" />
+                      <Tag size={10} className="text-gray-400 dark:text-gray-500 group-hover:text-blue-400" />
                       {suggestion}
                   </button>
               ))}
@@ -338,7 +540,7 @@ const ChatWidget: React.FC = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={config.chatInputPlaceholder || "پیام خود را بنویسید..."}
                 disabled={config.isActive === false || isResponseLoading}
-                className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full py-3 pr-4 pl-12 text-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/50 transition-all text-gray-800 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
             <button 
                 onClick={() => handleSend()}
@@ -351,7 +553,7 @@ const ChatWidget: React.FC = () => {
             </button>
             </div>
             <div className="text-center mt-2">
-                <span className="text-[10px] text-gray-400">قدرت گرفته از IR48</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">قدرت گرفته از MegaLive.ir</span>
             </div>
         </div>
       </div>
