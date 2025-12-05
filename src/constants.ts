@@ -1,11 +1,11 @@
 import { BotConfig, UploadedFile } from './types';
 
 export const DEFAULT_CONFIG: BotConfig = {
-  appTitle: 'Mega Live AI',
-  appSlogan: 'نسخه ۱.۰.۰',
+  appTitle: 'MegaLive AI',
+  appSlogan: 'Chatbot Generator',
   name: 'دستیار هوشمند',
   description: 'پاسخگوی سوالات کاربران درباره خدمات ما',
-  systemInstruction: 'شما یک دستیar هوشمند مفید و مودب هستید که به کاربران در مورد خدمات شرکت کمک می‌کنید. همیشه به زبان فارسی پاسخ دهید.',
+  systemInstruction: 'شما یک دستیar هوشمند مفید و حرفه ای هستید که به کاربران در مورد خدمات شرکت کمک می‌کنید. همیشه به زبان فارسی پاسخ دهید.',
   primaryColor: '#3b82f6',
   welcomeMessage: 'سلام! چطور می‌توانم امروز به شما کمک کنم؟',
   logoUrl: 'https://picsum.photos/200',
@@ -19,7 +19,7 @@ export const DEFAULT_CONFIG: BotConfig = {
 export const MOCK_FILES: UploadedFile[] = [
   {
     id: '1',
-    name: 'راهنمای_محصولات_۱۴۰۳.pdf',
+    name: 'راهنمای_محصولات_۱۴۰۴.pdf',
     size: 1024 * 1024 * 2.5, // 2.5MB
     status: 'ready',
     uploadDate: '1403/01/15',
