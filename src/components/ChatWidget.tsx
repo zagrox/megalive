@@ -365,7 +365,7 @@ const ChatWidget: React.FC = () => {
                         {/* Phone Number */}
                         {config.phone && (
                             <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.phone}</span>
+                                <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.phone}</span>
                                 <a 
                                     href={`tel:${config.phone}`} 
                                     className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400 transition-colors"
@@ -381,7 +381,7 @@ const ChatWidget: React.FC = () => {
                            <>
                              {config.instagram && (
                                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
+                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
                                     <a 
                                         href={getInstagramUrl(config.instagram)} 
                                         target="_blank"
@@ -394,7 +394,7 @@ const ChatWidget: React.FC = () => {
                              )}
                              {config.whatsapp && (
                                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
+                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
                                     <a 
                                         href={getWhatsAppUrl(config.whatsapp)} 
                                         target="_blank"
@@ -407,7 +407,7 @@ const ChatWidget: React.FC = () => {
                              )}
                              {config.telegram && (
                                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <span dir="ltr" className="text-xs font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
+                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
                                     <a 
                                         href={getTelegramUrl(config.telegram)} 
                                         target="_blank"
