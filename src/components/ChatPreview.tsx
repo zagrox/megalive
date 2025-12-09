@@ -321,7 +321,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                         {/* Phone Number (First Item) */}
                         {config.phone && (
                             <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
-                                <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.phone}</span>
+                                <span dir="ltr" className="text-sm font-medium text-left truncate max-w-[120px]">{config.phone}</span>
                                 <a 
                                     href={`tel:${config.phone}`} 
                                     className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-green-900/30 hover:text-green-400' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-600'}`}
@@ -336,7 +336,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                            <>
                            {config.whatsapp && (
                                 <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
-                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
+                                    <span dir="ltr" className="text-sm font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
                                     <a 
                                         href={getWhatsAppUrl(config.whatsapp)} 
                                         target="_blank"
