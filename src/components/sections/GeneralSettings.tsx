@@ -260,7 +260,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
                                 setFormData(prev => ({ ...prev, chatbot_whatsapp: val }));
                                 onPreviewUpdate?.({ chatbot_whatsapp: val });
                             }}
-                            placeholder="+98912..."
+                            placeholder="98912..."
                             className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none text-left"
                         />
                     </div>

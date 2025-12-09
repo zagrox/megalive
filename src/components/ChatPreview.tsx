@@ -274,15 +274,15 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
   return (
     <div className={`h-full w-full flex flex-col items-center justify-center`}>
     <div className={`
-      ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}
-      rounded-[2rem] shadow-2xl border 
+      ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}
+      rounded-[1.5rem] shadow-2xl border 
       overflow-hidden flex flex-col 
       w-full max-w-sm mx-auto relative transition-all duration-300
       ${isFullscreen ? 'h-[700px] max-w-md' : 'h-[600px]'}
     `}>
       {/* Header */}
       <div 
-        className="p-4 flex items-center justify-between text-white transition-all"
+        className={`p-4 flex items-center justify-between text-white transition-all ${isFullscreen ? '' : 'rounded-t-[1.4rem]'}`}
         style={{ backgroundColor: config.primaryColor }}
       >
         <div className="flex items-center gap-3">
@@ -330,20 +330,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                         {/* Social Media Links */}
                         {(config.instagram || config.whatsapp || config.telegram) && (
                            <>
-                             {config.instagram && (
-                                <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
-                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
-                                    <a 
-                                        href={getInstagramUrl(config.instagram)} 
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-pink-900/30 hover:text-pink-400' : 'bg-gray-100 text-gray-600 hover:bg-pink-100 hover:text-pink-600'}`}
-                                    >
-                                        <Instagram size={14} />
-                                    </a>
-                                </div>
-                             )}
-                             {config.whatsapp && (
+                           {config.whatsapp && (
                                 <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
                                     <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
                                     <a 
@@ -356,9 +343,23 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                                     </a>
                                 </div>
                              )}
+                             {config.instagram && (
+                                <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                                    <span dir="ltr" className="text-sm font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
+                                    <a 
+                                        href={getInstagramUrl(config.instagram)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-pink-900/30 hover:text-pink-400' : 'bg-gray-100 text-gray-600 hover:bg-pink-100 hover:text-pink-600'}`}
+                                    >
+                                        <Instagram size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             
                              {config.telegram && (
                                 <div className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
-                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
+                                    <span dir="ltr" className="text-sm font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
                                     <a 
                                         href={getTelegramUrl(config.telegram)} 
                                         target="_blank"
@@ -464,7 +465,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
       </div>
 
       {/* Suggestion Chips & Input */}
-      <div className={`border-t transition-colors ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
+      <div className={`border-t transition-colors ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} ${isFullscreen ? '' : 'rounded-b-[1.4rem]'}`}>
         
         {/* Suggestions (Tag Style) */}
         {config.suggestions && config.suggestions.length > 0 && messages.length <= 1 && (

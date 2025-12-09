@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle } from 'lucide-react';
 import { BotConfig, Message } from '../types';
@@ -321,17 +320,15 @@ const ChatWidget: React.FC = () => {
      return <div className="flex items-center justify-center h-full text-red-500 p-4 text-center bg-white dark:bg-gray-900">{error}</div>;
   }
 
-  // Helpers for Social Links (Construct from ID)
-  // Assumes input is an ID since GeneralSettings enforces it, but handles full URLs gracefully just in case
   const getInstagramUrl = (handle: string) => handle.startsWith('http') ? handle : `https://instagram.com/${handle.replace('@', '')}`;
   const getTelegramUrl = (handle: string) => handle.startsWith('http') ? handle : `https://t.me/${handle.replace('@', '')}`;
   const getWhatsAppUrl = (number: string) => number.startsWith('http') ? number : `https://wa.me/${number.replace(/[^0-9+]/g, '')}`;
 
   return (
-    <div className={`rounded-t-[1.5rem] flex flex-col h-full w-full max-w-sm mx-auto relative font-vazir transition-colors bg-white dark:bg-gray-900 ${isFullscreen ? 'max-w-none rounded-none' : ''}`} dir="rtl">
+    <div className={`flex flex-col h-full w-full max-w-sm mx-auto relative font-vazir transition-colors bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 ${isFullscreen ? 'max-w-none rounded-none' : 'rounded-[1.5rem]'}`} dir="rtl">
       {/* Header */}
       <div 
-        className={`p-4 flex items-center justify-between text-white transition-all ${isFullscreen ? '' : 'rounded-t-[1.5rem]'}`}
+        className={`p-4 flex items-center justify-between text-white transition-all ${isFullscreen ? '' : 'rounded-t-[1.4rem]'}`}
         style={{ backgroundColor: config.primaryColor || '#3b82f6' }}
       >
         <div className="flex items-center gap-3">
@@ -379,19 +376,6 @@ const ChatWidget: React.FC = () => {
                         {/* Social Media Links */}
                         {(config.instagram || config.whatsapp || config.telegram) && (
                            <>
-                             {config.instagram && (
-                                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
-                                    <a 
-                                        href={getInstagramUrl(config.instagram)} 
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-pink-100 hover:text-pink-600 dark:hover:bg-pink-900/30 dark:hover:text-pink-400 transition-colors"
-                                    >
-                                        <Instagram size={14} />
-                                    </a>
-                                </div>
-                             )}
                              {config.whatsapp && (
                                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                     <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.whatsapp.replace('https://wa.me/', '')}</span>
@@ -405,9 +389,23 @@ const ChatWidget: React.FC = () => {
                                     </a>
                                 </div>
                              )}
+                             {config.instagram && (
+                                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <span dir="ltr" className="text-sm font-medium text-left truncate max-w-[120px]">{config.instagram.replace('https://instagram.com/', '')}</span>
+                                    <a 
+                                        href={getInstagramUrl(config.instagram)} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-pink-100 hover:text-pink-600 dark:hover:bg-pink-900/30 dark:hover:text-pink-400 transition-colors"
+                                    >
+                                        <Instagram size={14} />
+                                    </a>
+                                </div>
+                             )}
+                             
                              {config.telegram && (
                                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <span dir="ltr" className="text-s font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
+                                    <span dir="ltr" className="text-sm font-medium text-left truncate max-w-[120px]">{config.telegram.replace('https://t.me/', '')}</span>
                                     <a 
                                         href={getTelegramUrl(config.telegram)} 
                                         target="_blank"
@@ -514,7 +512,7 @@ const ChatWidget: React.FC = () => {
       </div>
 
       {/* Suggestion Chips & Input */}
-      <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors">
+      <div className={`bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors ${isFullscreen ? '' : 'rounded-b-[1.4rem]'}`}>
         {config.suggestions && config.suggestions.length > 0 && messages.length <= 1 && (
            <div className="px-4 pt-3 flex gap-2 overflow-x-auto pb-1" style={{scrollbarWidth: 'none'}}>
               {config.suggestions.map((suggestion, idx) => (

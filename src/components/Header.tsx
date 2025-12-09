@@ -109,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
       case 'general': return 'تنظیمات عمومی';
       case 'appearance': return 'ظاهر چت‌بات';
       case 'knowledge': return 'پایگاه دانش';
-      case 'integrations': return 'افزونه‌ها و ادغام‌ها';
+      case 'integrations': return 'اتصال برنامه';
       case 'deploy': return 'انتشار و کد';
       case 'profile': return 'حساب کاربری';
       case 'manage-bots': return 'مدیریت چت‌بات‌ها';
