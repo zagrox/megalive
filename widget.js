@@ -88,7 +88,7 @@
             position: fixed;
             bottom: 90px;
             right: 20px;
-            width: 400px;
+            width: 384px;
             height: 600px;
             max-height: calc(100vh - 110px);
             max-width: calc(100vw - 40px);
