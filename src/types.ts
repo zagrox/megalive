@@ -1,4 +1,5 @@
 
+
 export interface UploadedFile {
   id: string;
   name: string;
@@ -26,6 +27,11 @@ export interface BotConfig {
   instagram?: string;
   whatsapp?: string;
   telegram?: string;
+  address?: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
 }
 
 // --- Directus Schema Definitions ---
@@ -59,6 +65,11 @@ export interface Chatbot {
   chatbot_phone?: string; // Contact phone number
   chatbot_instagram?: string; // Contact Instagram
   chatbot_whatsapp?: string; // Contact WhatsApp
+  chatbot_address?: string; // Address text
+  chatbot_location?: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
   // Usage stats per bot
   chatbot_messages?: string; // Stored as string/bigint in DB
   chatbot_storage?: string; // Stored as string/bigint in DB

@@ -1,6 +1,9 @@
 
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle, MapPin } from 'lucide-react';
 import { BotConfig, Message } from '../types';
 
 interface ChatPreviewProps {
@@ -275,7 +278,8 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
     <div className={`h-full w-full flex flex-col items-center justify-center`}>
     <div className={`
       ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}
-      rounded-[1.5rem] shadow-2xl border 
+      border-[1px]
+      rounded-[1.5rem] shadow-2xl 
       overflow-hidden flex flex-col 
       w-full max-w-sm mx-auto relative transition-all duration-300
       ${isFullscreen ? 'h-[700px] max-w-md' : 'h-[600px]'}
@@ -310,7 +314,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                 
                 {/* Settings Dropdown */}
                 {showSettings && (
-                    <div className={`absolute left-0 top-full mt-2 w-52 rounded-xl shadow-xl border p-2 z-50 flex flex-col gap-2 animate-fade-in
+                    <div className={`absolute left-0 top-full mt-2 w-72 rounded-xl shadow-xl border p-2 z-50 flex flex-col gap-2 animate-fade-in
                         ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'}
                     `}>
                         
@@ -372,6 +376,24 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
                              )}
                              <div className={`h-px my-1 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}></div>
                            </>
+                        )}
+
+                        {/* Address Section */}
+                        {config.address && (
+                            <>
+                            <div className={`flex items-center justify-between p-2 rounded-lg transition-colors gap-3 ${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+                                <span className="text-xs font-medium text-right flex-1 leading-snug">{config.address}</span>
+                                <a 
+                                    href={config.location ? `https://www.google.com/maps/search/?api=1&query=${config.location.coordinates[1]},${config.location.coordinates[0]}` : '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`p-1.5 rounded-full transition-colors flex-shrink-0 ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-red-900/30 hover:text-red-400' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600'}`}
+                                >
+                                    <MapPin size={14} />
+                                </a>
+                            </div>
+                            <div className={`h-px my-1 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}></div>
+                            </>
                         )}
 
                         {/* Theme Toggle */}

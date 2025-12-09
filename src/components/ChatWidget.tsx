@@ -1,5 +1,7 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle, MapPin } from 'lucide-react';
 import { BotConfig, Message } from '../types';
 import { getAssetUrl } from '../services/directus';
 
@@ -139,7 +141,8 @@ const ChatWidget: React.FC = () => {
         const publicFields = [
           'chatbot_name', 'chabot_title', 'chatbot_welcome', 'chatbot_logo', 
           'chatbot_color', 'chatbot_input', 'chatbot_suggestion', 'chatbot_active', 'chatbot_webhook',
-          'chatbot_phone', 'chatbot_instagram', 'chatbot_whatsapp', 'chatbot_telegram'
+          'chatbot_phone', 'chatbot_instagram', 'chatbot_whatsapp', 'chatbot_telegram',
+          'chatbot_address', 'chatbot_location'
         ].join(',');
         
         // Fetch from the collection endpoint with a filter. This is often more reliable
@@ -170,6 +173,8 @@ const ChatWidget: React.FC = () => {
           instagram: data.chatbot_instagram,
           whatsapp: data.chatbot_whatsapp,
           telegram: data.chatbot_telegram,
+          address: data.chatbot_address,
+          location: data.chatbot_location,
         };
 
         setConfig(fetchedConfig);
@@ -325,7 +330,7 @@ const ChatWidget: React.FC = () => {
   const getWhatsAppUrl = (number: string) => number.startsWith('http') ? number : `https://wa.me/${number.replace(/[^0-9+]/g, '')}`;
 
   return (
-    <div className={`flex flex-col h-full w-full max-w-sm mx-auto relative font-vazir transition-colors bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 ${isFullscreen ? 'max-w-none rounded-none' : 'rounded-[1.5rem]'}`} dir="rtl">
+    <div className={`flex flex-col h-full w-full max-w-sm mx-auto relative font-vazir transition-colors bg-white dark:bg-gray-900 border-[1px] border-gray-200 dark:border-gray-800 ${isFullscreen ? 'max-w-none rounded-none' : 'rounded-[1.5rem]'}`} dir="rtl">
       {/* Header */}
       <div 
         className={`p-4 flex items-center justify-between text-white transition-all ${isFullscreen ? '' : 'rounded-t-[1.4rem]'}`}
@@ -357,7 +362,7 @@ const ChatWidget: React.FC = () => {
                 
                 {/* Settings Popover */}
                 {showSettings && (
-                    <div className="absolute left-0 top-full mt-2 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 text-gray-800 dark:text-white flex flex-col gap-2 animate-fade-in-widget">
+                    <div className="absolute left-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 text-gray-800 dark:text-white flex flex-col gap-2 animate-fade-in-widget">
                         
                         {/* Phone Number */}
                         {config.phone && (
@@ -418,6 +423,24 @@ const ChatWidget: React.FC = () => {
                              )}
                              <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
                            </>
+                        )}
+                        
+                        {/* Address Section */}
+                        {config.address && (
+                            <>
+                            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors gap-3">
+                                <span className="text-xs font-medium text-right flex-1 leading-snug">{config.address}</span>
+                                <a 
+                                    href={config.location ? `https://www.google.com/maps/search/?api=1&query=${config.location.coordinates[1]},${config.location.coordinates[0]}` : '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                                >
+                                    <MapPin size={14} />
+                                </a>
+                            </div>
+                            <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                            </>
                         )}
 
                         {/* Theme */}

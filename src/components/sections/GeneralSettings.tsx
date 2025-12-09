@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chatbot } from '../../types';
-import { Save, AlertCircle, Loader2, Check, Sparkles, ChevronDown, ChevronUp, Phone, Instagram, Send, MessageCircle } from 'lucide-react';
+import { Save, AlertCircle, Loader2, Check, Sparkles, ChevronDown, ChevronUp, Phone, Instagram, Send, MessageCircle, MapPin, X } from 'lucide-react';
 import { PROMPT_TEMPLATE } from '../../constants';
 
 interface Props {
@@ -10,11 +10,90 @@ interface Props {
   onPreviewUpdate?: (data: Partial<Chatbot>) => void;
 }
 
+// Internal Map Component to handle Leaflet logic
+const LocationPicker: React.FC<{ 
+    initialPosition?: [number, number]; // [lng, lat] from DB
+    onSave: (coords: [number, number]) => void; 
+    onCancel: () => void 
+}> = ({ initialPosition, onSave, onCancel }) => {
+    const mapRef = useRef<HTMLDivElement>(null);
+    const [currentCoords, setCurrentCoords] = useState<[number, number]>(initialPosition || [51.3890, 35.6892]); // Default Tehran
+    const mapInstance = useRef<any>(null);
+    const markerInstance = useRef<any>(null);
+
+    useEffect(() => {
+        if (!mapRef.current) return;
+        const L = (window as any).L;
+        if (!L) {
+            console.error("Leaflet not loaded");
+            return;
+        }
+
+        // Leaflet uses [lat, lng], but Directus stores [lng, lat]
+        const [lng, lat] = currentCoords;
+
+        // Init Map
+        mapInstance.current = L.map(mapRef.current).setView([lat, lng], 13);
+        
+        // Add Tile Layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(mapInstance.current);
+
+        // Add Marker
+        markerInstance.current = L.marker([lat, lng], { draggable: true }).addTo(mapInstance.current);
+
+        // Events
+        markerInstance.current.on('dragend', function(event: any) {
+            const position = markerInstance.current.getLatLng();
+            setCurrentCoords([position.lng, position.lat]);
+        });
+
+        mapInstance.current.on('click', function(e: any) {
+            markerInstance.current.setLatLng(e.latlng);
+            setCurrentCoords([e.latlng.lng, e.latlng.lat]);
+        });
+
+        // Cleanup
+        return () => {
+            if (mapInstance.current) {
+                mapInstance.current.remove();
+                mapInstance.current = null;
+            }
+        };
+    }, []);
+
+    const handleConfirm = () => {
+        onSave(currentCoords);
+    };
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex-1 relative z-0" ref={mapRef}></div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-end gap-3">
+                <button 
+                    onClick={onCancel}
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                    انصراف
+                </button>
+                <button 
+                    onClick={handleConfirm}
+                    className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium shadow-md shadow-blue-600/20"
+                >
+                    تایید موقعیت
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, onPreviewUpdate }) => {
   const [formData, setFormData] = useState<Partial<Chatbot>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   useEffect(() => {
     if (selectedChatbot) {
@@ -29,6 +108,8 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
         chatbot_instagram: selectedChatbot.chatbot_instagram || '',
         chatbot_whatsapp: selectedChatbot.chatbot_whatsapp || '',
         chatbot_telegram: selectedChatbot.chatbot_telegram || '',
+        chatbot_address: selectedChatbot.chatbot_address || '',
+        chatbot_location: selectedChatbot.chatbot_location,
       });
     }
   }, [selectedChatbot]);
@@ -94,6 +175,7 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
   }
 
   return (
+    <>
     <div className="space-y-8 animate-fade-in">
       <div>
         <p className="text-gray-500 dark:text-gray-400 text-lg">اطلاعات پایه و هویت چت‌بات خود را تنظیم کنید.</p>
@@ -289,6 +371,34 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
                         />
                     </div>
                 </div>
+
+                {/* Address - NEW */}
+                <div className="md:col-span-2 grid gap-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <MapPin size={14} className="text-gray-400"/>
+                        آدرس
+                    </label>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={formData.chatbot_address || ''}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(prev => ({ ...prev, chatbot_address: val }));
+                            }}
+                            placeholder="آدرس پستی خود را وارد کنید..."
+                            className="w-full pl-20 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all"
+                        />
+                        <button
+                            onClick={() => setIsMapOpen(true)}
+                            className="absolute left-1 top-1 bottom-1 px-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
+                        >
+                            <MapPin size={14} />
+                            نقشه
+                        </button>
+                    </div>
+                </div>
+
              </div>
         </div>
 
@@ -376,6 +486,36 @@ const GeneralSettings: React.FC<Props> = ({ selectedChatbot, onUpdateChatbot, on
         </div>
       </div>
     </div>
+    
+    {/* Map Modal */}
+    {isMapOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={() => setIsMapOpen(false)}>
+            <div className="bg-white dark:bg-gray-900 w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[600px] max-h-full" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800">
+                    <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <MapPin size={20} className="text-blue-600 dark:text-blue-400"/>
+                        انتخاب موقعیت روی نقشه
+                    </h3>
+                    <button onClick={() => setIsMapOpen(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
+                {/* Map Container */}
+                <div className="flex-1 relative bg-gray-100">
+                    <LocationPicker
+                        initialPosition={formData.chatbot_location?.coordinates}
+                        onSave={(coords) => {
+                            setFormData(prev => ({ ...prev, chatbot_location: { type: 'Point', coordinates: coords } }));
+                            setIsMapOpen(false);
+                        }}
+                        onCancel={() => setIsMapOpen(false)}
+                    />
+                </div>
+            </div>
+        </div>
+    )}
+    </>
   );
 };
 

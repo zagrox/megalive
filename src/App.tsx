@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -164,6 +165,8 @@ const App: React.FC = () => {
         instagram: selectedChatbot.chatbot_instagram || prev.instagram,
         whatsapp: selectedChatbot.chatbot_whatsapp || prev.whatsapp,
         telegram: selectedChatbot.chatbot_telegram || prev.telegram,
+        address: selectedChatbot.chatbot_address || prev.address,
+        location: selectedChatbot.chatbot_location || prev.location,
       }));
     }
   }, [selectedChatbot]);
@@ -231,6 +234,8 @@ const App: React.FC = () => {
       instagram: data.chatbot_instagram !== undefined ? data.chatbot_instagram : prev.instagram,
       whatsapp: data.chatbot_whatsapp !== undefined ? data.chatbot_whatsapp : prev.whatsapp,
       telegram: data.chatbot_telegram !== undefined ? data.chatbot_telegram : prev.telegram,
+      address: data.chatbot_address !== undefined ? data.chatbot_address : prev.address,
+      location: data.chatbot_location !== undefined ? data.chatbot_location : prev.location,
     }));
   };
 
