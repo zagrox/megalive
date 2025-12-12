@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'appearance', label: 'ظاهر چت‌بات', icon: <Palette size={20} /> },
     { id: 'knowledge', label: 'پایگاه دانش', icon: <Database size={20} /> },
     { id: 'deploy', label: 'انتشار آنلاین', icon: <Rocket size={20} /> },
-    { id: 'integrations', label: 'اتصال برنامه', icon: <Puzzle size={20} /> },
+    // { id: 'integrations', label: 'اتصال برنامه', icon: <Puzzle size={20} /> },
   ];
 
   // Calculate Message Usage
