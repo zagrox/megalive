@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Plan, Order, Transaction } from '../../types';
-import { ArrowLeft, Check, CreditCard, Landmark, ShieldCheck, AlertCircle, Bot, MessageSquare, Database, Cpu, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, CreditCard, Landmark, ShieldCheck, AlertCircle, Bot, MessageSquare, Database, Cpu, Loader2, FileText, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { directus } from '../../services/directus';
-import { createItem, readItem } from '@directus/sdk';
+import { createItem, readItem, updateItem } from '@directus/sdk';
 
 interface CheckoutProps {
   plan: Plan | null;
@@ -18,6 +18,10 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Offline Flow State
+  const [offlineOrder, setOfflineOrder] = useState<Order | null>(null);
+  const [paymentNote, setPaymentNote] = useState('');
   
   // Polling Ref to cleanup on unmount
   const pollIntervalRef = useRef<any>(null);
@@ -39,9 +43,9 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
   }
 
   const basePrice = billingCycle === 'monthly' ? plan.plan_monthly : plan.plan_yearly;
-  const taxRate = 0.09; // 9% VAT
-  const taxAmount = basePrice * taxRate;
-  const finalPrice = Math.floor(basePrice + taxAmount); // Ensure Integer
+  // const taxRate = 0.09; // VAT Disabled
+  // const taxAmount = basePrice * taxRate;
+  const finalPrice = basePrice; // No tax added
 
   const handlePayment = async () => {
     // Basic validation
@@ -56,10 +60,18 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
 
     try {
         const isFreeOrder = finalPrice === 0;
+        
+        // Determine status based on method
+        // Free -> Completed
+        // Offline -> Processing
+        // Online -> Pending (waiting for gateway)
+        let initialStatus = 'pending';
+        if (isFreeOrder) initialStatus = 'completed';
+        else if (paymentMethod === 'offline') initialStatus = 'processing';
 
         // Prepare Payload
         const orderPayload = {
-            order_status: isFreeOrder ? 'completed' : 'pending',
+            order_status: initialStatus,
             order_duration: billingCycle,
             order_amount: finalPrice.toString(),
             order_profile: user.profile.id,
@@ -79,7 +91,14 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
             return;
         }
 
-        // Paid Plan Logic: Poll for Transaction TrackID
+        if (paymentMethod === 'offline') {
+            // Switch UI to Payment Note entry
+            setOfflineOrder(newOrder);
+            setIsProcessing(false);
+            return;
+        }
+
+        // Paid Online Plan Logic: Poll for Transaction TrackID
         setStatusMessage('در حال اتصال به درگاه پرداخت...');
         
         let attempts = 0;
@@ -129,6 +148,83 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
     }
   };
 
+  const handleSubmitNote = async () => {
+      if (!offlineOrder) return;
+      
+      setIsProcessing(true);
+      try {
+          // @ts-ignore
+          await directus.request(updateItem('order', offlineOrder.id, {
+              order_note: paymentNote
+          }));
+          
+          setStatusMessage('اطلاعات پرداخت ثبت شد.');
+          setTimeout(() => {
+              window.location.href = '/?tab=orders';
+          }, 1000);
+      } catch (err) {
+          console.error("Failed to update note:", err);
+          setError("خطا در ثبت توضیحات. لطفا مجددا تلاش کنید.");
+          setIsProcessing(false);
+      }
+  };
+
+  // --- View: Offline Note Submission ---
+  if (offlineOrder) {
+      return (
+        <div className="max-w-xl mx-auto py-12 animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm text-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={32} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">سفارش شما با موفقیت ایجاد شد</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                    شماره سفارش: <span className="font-mono font-bold text-gray-800 dark:text-gray-200 mx-1">#{offlineOrder.id}</span>
+                </p>
+
+                <div className="text-right bg-gray-50 dark:bg-gray-800 p-4 rounded-xl mb-6 border border-gray-100 dark:border-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                        <FileText size={16} className="text-blue-500" />
+                        ثبت اطلاعات پرداخت
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
+                        لطفا شماره کارت مبدا، شماره پیگیری، تاریخ و ساعت واریز یا هر توضیح دیگری که به تایید پرداخت کمک می‌کند را اینجا بنویسید.
+                    </p>
+                    <textarea 
+                        value={paymentNote}
+                        onChange={(e) => setPaymentNote(e.target.value)}
+                        rows={4}
+                        placeholder="مثال: واریز به کارت پاسارگاد - شماره پیگیری ۱۲۳۴۵۶ - ساعت ۱۰:۳۰"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 outline-none transition-all resize-none text-sm"
+                    />
+                </div>
+
+                {error && (
+                    <div className="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
+                        {error}
+                    </div>
+                )}
+
+                <button 
+                    onClick={handleSubmitNote}
+                    disabled={isProcessing || !paymentNote.trim()}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    {isProcessing ? <Loader2 className="animate-spin" /> : 'ثبت توضیحات و تکمیل'}
+                </button>
+                
+                <button 
+                    onClick={() => window.location.href = '/?tab=orders'}
+                    className="mt-4 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                    رد کردن و رفتن به سفارش‌ها
+                </button>
+            </div>
+        </div>
+      );
+  }
+
+  // --- View: Checkout Form ---
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       <div className="flex items-center gap-4">
@@ -225,7 +321,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                         <p className="font-mono dir-ltr text-right">کارت: 5022.2910.8932.4477</p>
                         <p className="font-mono dir-ltr text-right">شبا: 290570033880012263512101</p>
                         <p className="font-mono dir-ltr text-right">نام: حمید چمانچی</p>
-                        <p className="mt-2 text-xs opacity-80">لطفا پس از واریز،اطلاعات پرداخت را در سفارش مربوطه ثبت کنید.</p>
+                        <p className="mt-2 text-xs opacity-80">لطفا پس از واریز، سفارش را ثبت کرده و اطلاعات پرداخت را در مرحله بعد وارد کنید.</p>
                     </div>
                 )}
             </div>
@@ -261,14 +357,16 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                 </div>
 
                 <div className="space-y-3 pb-6 border-b border-gray-100 dark:border-gray-800">
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>قیمت پایه</span>
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 font-bold">
+                        <span>قیمت طرح</span>
                         <span className="font-mono">{basePrice.toLocaleString('en-US')} <span className="text-xs">تومان</span></span>
                     </div>
+                    {/* VAT Disabled
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                         <span>مالیات (۹٪)</span>
                         <span className="font-mono">{taxAmount.toLocaleString('en-US')} <span className="text-xs">تومان</span></span>
                     </div>
+                    */}
                 </div>
 
                 <div className="pt-4 mb-6">
