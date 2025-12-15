@@ -1,12 +1,17 @@
-
 import React, { useEffect, useState } from 'react';
 import { readItems } from '@directus/sdk';
 import { directus } from '../../services/directus';
 import { Order, Plan } from '../../types';
-import { Loader2, Package, Calendar, CreditCard, AlertCircle, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Loader2, Package, Calendar, CreditCard, AlertCircle, ShoppingBag, ArrowLeft, Clock, CheckCircle, RefreshCw } from 'lucide-react';
 import { fetchPricingPlans } from '../../services/configService';
+import { useAuth } from '../../context/AuthContext';
 
-const MyOrders: React.FC = () => {
+interface MyOrdersProps {
+  onRenew?: () => void;
+}
+
+const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +106,26 @@ const MyOrders: React.FC = () => {
       }
   };
 
+  const currentPlanInfo = (() => {
+    const planId = user?.profile?.profile_plan;
+    const endDate = user?.profile?.profile_end;
+    
+    // Attempt to find plan object
+    const plan = plans.find(p => 
+      p.id === Number(planId) || 
+      (typeof planId === 'object' && (planId as any)?.id === p.id) ||
+      String(p.plan_name || '').toLowerCase() === String(planId || '').toLowerCase()
+    );
+    
+    const name = plan?.plan_name || (typeof planId === 'string' && planId ? planId : 'Free');
+    
+    return { 
+        name, 
+        endDate,
+        isFree: String(name).toLowerCase() === 'free'
+    };
+  })();
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-400">
@@ -112,9 +137,72 @@ const MyOrders: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">سفارش‌های من</h2>
-        <p className="text-gray-500 dark:text-gray-400">تاریخچه خریدها و وضعیت پرداخت‌های شما.</p>
+      
+      {/* Subscription Status Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden">
+        {/* Background Decoration */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/10 rounded-bl-full -mr-10 -mt-10 pointer-events-none"></div>
+
+        <div className="relative z-10">
+            <h2 className="text-3xl font-black text-gray-800 dark:text-white mb-2 capitalize tracking-tight flex items-center gap-3">
+                {currentPlanInfo.name}
+                <span className="flex items-center gap-1 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 rounded-full border border-green-200 dark:border-green-800">
+                    <CheckCircle size={12} />
+                    فعال
+                </span>
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+                طرح اشتراک فعلی حساب کاربری شما
+            </p>
+        </div>
+
+        {currentPlanInfo.isFree ? (
+             <div className="relative z-10 flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 px-5 py-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 md:flex-none">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl shrink-0">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">اعتبار زمانی</span>
+                        <span className="block font-bold text-gray-800 dark:text-white text-lg">نامحدود</span>
+                    </div>
+                </div>
+                
+                {onRenew && (
+                    <button 
+                        onClick={onRenew}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all font-bold text-sm h-full"
+                    >
+                        <RefreshCw size={18} />
+                        ارتقای طرح
+                    </button>
+                )}
+             </div>
+        ) : (
+             <div className="relative z-10 flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 px-5 py-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 md:flex-none">
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">تاریخ تمدید بعدی</span>
+                        <span className="block font-bold text-gray-800 dark:text-white text-lg font-mono mt-0.5 whitespace-nowrap">
+                            {currentPlanInfo.endDate ? formatDate(currentPlanInfo.endDate, false) : '-'}
+                        </span>
+                    </div>
+                </div>
+
+                {onRenew && (
+                    <button 
+                        onClick={onRenew}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all font-bold text-sm h-full"
+                    >
+                        <RefreshCw size={18} />
+                        تمدید اشتراک
+                    </button>
+                )}
+             </div>
+        )}
       </div>
 
       {error && (
