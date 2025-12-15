@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Check, Crown, Zap, MessageSquare, Database, Cpu, Bot, ArrowLeft } from 'lucide-react';
 import { Plan } from '../../types';
@@ -124,15 +125,14 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                     </ul>
 
                     <button 
-                        onClick={() => !isCurrent && onSelectPlan && onSelectPlan(plan)}
+                        onClick={() => onSelectPlan && onSelectPlan(plan)}
                         className={`w-full py-3 rounded-xl font-bold transition-all ${
                             isCurrent 
-                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-default' 
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 active:scale-95' 
                             : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 active:scale-95'
                         }`}
-                        disabled={isCurrent}
                     >
-                        {isCurrent ? 'طرح فعال' : 'انتخاب طرح'}
+                        {isCurrent ? 'تمدید طرح' : 'انتخاب طرح'}
                     </button>
                   </div>
                 );

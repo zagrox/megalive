@@ -24,7 +24,7 @@ import { fetchCrmConfig } from './services/configService';
 import { fetchUserChatbots, createChatbot, updateChatbot, recalculateChatbotStats } from './services/chatbotService';
 import { useAuth } from './context/AuthContext';
 import { getAssetUrl } from './services/directus';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Clock } from 'lucide-react';
 import HelpCenterPanel from './components/HelpCenterPanel';
 
 const App: React.FC = () => {
@@ -130,13 +130,21 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Check Plan Expiration
-  const isPlanExpired = useMemo(() => {
-    if (!user?.profile?.profile_end) return false; // No end date usually means free/lifetime or not set
+  // Check Plan Expiration & Remaining Days
+  const { isPlanExpired, daysRemaining } = useMemo(() => {
+    if (!user?.profile?.profile_end) return { isPlanExpired: false, daysRemaining: Infinity }; 
     const endDate = new Date(user.profile.profile_end);
     const now = new Date();
-    return endDate < now;
+    const diffTime = endDate.getTime() - now.getTime();
+    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return {
+        isPlanExpired: endDate < now,
+        daysRemaining: days
+    };
   }, [user]);
+
+  const isExpiringSoon = !isPlanExpired && daysRemaining <= 7 && daysRemaining >= 0;
 
   // Restrict Navigation if Expired
   useEffect(() => {
@@ -350,11 +358,22 @@ const App: React.FC = () => {
           toggleHelpCenter={toggleHelpCenter}
         />
 
-        {/* Expired Banner */}
+        {/* Expired Banner (Blocking) */}
         {isPlanExpired && (
             <div className="bg-red-600 text-white px-4 py-2 text-center text-sm font-bold shadow-md z-20 flex items-center justify-center gap-2 flex-shrink-0 animate-fade-in">
                 <AlertTriangle size={18} />
                 <span>اشتراک شما به پایان رسیده است. برای دسترسی مجدد به پنل، لطفا اشتراک خود را تمدید کنید.</span>
+            </div>
+        )}
+
+        {/* Warning Banner (Expiring Soon) */}
+        {isExpiringSoon && (
+            <div 
+              className="bg-amber-500 text-white px-4 py-2 text-center text-sm font-bold shadow-md z-20 flex items-center justify-center gap-2 flex-shrink-0 animate-fade-in cursor-pointer hover:bg-amber-600 transition-colors"
+              onClick={() => setActiveTab('pricing')}
+            >
+                <Clock size={18} />
+                <span>اشتراک شما رو به پایان است ({daysRemaining} روز باقی‌مانده). جهت تمدید اشتراک کلیک کنید.</span>
             </div>
         )}
 
