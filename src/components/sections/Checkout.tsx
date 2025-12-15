@@ -1,7 +1,10 @@
 
-import React, { useState } from 'react';
-import { Plan } from '../../types';
-import { ArrowLeft, Check, CreditCard, Landmark, ShieldCheck, AlertCircle, Bot, MessageSquare, Database, Cpu } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plan, Order, Transaction } from '../../types';
+import { ArrowLeft, Check, CreditCard, Landmark, ShieldCheck, AlertCircle, Bot, MessageSquare, Database, Cpu, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { directus } from '../../services/directus';
+import { createItem, readItem } from '@directus/sdk';
 
 interface CheckoutProps {
   plan: Plan | null;
@@ -9,8 +12,21 @@ interface CheckoutProps {
 }
 
 const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
+  const { user } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'offline'>('online');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Polling Ref to cleanup on unmount
+  const pollIntervalRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
 
   if (!plan) {
     return (
@@ -25,12 +41,98 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
   const basePrice = billingCycle === 'monthly' ? plan.plan_monthly : plan.plan_yearly;
   const taxRate = 0.09; // 9% VAT
   const taxAmount = basePrice * taxRate;
-  const finalPrice = basePrice + taxAmount;
+  const finalPrice = Math.floor(basePrice + taxAmount); // Ensure Integer
+
+  const handlePayment = async () => {
+    // Basic validation
+    if (!user || !user.profile?.id || !plan) {
+        setError('اطلاعات کاربری ناقص است. لطفا دوباره وارد شوید.');
+        return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setStatusMessage('در حال ایجاد سفارش...');
+
+    try {
+        const isFreeOrder = finalPrice === 0;
+
+        // Prepare Payload
+        const orderPayload = {
+            order_status: isFreeOrder ? 'completed' : 'pending',
+            order_duration: billingCycle,
+            order_amount: finalPrice.toString(),
+            order_profile: user.profile.id,
+            order_plan: plan.id
+        };
+
+        // Create Order Item
+        // @ts-ignore
+        const newOrder = await directus.request(createItem('order', orderPayload)) as Order;
+        
+        if (isFreeOrder) {
+            // Free plan logic: Direct Success
+            setStatusMessage('طرح رایگان با موفقیت فعال شد.');
+            setTimeout(() => {
+                window.location.href = '/?tab=orders'; // Simple reload/redirect to orders
+            }, 1000);
+            return;
+        }
+
+        // Paid Plan Logic: Poll for Transaction TrackID
+        setStatusMessage('در حال اتصال به درگاه پرداخت...');
+        
+        let attempts = 0;
+        const maxAttempts = 30; // 60 seconds timeout (2s interval)
+
+        pollIntervalRef.current = setInterval(async () => {
+            attempts++;
+            try {
+                // Fetch order again to check for order_transaction
+                // @ts-ignore
+                const updatedOrder = await directus.request(readItem('order', newOrder.id, {
+                    fields: ['order_transaction']
+                })) as Order;
+
+                if (updatedOrder.order_transaction) {
+                    // Transaction ID found, now fetch the transaction to get trackid
+                    const transactionId = updatedOrder.order_transaction;
+                    
+                    // @ts-ignore
+                    const transaction = await directus.request(readItem('transaction', transactionId, {
+                        fields: ['trackid']
+                    })) as Transaction;
+
+                    if (transaction && transaction.trackid) {
+                        // Success! Redirect to Zibal
+                        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+                        setStatusMessage('انتقال به درگاه بانک...');
+                        window.location.href = `https://gateway.zibal.ir/start/${transaction.trackid}`;
+                    }
+                }
+
+                if (attempts >= maxAttempts) {
+                    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+                    setError('خطا در دریافت شناسه پرداخت. لطفا دقایقی دیگر تلاش کنید یا با پشتیبانی تماس بگیرید.');
+                    setIsProcessing(false);
+                }
+            } catch (pollErr) {
+                console.warn("Polling error:", pollErr);
+                // Continue polling despite minor network glitches
+            }
+        }, 2000);
+
+    } catch (err: any) {
+        console.error('Payment initiation failed:', err);
+        setError('خطا در ثبت سفارش. لطفا مجددا تلاش کنید.');
+        setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        <button onClick={onBack} disabled={isProcessing} className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
             <ArrowLeft size={24} />
         </button>
         <div>
@@ -49,6 +151,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                 <div className="flex gap-4">
                     <button 
                         onClick={() => setBillingCycle('monthly')}
+                        disabled={isProcessing}
                         className={`flex-1 p-4 rounded-xl border-2 transition-all flex items-center justify-between ${billingCycle === 'monthly' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}
                     >
                         <span className="font-bold text-gray-700 dark:text-gray-200">ماهانه</span>
@@ -56,6 +159,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                     </button>
                     <button 
                         onClick={() => setBillingCycle('yearly')}
+                        disabled={isProcessing}
                         className={`flex-1 p-4 rounded-xl border-2 transition-all flex items-center justify-between ${billingCycle === 'yearly' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}
                     >
                         <div>
@@ -78,6 +182,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                             className="hidden" 
                             checked={paymentMethod === 'online'}
                             onChange={() => setPaymentMethod('online')}
+                            disabled={isProcessing}
                         />
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-blue-600' : 'border-gray-400'}`}>
                             {paymentMethod === 'online' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
@@ -98,6 +203,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                             className="hidden" 
                             checked={paymentMethod === 'offline'}
                             onChange={() => setPaymentMethod('offline')}
+                            disabled={isProcessing}
                         />
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'offline' ? 'border-blue-600' : 'border-gray-400'}`}>
                             {paymentMethod === 'offline' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
@@ -119,7 +225,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                         <p className="font-mono dir-ltr text-right">کارت: 5022.2910.8932.4477</p>
                         <p className="font-mono dir-ltr text-right">شبا: 290570033880012263512101</p>
                         <p className="font-mono dir-ltr text-right">نام: حمید چمانچی</p>
-                        <p className="mt-2 text-xs opacity-80">لطفا پس از واریز،اطلاعات پردخت را در سفارش مربوطه ثبت کنید.</p>
+                        <p className="mt-2 text-xs opacity-80">لطفا پس از واریز،اطلاعات پرداخت را در سفارش مربوطه ثبت کنید.</p>
                     </div>
                 )}
             </div>
@@ -177,9 +283,29 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                     </div>
                 </div>
 
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">
-                    {paymentMethod === 'online' ? 'پرداخت و فعال‌سازی' : 'ثبت سفارش'}
-                    <ShieldCheck size={18} />
+                {error && (
+                    <div className="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-xs flex items-start gap-2">
+                        <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                        {error}
+                    </div>
+                )}
+
+                <button 
+                    onClick={handlePayment}
+                    disabled={isProcessing}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                    {isProcessing ? (
+                        <>
+                            <Loader2 size={18} className="animate-spin" />
+                            <span>{statusMessage || 'در حال پردازش...'}</span>
+                        </>
+                    ) : (
+                        <>
+                            {paymentMethod === 'online' ? (finalPrice === 0 ? 'فعال‌سازی رایگان' : 'پرداخت و فعال‌سازی') : 'ثبت سفارش'}
+                            <ShieldCheck size={18} />
+                        </>
+                    )}
                 </button>
                 
                 <p className="text-xs text-center text-gray-400 mt-4">

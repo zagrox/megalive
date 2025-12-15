@@ -170,6 +170,29 @@ export interface Plan {
   plan_copyright?: boolean;
 }
 
+export interface Transaction {
+  id: number;
+  status: string;
+  date_created: string;
+  trackid?: string;
+  transaction_status?: string;
+  transaction_result?: number;
+  transaction_message?: string;
+}
+
+export interface Order {
+  id: number;
+  status: string;
+  user_created: string;
+  date_created: string;
+  order_status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  order_duration: 'monthly' | 'yearly';
+  order_amount: string;
+  order_profile: number; // Relation ID to Profile
+  order_plan: number; // Relation ID to Plan
+  order_transaction?: number | Transaction; // Relation ID to Transaction or Object
+}
+
 export interface LLMJob {
   id: number;
   llm_status: 'ready' | 'start' | 'building' | 'completed' | 'error';
@@ -188,9 +211,11 @@ export interface DirectusSchema {
   plan: Plan[];
   content: ContentItem[]; // Replaces faq_items
   faq_items: FAQItem[];
+  order: Order[];
+  transaction: Transaction[];
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout' | 'orders' | 'payment_verify';
 
 export interface Message {
   id: string;

@@ -14,7 +14,8 @@ import {
   PlusSquare,
   X,
   MoreVertical,
-  CheckCircle2
+  CheckCircle2,
+  ShoppingBag
 } from 'lucide-react';
 import { TabType } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -115,6 +116,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
       case 'manage-bots': return 'مدیریت چت‌بات‌ها';
       case 'create-bot': return 'ساخت ربات جدید';
       case 'pricing': return 'طرح‌های اشتراک';
+      case 'orders': return 'سفارش‌های من';
       default: return 'داشبورد';
     }
   };
@@ -199,6 +201,13 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
                   >
                     <User size={16} className="text-gray-400" />
                     پروفایل من
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab('orders'); setIsProfileOpen(false); }}
+                    className="w-full text-right px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg flex items-center gap-2 transition-colors"
+                  >
+                    <ShoppingBag size={16} className="text-gray-400" />
+                    سفارش‌های من
                   </button>
                   <button 
                     onClick={() => { setActiveTab('manage-bots'); setIsProfileOpen(false); }}

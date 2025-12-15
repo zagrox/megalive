@@ -1,6 +1,5 @@
 
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/sections/Dashboard';
@@ -15,6 +14,8 @@ import CreateBot from './components/sections/CreateBot';
 import ManageBots from './components/sections/ManageBots';
 import Pricing from './components/sections/Pricing';
 import Checkout from './components/sections/Checkout';
+import MyOrders from './components/sections/MyOrders';
+import PaymentVerify from './components/sections/PaymentVerify';
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
@@ -23,7 +24,7 @@ import { fetchCrmConfig } from './services/configService';
 import { fetchUserChatbots, createChatbot, updateChatbot, recalculateChatbotStats } from './services/chatbotService';
 import { useAuth } from './context/AuthContext';
 import { getAssetUrl } from './services/directus';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import HelpCenterPanel from './components/HelpCenterPanel';
 
 const App: React.FC = () => {
@@ -45,6 +46,20 @@ const App: React.FC = () => {
     }
     return false;
   });
+
+  // Check URL params for Payment Callback
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      // Zibal usually sends trackId and status/success. If present, switch to verify tab.
+      // Also check for explicit tab param.
+      if (params.get('tab') === 'payment_verify' || params.has('trackId') || params.has('trackid')) {
+        setActiveTab('payment_verify');
+      } else if (params.get('tab') === 'orders') {
+        setActiveTab('orders');
+      }
+    }
+  }, []);
 
   // Handle responsive sidebar state on resize
   useEffect(() => {
@@ -115,6 +130,25 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Check Plan Expiration
+  const isPlanExpired = useMemo(() => {
+    if (!user?.profile?.profile_end) return false; // No end date usually means free/lifetime or not set
+    const endDate = new Date(user.profile.profile_end);
+    const now = new Date();
+    return endDate < now;
+  }, [user]);
+
+  // Restrict Navigation if Expired
+  useEffect(() => {
+    if (isPlanExpired) {
+      const allowedTabs: TabType[] = ['pricing', 'checkout', 'orders', 'profile', 'payment_verify'];
+      // If user tries to access a restricted tab, force them to pricing
+      if (!allowedTabs.includes(activeTab)) {
+        setActiveTab('pricing');
+      }
+    }
+  }, [isPlanExpired, activeTab]);
+
   // Load configuration from CRM only when authenticated
   useEffect(() => {
     if (user?.id) {
@@ -139,13 +173,15 @@ const App: React.FC = () => {
            const savedBot = savedId ? bots.find(b => b.id === Number(savedId)) : null;
            setSelectedChatbot(savedBot || bots[0]);
         } else {
-           // No chatbots found (new user), redirect to creation page
-           setActiveTab('create-bot');
+           // No chatbots found (new user), redirect to creation page (unless expired)
+           if (!isPlanExpired && activeTab !== 'payment_verify') {
+             setActiveTab('create-bot');
+           }
         }
       };
       loadChatbots();
     }
-  }, [user?.id]);
+  }, [user?.id, isPlanExpired]);
 
   // Sync selected chatbot to preview config
   useEffect(() => {
@@ -178,6 +214,10 @@ const App: React.FC = () => {
   };
 
   const handleCreateChatbot = async () => {
+    if (isPlanExpired) {
+        setActiveTab('pricing');
+        return;
+    }
     setActiveTab('create-bot');
   };
 
@@ -275,7 +315,7 @@ const App: React.FC = () => {
     return <Login />;
   }
   
-  const showPreview = ['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy'].includes(activeTab);
+  const showPreview = !isPlanExpired && ['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy'].includes(activeTab);
 
   // 3. Authenticated Dashboard
   return (
@@ -295,6 +335,7 @@ const App: React.FC = () => {
         onSelectChatbot={handleSelectChatbot}
         onCreateChatbot={handleCreateChatbot}
         user={user}
+        isPlanExpired={isPlanExpired}
       />
 
       {/* Content Wrapper */}
@@ -309,20 +350,28 @@ const App: React.FC = () => {
           toggleHelpCenter={toggleHelpCenter}
         />
 
+        {/* Expired Banner */}
+        {isPlanExpired && (
+            <div className="bg-red-600 text-white px-4 py-2 text-center text-sm font-bold shadow-md z-20 flex items-center justify-center gap-2 flex-shrink-0 animate-fade-in">
+                <AlertTriangle size={18} />
+                <span>اشتراک شما به پایان رسیده است. برای دسترسی مجدد به پنل، لطفا اشتراک خود را تمدید کنید.</span>
+            </div>
+        )}
+
         {/* Main Content & Preview */}
         <main className="flex-1 flex relative overflow-hidden">
           
           {/* Settings/Dashboard Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12 pb-24 lg:pb-12 scroll-smooth">
             <div className="max-w-7xl mx-auto">
-              {activeTab === 'dashboard' && (
+              {!isPlanExpired && activeTab === 'dashboard' && (
                 <Dashboard 
                   setActiveTab={setActiveTab}
                   selectedChatbot={selectedChatbot}
                   onRefresh={handleRefreshChatbots}
                 />
               )}
-              {activeTab === 'manage-bots' && (
+              {!isPlanExpired && activeTab === 'manage-bots' && (
                 <ManageBots 
                   chatbots={chatbots}
                   onUpdateChatbot={handleUpdateChatbot}
@@ -333,9 +382,11 @@ const App: React.FC = () => {
               )}
               
               {/* Container for Centered Pages */}
-              {['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout'].includes(activeTab) && (
-                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' || activeTab === 'checkout' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
-                    {activeTab === 'create-bot' && (
+              {/* Note: Tabs are filtered by logic above, but we also ensure they don't render if expired unless allowed */}
+              {['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout', 'orders', 'payment_verify'].includes(activeTab) && (
+                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' || activeTab === 'checkout' || activeTab === 'orders' || activeTab === 'payment_verify' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
+                    
+                    {!isPlanExpired && activeTab === 'create-bot' && (
                       <CreateBot 
                         onSubmit={handleSubmitCreateChatbot} 
                         onCancel={chatbots.length > 0 ? () => setActiveTab('dashboard') : undefined} 
@@ -343,37 +394,39 @@ const App: React.FC = () => {
                         onShowPricing={() => setActiveTab('pricing')}
                       />
                     )}
-                    {activeTab === 'general' && (
+                    {!isPlanExpired && activeTab === 'general' && (
                       <GeneralSettings 
                         selectedChatbot={selectedChatbot} 
                         onUpdateChatbot={handleUpdateChatbot} 
                         onPreviewUpdate={handlePreviewUpdate}
                       />
                     )}
-                    {activeTab === 'appearance' && (
+                    {!isPlanExpired && activeTab === 'appearance' && (
                       <AppearanceSettings 
                         selectedChatbot={selectedChatbot} 
                         onUpdateChatbot={handleUpdateChatbot} 
                         onPreviewUpdate={handlePreviewUpdate}
                       />
                     )}
-                    {activeTab === 'knowledge' && (
+                    {!isPlanExpired && activeTab === 'knowledge' && (
                       <KnowledgeBase 
                         selectedChatbot={selectedChatbot} 
                         onUpdateChatbot={handleUpdateChatbot}
                       />
                     )}
-                    {activeTab === 'content-manager' && (
+                    {!isPlanExpired && activeTab === 'content-manager' && (
                       <ContentManager 
                         selectedChatbot={selectedChatbot} 
                       />
                     )}
-                    {activeTab === 'integrations' && (
+                    {!isPlanExpired && activeTab === 'integrations' && (
                       <Integrations />
                     )}
-                    {activeTab === 'deploy' && (
+                    {!isPlanExpired && activeTab === 'deploy' && (
                       <Deploy selectedChatbot={selectedChatbot} />
                     )}
+                    
+                    {/* Allowed Tabs even when Expired */}
                     {activeTab === 'profile' && (
                       <Profile />
                     )}
@@ -382,6 +435,12 @@ const App: React.FC = () => {
                     )}
                     {activeTab === 'checkout' && (
                       <Checkout plan={checkoutPlan} onBack={() => setActiveTab('pricing')} />
+                    )}
+                    {activeTab === 'orders' && (
+                      <MyOrders />
+                    )}
+                    {activeTab === 'payment_verify' && (
+                      <PaymentVerify onContinue={() => setActiveTab('orders')} />
                     )}
                   </div>
               )}

@@ -1,7 +1,7 @@
 
 
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck } from 'lucide-react';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock } from 'lucide-react';
 import { TabType, Chatbot, Plan } from '../types';
 import { User } from '../context/AuthContext';
 import { fetchPricingPlans } from '../services/configService';
@@ -19,6 +19,7 @@ interface SidebarProps {
   onSelectChatbot: (bot: Chatbot) => void;
   onCreateChatbot: () => void;
   user: User | null;
+  isPlanExpired?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -33,7 +34,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedChatbot,
   onSelectChatbot,
   onCreateChatbot,
-  user
+  user,
+  isPlanExpired = false
 }) => {
   const [isBotDropdownOpen, setIsBotDropdownOpen] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -157,7 +159,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                           <button 
                               key={bot.id}
                               onClick={() => { onSelectChatbot(bot); setIsBotDropdownOpen(false); }}
-                              className="w-full text-right px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 transition-colors"
+                              disabled={isPlanExpired}
+                              className={`w-full text-right px-3 py-2 flex items-center gap-2 transition-colors ${isPlanExpired ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                           >
                               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${bot.chatbot_active ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></span>
                               <span className={`text-sm truncate flex-1 ${selectedChatbot?.id === bot.id ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
@@ -172,18 +175,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950 flex flex-col gap-2">
                       <button 
                           onClick={() => { onCreateChatbot(); setIsBotDropdownOpen(false); }}
-                          className="w-full flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors shadow-sm"
+                          disabled={isPlanExpired}
+                          className={`w-full flex items-center justify-center gap-2 text-xs font-bold bg-white dark:bg-gray-800 border py-2.5 rounded-lg transition-colors shadow-sm
+                            ${isPlanExpired 
+                                ? 'border-gray-200 text-gray-400 cursor-not-allowed opacity-70' 
+                                : 'text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-900/20'}
+                          `}
                       >
-                          <Plus size={14} />
+                          {isPlanExpired ? <Lock size={14} /> : <Plus size={14} />}
                           ساخت چت‌بات جدید
                       </button>
-                      <button 
-                          onClick={() => { setActiveTab('manage-bots'); setIsBotDropdownOpen(false); }}
-                          className="w-full flex items-center justify-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-2.5 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm group"
-                      >
-                          <List size={14} className="text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors" />
-                          مدیریت چت‌بات‌ها
-                      </button>
+                      
+                      {!isPlanExpired && (
+                        <button 
+                            onClick={() => { setActiveTab('manage-bots'); setIsBotDropdownOpen(false); }}
+                            className="w-full flex items-center justify-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-2.5 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm group"
+                        >
+                            <List size={14} className="text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors" />
+                            مدیریت چت‌بات‌ها
+                        </button>
+                      )}
                   </div>
               </div>
           )}
@@ -191,31 +202,48 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 p-2 lg:p-3 space-y-1.5 overflow-y-auto overflow-x-hidden">
-        {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => {
-              setActiveTab(item.id);
-            }}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${
-              activeTab === item.id
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-            } ${isCollapsed ? 'justify-center' : ''}`}
-          >
-            <div className="flex-shrink-0">{item.icon}</div>
-            <span className={`whitespace-nowrap text-sm transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
-              {item.label}
-            </span>
-            
-            {/* Tooltip for collapsed state */}
-            {isCollapsed && (
-              <div className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">
+        {menuItems.map((item) => {
+          const isDisabled = isPlanExpired;
+          return (
+            <button
+                key={item.id}
+                onClick={() => {
+                if (!isDisabled) {
+                    setActiveTab(item.id);
+                }
+                }}
+                disabled={isDisabled}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${isCollapsed ? 'justify-center' : ''}
+                ${isDisabled 
+                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-70' 
+                    : activeTab === item.id
+                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                }
+                `}
+            >
+                <div className="flex-shrink-0 relative">
+                    {item.icon}
+                    {isDisabled && (
+                        <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-900 rounded-full p-0.5">
+                            <Lock size={10} className="text-red-500" />
+                        </div>
+                    )}
+                </div>
+                <span className={`whitespace-nowrap text-sm transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
                 {item.label}
-              </div>
-            )}
-          </button>
-        ))}
+                </span>
+                
+                {/* Tooltip for collapsed state */}
+                {isCollapsed && (
+                <div className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg flex items-center gap-1">
+                    {isDisabled && <Lock size={10} />}
+                    {item.label}
+                </div>
+                )}
+            </button>
+          );
+        })}
       </nav>
 
       {/* Footer Actions (Messages Usage) */}

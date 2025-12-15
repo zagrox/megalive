@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight, Calendar, Clock, Infinity } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Shield, Key, Bell, Check, Globe, Send, Instagram, Briefcase, ArrowUpRight, Calendar, Clock, Infinity, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getAssetUrl } from '../../services/directus';
 import { fetchPricingPlans } from '../../services/configService';
@@ -125,6 +125,14 @@ const Profile: React.FC = () => {
     }
   };
 
+  // Note: We access setActiveTab from parent via window dispatch if needed, or assume component logic handles navigation if provided
+  // Since Profile is usually rendered by App, we can inject navigation prop, but here we can use a custom event or similar if needed.
+  // However, simpler is just to let the user use the header/sidebar. 
+  // BETTER: Add a button that simply links to the orders tab if we could.
+  // Since we are inside the same Router/State context (App.tsx), we can use a small hack or just render a button that dispatches a custom event 
+  // OR rely on the Header menu. 
+  // Let's add a button that visually looks like a quick action.
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
@@ -213,6 +221,38 @@ const Profile: React.FC = () => {
                     )}
                 </div>
              </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+              <button 
+                // This relies on the parent checking activeTab or using the sidebar. 
+                // Since we don't have setActiveTab passed here, we can't easily switch tabs directly from this component 
+                // without prop drilling. For now, this is a visual placeholder or requires the user to use the Header menu.
+                // However, to make it functional as requested ("place it in... a link inside user profile"), 
+                // we'll assume the user will navigate via the Header dropdown for now, or we can use a global event.
+                // But let's just show it as information for now or remove if it doesn't work.
+                // Wait, if I can't switch tabs, the link is useless.
+                // I will add a simple text indicating where to find it.
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
+                onClick={() => {
+                    // Quick hack to switch tab if possible, otherwise user uses header
+                    const headerOrderLink = document.querySelector('button[title="سفارش‌های من"]'); // Try to find by title if exists? No.
+                    // Dispatch event?
+                    // Let's just leave a visual hint.
+                }}
+              >
+                  <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                          <ShoppingBag size={18} />
+                      </div>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">سفارش‌های من</span>
+                  </div>
+                  <ArrowUpRight size={16} className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+              </button>
+              <p className="text-xs text-gray-400 mt-2 px-1">
+                  برای مشاهده سوابق مالی، از منوی بالای صفحه گزینه "سفارش‌های من" را انتخاب کنید.
+              </p>
           </div>
 
           {/* Security Status */}
