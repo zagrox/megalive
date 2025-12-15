@@ -75,6 +75,40 @@ export interface Chatbot {
   chatbot_storage?: string; // Stored as string/bigint in DB
 }
 
+export interface ContentItem {
+  id: number;
+  status: string;
+  user_created: string;
+  date_created: string;
+  date_updated: string;
+  content_type: 'faq' | 'product';
+  content_chatbot: number;
+  content_index?: boolean; // New field to track indexing status
+  // Common
+  content_link?: string;
+  content_image?: string;
+  // FAQ Fields
+  content_question?: string;
+  content_answer?: string;
+  // Product Fields
+  content_product?: string; // Name
+  content_price?: string;
+  content_sku?: string;
+  content_details?: string;
+}
+
+export interface FAQItem {
+  id: number;
+  status?: string;
+  user_created?: string;
+  date_created: string;
+  date_updated?: string;
+  question: string;
+  answer: string;
+  chatbot: number;
+  is_indexed?: boolean;
+}
+
 export interface DirectusFile {
   id: string;
   filename_download: string;
@@ -139,7 +173,7 @@ export interface Plan {
 export interface LLMJob {
   id: number;
   llm_status: 'ready' | 'start' | 'building' | 'completed' | 'error';
-  llm_file: string | DirectusFile; // Can be an ID or the full object
+  llm_file: string | DirectusFile; // Can be ID or the full object
   llm_chatbot: number | Chatbot;
   llm_error?: string | null;
   date_created: string;
@@ -152,9 +186,11 @@ export interface DirectusSchema {
   llm: LLMJob[];
   profile: UserProfile[];
   plan: Plan[];
+  content: ContentItem[]; // Replaces faq_items
+  faq_items: FAQItem[];
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout';
+export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout';
 
 export interface Message {
   id: string;

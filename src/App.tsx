@@ -7,6 +7,7 @@ import Dashboard from './components/sections/Dashboard';
 import GeneralSettings from './components/sections/GeneralSettings';
 import AppearanceSettings from './components/sections/AppearanceSettings';
 import KnowledgeBase from './components/sections/KnowledgeBase';
+import ContentManager from './components/sections/ContentManager'; // Changed from FAQManager
 import Integrations from './components/sections/Integrations';
 import Deploy from './components/sections/Deploy';
 import Profile from './components/sections/Profile';
@@ -274,7 +275,7 @@ const App: React.FC = () => {
     return <Login />;
   }
   
-  const showPreview = ['general', 'appearance', 'knowledge', 'integrations', 'deploy'].includes(activeTab);
+  const showPreview = ['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy'].includes(activeTab);
 
   // 3. Authenticated Dashboard
   return (
@@ -332,7 +333,7 @@ const App: React.FC = () => {
               )}
               
               {/* Container for Centered Pages */}
-              {['general', 'appearance', 'knowledge', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout'].includes(activeTab) && (
+              {['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout'].includes(activeTab) && (
                   <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' || activeTab === 'checkout' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
                     {activeTab === 'create-bot' && (
                       <CreateBot 
@@ -360,6 +361,11 @@ const App: React.FC = () => {
                       <KnowledgeBase 
                         selectedChatbot={selectedChatbot} 
                         onUpdateChatbot={handleUpdateChatbot}
+                      />
+                    )}
+                    {activeTab === 'content-manager' && (
+                      <ContentManager 
+                        selectedChatbot={selectedChatbot} 
                       />
                     )}
                     {activeTab === 'integrations' && (
