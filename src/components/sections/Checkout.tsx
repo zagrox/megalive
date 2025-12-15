@@ -9,9 +9,10 @@ import { createItem, readItem, updateItem } from '@directus/sdk';
 interface CheckoutProps {
   plan: Plan | null;
   onBack: () => void;
+  onSuccess: () => void;
 }
 
-const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
+const Checkout: React.FC<CheckoutProps> = ({ plan, onBack, onSuccess }) => {
   const { user } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'offline'>('online');
@@ -86,7 +87,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
             // Free plan logic: Direct Success
             setStatusMessage('طرح رایگان با موفقیت فعال شد.');
             setTimeout(() => {
-                window.location.href = '/?tab=orders'; // Simple reload/redirect to orders
+                onSuccess();
             }, 1000);
             return;
         }
@@ -160,7 +161,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
           
           setStatusMessage('اطلاعات پرداخت ثبت شد.');
           setTimeout(() => {
-              window.location.href = '/?tab=orders';
+              onSuccess();
           }, 1000);
       } catch (err) {
           console.error("Failed to update note:", err);
@@ -214,7 +215,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                 </button>
                 
                 <button 
-                    onClick={() => window.location.href = '/?tab=orders'}
+                    onClick={onSuccess}
                     className="mt-4 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 >
                     رد کردن و رفتن به سفارش‌ها
@@ -400,7 +401,7 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack }) => {
                         </>
                     ) : (
                         <>
-                            {paymentMethod === 'online' ? (finalPrice === 0 ? 'فعال‌سازی رایگان' : 'پرداخت و فعال‌سازی') : 'ثبت سفارش'}
+                            {paymentMethod === 'online' ? (finalPrice === 0 ? 'شروع کنید' : 'پرداخت و فعال‌سازی') : 'ثبت سفارش'}
                             <ShieldCheck size={18} />
                         </>
                     )}

@@ -181,9 +181,9 @@ const App: React.FC = () => {
            const savedBot = savedId ? bots.find(b => b.id === Number(savedId)) : null;
            setSelectedChatbot(savedBot || bots[0]);
         } else {
-           // No chatbots found (new user), redirect to creation page (unless expired)
+           // No chatbots found (new user), redirect to PRICING page first
            if (!isPlanExpired && activeTab !== 'payment_verify') {
-             setActiveTab('create-bot');
+             setActiveTab('pricing');
            }
         }
       };
@@ -453,7 +453,11 @@ const App: React.FC = () => {
                       <Pricing onSelectPlan={handleSelectPlan} />
                     )}
                     {activeTab === 'checkout' && (
-                      <Checkout plan={checkoutPlan} onBack={() => setActiveTab('pricing')} />
+                      <Checkout 
+                        plan={checkoutPlan} 
+                        onBack={() => setActiveTab('pricing')} 
+                        onSuccess={() => setActiveTab('orders')}
+                      />
                     )}
                     {activeTab === 'orders' && (
                       <MyOrders />

@@ -148,7 +148,7 @@ const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPla
                             : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 active:scale-95'
                         }`}
                     >
-                        {isCurrent ? 'تمدید طرح' : 'انتخاب طرح'}
+                        {isCurrent ? 'تمدید طرح' : (plan.plan_monthly === 0 ? 'شروع رایگان' : 'انتخاب طرح')}
                     </button>
                   </div>
                 );

@@ -191,6 +191,7 @@ export interface Order {
   order_profile: number; // Relation ID to Profile
   order_plan: number; // Relation ID to Plan
   order_transaction?: number | Transaction; // Relation ID to Transaction or Object
+  profile_end?: string; // Optional field for order expiration date
 }
 
 export interface LLMJob {
