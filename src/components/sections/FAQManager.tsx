@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Chatbot, FAQItem } from '../../types';
 import { directus } from '../../services/directus';
 import { readItems, createItem, updateItem, deleteItem } from '@directus/sdk';
-import { Plus, Search, Edit2, Trash2, Save, X, Check, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
-import { generateEmbedding, upsertToQdrant, deleteFromQdrant } from '../../services/embeddingService';
+import { Plus, Search, Edit2, Trash2, Save, X, Check, Loader2, AlertCircle } from 'lucide-react';
 
 interface Props {
   selectedChatbot: Chatbot | null;
@@ -68,48 +67,28 @@ const FAQManager: React.FC<Props> = ({ selectedChatbot }) => {
       setError(null);
 
       try {
-          // 1. Generate Vector (Microservice)
-          // Combine Q & A for better semantic matching
-          const textToEmbed = `${question} \n ${answer}`;
-          const vector = await generateEmbedding(textToEmbed);
+          // Note: Embedding and Qdrant Sync is now handled by Directus Flows.
+          // We simply create/update the record here.
 
-          let savedItem: FAQItem;
-
-          // 2. Save to Directus
+          // 1. Save to Directus
           if (editingItem) {
               // Update
               // @ts-ignore
-              savedItem = await directus.request(updateItem('faq_items', editingItem.id, {
+              await directus.request(updateItem('faq_items', editingItem.id, {
                   question,
                   answer,
-                  is_indexed: true
-              })) as FAQItem;
+                  is_indexed: true // Trigger for the flow
+              }));
           } else {
               // Create
               // @ts-ignore
-              savedItem = await directus.request(createItem('faq_items', {
+              await directus.request(createItem('faq_items', {
                   question,
                   answer,
                   chatbot: selectedChatbot.id,
-                  is_indexed: true,
-                  // Generate a pseudo-UUID if one doesn't exist, though Directus ID (number) is usually fine
-                  // For Qdrant we need a UUID or integer. Directus ID (Int) works for Qdrant.
-              })) as FAQItem;
+                  is_indexed: true // Trigger for the flow
+              }));
           }
-
-          // 3. Save to Qdrant
-          // Collection name is usually the chatbot slug or ID-based
-          const collectionName = selectedChatbot.chatbot_slug || `chatbot_${selectedChatbot.id}`;
-          
-          await upsertToQdrant(collectionName, [{
-              id: savedItem.id, // Using Directus ID as Qdrant ID
-              vector: vector,
-              payload: {
-                  question: question,
-                  answer: answer,
-                  source: 'faq_manager'
-              }
-          }]);
 
           // Refresh list
           await fetchFAQs();
@@ -117,7 +96,7 @@ const FAQManager: React.FC<Props> = ({ selectedChatbot }) => {
 
       } catch (err: any) {
           console.error("Save failed:", err);
-          setError("خطا در ذخیره‌سازی. لطفا وضعیت اتصال به سرویس امبدینگ را بررسی کنید.");
+          setError("خطا در ذخیره‌سازی. لطفا ارتباط با سرور را بررسی کنید.");
       } finally {
           setIsSaving(false);
       }
@@ -127,20 +106,10 @@ const FAQManager: React.FC<Props> = ({ selectedChatbot }) => {
       if (!confirm("آیا از حذف این سوال اطمینان دارید؟")) return;
       
       try {
-          // 1. Delete from Directus
+          // 1. Delete from Directus (Flow handles Qdrant cleanup)
           // @ts-ignore
           await directus.request(deleteItem('faq_items', id));
           
-          // 2. Delete from Qdrant (Best effort)
-          if (selectedChatbot?.chatbot_slug) {
-             const collectionName = selectedChatbot.chatbot_slug;
-             try {
-                 await deleteFromQdrant(collectionName, [id]);
-             } catch (qdrantErr) {
-                 console.warn("Failed to delete from Qdrant, likely already gone:", qdrantErr);
-             }
-          }
-
           setFaqs(prev => prev.filter(item => item.id !== id));
       } catch (err) {
           console.error("Delete failed:", err);
@@ -228,7 +197,7 @@ const FAQManager: React.FC<Props> = ({ selectedChatbot }) => {
                                 ) : (
                                     <span className="flex items-center gap-1 text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-100 dark:border-amber-800">
                                         <Loader2 size={10} className="animate-spin" />
-                                        Processing
+                                        Pending Sync
                                     </span>
                                 )}
                             </div>
@@ -296,7 +265,7 @@ const FAQManager: React.FC<Props> = ({ selectedChatbot }) => {
                             className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium shadow-md shadow-blue-600/20 disabled:opacity-70"
                         >
                             {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                            {isSaving ? 'در حال پردازش...' : 'ذخیره و ایندکس'}
+                            {isSaving ? 'در حال ذخیره...' : 'ذخیره'}
                         </button>
                     </div>
                 </div>
