@@ -1,4 +1,5 @@
 
+
 import { BotConfig, Plan } from '../types';
 import { directus, getAssetUrl } from './directus';
 import { readSingleton, readItems } from '@directus/sdk';
@@ -66,7 +67,8 @@ export const fetchPricingPlans = async (): Promise<Plan[]> => {
         plan_monthly: Number(item.plan_monthly),
         plan_yearly: Number(item.plan_yearly),
         plan_bots: Number(item.plan_bots),
-        plan_llm: Number(item.plan_llm)
+        plan_llm: Number(item.plan_llm),
+        plan_contents: Number(item.plan_contents || 0)
     })) as Plan[];
   } catch (error) {
     console.error('Error fetching pricing plans:', error);

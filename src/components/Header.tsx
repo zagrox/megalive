@@ -207,7 +207,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isDark, toggle
                     className="w-full text-right px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg flex items-center gap-2 transition-colors"
                   >
                     <ShoppingBag size={16} className="text-gray-400" />
-                    سفارش‌های من
+                    اشتراک من
                   </button>
                   <button 
                     onClick={() => { setActiveTab('manage-bots'); setIsProfileOpen(false); }}

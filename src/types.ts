@@ -166,6 +166,7 @@ export interface Plan {
   plan_monthly: number;
   plan_yearly: number;
   plan_bots: number;
+  plan_contents?: number; // NEW: Number of content entries (FAQ/Product)
   plan_vector?: string; // Kept as string to match DB if needed, though mostly unused in UI math
   plan_copyright?: boolean;
 }

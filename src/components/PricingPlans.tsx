@@ -1,6 +1,7 @@
 
+
 import React, { useEffect, useState } from 'react';
-import { X, Check, Crown, Zap, MessageSquare, Database, Cpu, Bot } from 'lucide-react';
+import { X, Check, Crown, Zap, MessageSquare, Database, Cpu, Bot, BookOpenCheck } from 'lucide-react';
 import { Plan } from '../types';
 import { fetchPricingPlans } from '../services/configService';
 
@@ -131,7 +132,11 @@ const PricingPlans: React.FC<PricingPlansProps> = ({ isOpen, onClose, currentPla
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                             <Cpu size={18} className="text-purple-500 shrink-0" />
-                            <span><strong className="mx-1">{plan.plan_llm}</strong> پایگاه دانش</span>
+                            <span><strong className="mx-1">{plan.plan_llm}</strong> فایل دانشی</span>
+                        </li>
+                        <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                            <BookOpenCheck size={18} className="text-pink-500 shrink-0" />
+                            <span><strong className="mx-1">{plan.plan_contents || 0}</strong> آیتم محتوا</span>
                         </li>
                     </ul>
 

@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Plan, Order, Transaction } from '../../types';
-import { ArrowLeft, Check, CreditCard, Landmark, ShieldCheck, AlertCircle, Bot, MessageSquare, Database, Cpu, Loader2, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Check, CreditCard, Landmark, ShieldCheck, AlertCircle, Bot, MessageSquare, Database, Cpu, Loader2, FileText, CheckCircle2, BookOpenCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { directus } from '../../services/directus';
 import { createItem, readItem, updateItem } from '@directus/sdk';
@@ -352,7 +353,10 @@ const Checkout: React.FC<CheckoutProps> = ({ plan, onBack, onSuccess }) => {
                             <Database size={14} /> <span>{plan.plan_storage.toLocaleString('en-US')} مگابایت</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                            <Cpu size={14} /> <span>{plan.plan_llm} پایگاه دانش</span>
+                            <Cpu size={14} /> <span>{plan.plan_llm} فایل دانشی</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <BookOpenCheck size={14} /> <span>{plan.plan_contents || 0} آیتم محتوا</span>
                         </div>
                     </div>
                 </div>

@@ -1,10 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
-import { readItems } from '@directus/sdk';
+import { readItems, deleteItem } from '@directus/sdk';
 import { directus } from '../../services/directus';
 import { Order, Plan } from '../../types';
-import { Loader2, Package, Calendar, CreditCard, AlertCircle, ShoppingBag, ArrowLeft, Clock, CheckCircle, RefreshCw } from 'lucide-react';
+import { Loader2, Package, Calendar, CreditCard, AlertCircle, ShoppingBag, ArrowLeft, Clock, CheckCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { fetchPricingPlans } from '../../services/configService';
 import { useAuth } from '../../context/AuthContext';
+import ConfirmationModal from '../ConfirmationModal';
 
 interface MyOrdersProps {
   onRenew?: () => void;
@@ -17,6 +19,10 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Delete State
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -27,8 +33,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
           // @ts-ignore
           directus.request(readItems('order', {
             sort: ['-date_created'],
-            // Removed 'profile_end' as it likely doesn't exist on the order collection, causing the crash.
-            // We will calculate it on the fly.
             fields: ['id', 'date_created', 'order_status', 'order_amount', 'order_duration', 'order_plan', 'order_transaction']
           }))
         ]);
@@ -37,7 +41,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
         setOrders(fetchedOrders as Order[]);
       } catch (err: any) {
         console.error("Failed to load orders:", JSON.stringify(err, null, 2));
-        // Try to extract a meaningful error message
         const msg = err?.errors?.[0]?.message || "خطا در دریافت لیست سفارش‌ها.";
         setError(msg);
       } finally {
@@ -47,6 +50,29 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
 
     loadData();
   }, []);
+
+  const handleRequestDelete = (id: number) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
+    setDeletingId(id);
+    
+    try {
+        // @ts-ignore
+        await directus.request(deleteItem('order', id));
+        setOrders(prev => prev.filter(o => o.id !== id));
+    } catch (err: any) {
+        console.error("Delete failed:", err);
+        // Assuming permission error if it fails on non-completed
+        setError('خطا در حذف سفارش. ممکن است دسترسی لازم را نداشته باشید.');
+    } finally {
+        setDeletingId(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -59,7 +85,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
       case 'failed':
         return <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-2.5 py-0.5 rounded-full text-xs font-bold">پرداخت ناموفق</span>;
       case 'cancelled':
-      case 'canceled': // Supporting both spellings to be safe
+      case 'canceled': 
         return <span className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 px-2.5 py-0.5 rounded-full text-xs font-bold">پرداخت لغو شده</span>;
       default:
         return <span className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 px-2.5 py-0.5 rounded-full text-xs font-bold">{status}</span>;
@@ -89,14 +115,12 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
       try {
         if (!order.date_created) return '-';
         
-        // Calculate end date based on duration
         const start = new Date(order.date_created);
         const endDate = new Date(start);
         
         if (order.order_duration === 'yearly') {
             endDate.setFullYear(start.getFullYear() + 1);
         } else {
-            // Monthly default
             endDate.setMonth(start.getMonth() + 1);
         }
         
@@ -110,7 +134,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
     const planId = user?.profile?.profile_plan;
     const endDate = user?.profile?.profile_end;
     
-    // Attempt to find plan object
     const plan = plans.find(p => 
       p.id === Number(planId) || 
       (typeof planId === 'object' && (planId as any)?.id === p.id) ||
@@ -136,6 +159,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
   }
 
   return (
+    <>
     <div className="space-y-8 animate-fade-in pb-12">
       
       {/* Subscription Status Header */}
@@ -233,6 +257,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
                   <th className="px-6 py-4 font-medium">مبلغ (تومان)</th>
                   <th className="px-6 py-4 font-medium">تاریخ و اعتبار</th>
                   <th className="px-6 py-4 font-medium">وضعیت</th>
+                  <th className="px-6 py-4 font-medium w-20">عملیات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -277,6 +302,18 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
                     <td className="px-6 py-4">
                       {getStatusBadge(order.order_status)}
                     </td>
+                    <td className="px-6 py-4">
+                      {order.order_status !== 'completed' && (
+                        <button 
+                            onClick={() => handleRequestDelete(order.id)}
+                            disabled={deletingId === order.id}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                            title="حذف سفارش"
+                        >
+                            {deletingId === order.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -285,6 +322,17 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
         </div>
       )}
     </div>
+
+    <ConfirmationModal 
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        title="حذف سفارش"
+        message="آیا از حذف این سفارش اطمینان دارید؟ این عملیات غیرقابل بازگشت است."
+        confirmText="بله، حذف کن"
+        confirmVariant="danger"
+    />
+    </>
   );
 };
 
