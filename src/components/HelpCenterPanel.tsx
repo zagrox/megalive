@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { X, BookOpen, HelpCircle as FaqIcon, MessageSquare, Phone, Mail, Send, Linkedin, Instagram, ChevronDown, Copy, Check, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, BookOpen, HelpCircle as FaqIcon, MessageSquare, Phone, Mail, ChevronDown, Loader2, AlertCircle, PlayCircle, UploadCloud, Settings, Rocket, FileText } from 'lucide-react';
+import { directus } from '../services/directus';
+import { readItems } from '@directus/sdk';
+import { SystemFAQ } from '../types';
 
 interface HelpCenterPanelProps {
   isOpen: boolean;
@@ -14,17 +17,17 @@ const FAQItem: React.FC<{ title: string; openFaq: number | null; index: number; 
         onClick={() => setOpenFaq(isOpen ? null : index)}
         className="flex justify-between items-center w-full py-4 text-right"
       >
-        <span className="font-semibold text-gray-800 dark:text-gray-200">{title}</span>
+        <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm md:text-base leading-snug ml-2">{title}</span>
         <ChevronDown
           size={20}
-          className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-gray-500 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       <div
         className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
       >
         <div className="overflow-hidden">
-          <div className="pb-4 text-gray-600 dark:text-gray-400 space-y-2 leading-relaxed">
+          <div className="pb-4 text-gray-600 dark:text-gray-400 space-y-2 leading-relaxed text-sm">
             {children}
           </div>
         </div>
@@ -33,122 +36,65 @@ const FAQItem: React.FC<{ title: string; openFaq: number | null; index: number; 
   );
 };
 
-const CodeBlock = ({ code }: { code: string }) => {
-    const [copied, setCopied] = useState(false);
-    
-    const handleCopy = () => {
-        navigator.clipboard.writeText(code);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    return (
-        <div className="relative mt-2 mb-4 bg-gray-900 rounded-lg p-3 border border-gray-700 dir-ltr text-left group">
-            <button 
-                onClick={handleCopy}
-                className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 rounded text-white transition-colors opacity-0 group-hover:opacity-100"
-            >
-                {copied ? <Check size={14} className="text-green-400"/> : <Copy size={14} />}
-            </button>
-            <pre className="text-xs text-blue-300 font-mono overflow-x-auto p-1">
-                <code>{code}</code>
-            </pre>
+const GuideStep: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode; number: number }> = ({ icon, title, children, number }) => (
+    <div className="relative pl-0 pr-8 pb-8 border-r border-gray-200 dark:border-gray-800 last:border-0 last:pb-0">
+        <span className="absolute -right-3 top-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-2 border-white dark:border-gray-900 flex items-center justify-center text-xs font-bold z-10">
+            {number}
+        </span>
+        <div className="flex items-center gap-2 mb-2">
+            <div className="text-gray-500 dark:text-gray-400">
+                {icon}
+            </div>
+            <h4 className="font-bold text-gray-800 dark:text-white text-base">{title}</h4>
         </div>
-    );
-};
-
+        <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-2">
+            {children}
+        </div>
+    </div>
+);
 
 const HelpCenterPanel: React.FC<HelpCenterPanelProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'guide' | 'faq' | 'contact'>('faq');
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [activeTab, setActiveTab] = useState<'guide' | 'faq' | 'contact'>('guide');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  
+  // Dynamic FAQ State
+  const [systemFaqs, setSystemFaqs] = useState<SystemFAQ[]>([]);
+  const [loadingFaqs, setLoadingFaqs] = useState(false);
+  const [errorFaqs, setErrorFaqs] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'faq' && systemFaqs.length === 0) {
+        const fetchFaqs = async () => {
+            setLoadingFaqs(true);
+            setErrorFaqs(null);
+            try {
+                // @ts-ignore
+                const result = await directus.request(readItems('faq', {
+                    filter: { status: { _eq: 'published' } },
+                    limit: -1
+                }));
+                setSystemFaqs(result as SystemFAQ[]);
+            } catch (err: any) {
+                console.error("Failed to fetch system FAQs:", err);
+                // Robust error extraction
+                let msg = 'خطا در برقراری ارتباط با سرور';
+                if (typeof err === 'string') msg = err;
+                else if (err?.errors?.[0]?.message) msg = err.errors[0].message;
+                else if (err?.message) msg = err.message;
+                
+                setErrorFaqs(msg);
+            } finally {
+                setLoadingFaqs(false);
+            }
+        };
+        fetchFaqs();
+    }
+  }, [isOpen, activeTab]);
 
   const TABS = [
-    { id: 'faq' as const, label: 'رفع اشکال N8N', icon: <FaqIcon size={20} /> },
     { id: 'guide' as const, label: 'راهنمای شروع', icon: <BookOpen size={20} /> },
+    { id: 'faq' as const, label: 'پرسش و پاسخ', icon: <FaqIcon size={20} /> },
     { id: 'contact' as const, label: 'پشتیبانی', icon: <MessageSquare size={20} /> },
-  ];
-
-  const splitterCode = `// Configuration
-// کاهش حجم به 2000 برای جلوگیری از خطای محدودیت (Rate Limit)
-const CHUNK_SIZE = 2000; 
-const OVERLAP = 200;
-const results = [];
-
-// Loop over input items
-for (const item of $input.all()) {
-  // نام فیلد ورودی را اینجا چک کنید (معمولا data یا text)
-  const text = item.json.data || item.json.text; 
-
-  if (text && typeof text === 'string') {
-    let startIndex = 0;
-    while (startIndex < text.length) {
-      const chunk = text.substring(startIndex, startIndex + CHUNK_SIZE);
-      
-      // ساخت خروجی جدید برای هر تکه
-      results.push({
-        json: { 
-            data: chunk,
-            chunk_index: results.length 
-        }
-      });
-
-      startIndex += (CHUNK_SIZE - OVERLAP);
-      if (chunk.length < CHUNK_SIZE) break;
-    }
-  }
-}
-
-return results;`;
-
-  const faqs = [
-    {
-      q: 'ارور "No fields - item(s) exist, but they\'re empty" چیست؟',
-      a: <>
-        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800 text-sm mb-3">
-            <span className="font-bold text-red-600 dark:text-red-400 block mb-1">علت خطا:</span>
-            نود Text Splitter هیچ داده‌ای در ورودی دریافت نکرده است یا کد داخل آن پیش‌فرض است.
-        </div>
-        <p><strong>راه حل:</strong></p>
-        <ol className="list-decimal pr-5 space-y-1 text-sm">
-            <li>مطمئن شوید نود قبلی (Extract Document Text) خروجی دارد (Execute کنید).</li>
-            <li>کد جاوا اسکریپت پیش‌فرض داخل نود Splitter را کاملا پاک کنید.</li>
-            <li>کد اصلاح شده زیر را کپی و جایگزین کنید.</li>
-        </ol>
-      </>
-    },
-    {
-      q: 'با وجود Loop باز هم خطای Rate Limit دریافت می‌کنم',
-      a: <>
-        <p>اگر با وجود حلقه باز هم خطا دارید، یعنی حجم توکن‌های ارسالی در دقیقه بیشتر از حد مجاز حساب شماست:</p>
-        <ul className="list-disc pr-5 mt-3 space-y-2 text-sm">
-            <li><strong>کاهش حجم هر تکه:</strong> کد Text Splitter خود را با کد زیر جایگزین کنید (مقدار <code>CHUNK_SIZE</code> به 2000 کاهش یافته است).</li>
-            <li><strong>افزایش زمان Wait:</strong> زمان نود Wait داخل حلقه را به <strong>10 تا 15 ثانیه</strong> افزایش دهید.</li>
-            <li><strong>صبر کنید:</strong> محدودیت OpenAI دقیقه‌ای است. یک دقیقه صبر کنید تا ظرفیت خالی شود، سپس دوباره امتحان کنید.</li>
-            <li><strong>شارژ حساب:</strong> اگر حساب OpenAI شما Free Tier است، با پرداخت حداقل 5 دلار، سقف سرعت شما 5 تا 10 برابر می‌شود.</li>
-        </ul>
-      </>
-    },
-    {
-      q: 'کد اصلاح شده برای Text Splitter (ضد خطا)',
-      a: <>
-        <p>این کد متن را به تکه‌های کوچک‌تر (2000 کاراکتر) تقسیم می‌کند تا در هر درخواست توکن کمتری مصرف شود:</p>
-        <CodeBlock code={splitterCode} />
-        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-            <AlertTriangle size={12} className="inline mr-1" />
-            نکته مهم: اگر خروجی نود قبلی شما نامی غیر از <code>data</code> دارد، خط 8 کد را ویرایش کنید.
-        </p>
-      </>
-    },
-    {
-      q: 'ترتیب صحیح اتصال نودها (Loop Topology) چگونه است؟',
-      a: <>
-        <p>در نسخه‌های جدید N8N نیازی به بستن دستی حلقه نیست:</p>
-        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg text-sm mt-2 font-mono dir-ltr text-left text-xs sm:text-sm overflow-x-auto whitespace-nowrap">
-            Extract <span className="text-blue-500">→</span> Splitter <span className="text-blue-500">→</span> Loop <span className="text-blue-500">→</span> AI Model <span className="text-blue-500">→</span> Wait <span className="text-blue-500">→</span> (پایان شاخه)
-        </div>
-        <p className="mt-2 text-sm">خروجی Wait را رها کنید. نود Loop خودش می‌فهمد چه زمانی تکرار بعدی را انجام دهد.</p>
-      </>
-    }
   ];
 
   return (
@@ -193,43 +139,100 @@ return results;`;
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 bg-white dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto p-5 bg-white dark:bg-gray-900 custom-scrollbar">
           {activeTab === 'guide' && (
-            <div className="space-y-6 text-gray-700 dark:text-gray-300 leading-relaxed animate-fade-in">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 border-b pb-2 dark:border-gray-800">شروع کار با سیستم</h3>
-                <ol className="space-y-6 relative border-r border-gray-200 dark:border-gray-800 mr-2">
-                    <li className="mr-6">
-                        <span className="absolute -right-2 top-1 w-4 h-4 rounded-full bg-blue-600 border-4 border-white dark:border-gray-900"></span>
-                        <h4 className="font-bold text-gray-800 dark:text-white">۱. ساخت چت‌بات</h4>
-                        <p className="mt-1 text-sm">از منوی "ساخت ربات جدید"، نام و شناسه یکتای ربات خود را وارد کنید.</p>
-                    </li>
-                    <li className="mr-6">
-                        <span className="absolute -right-2 top-1 w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-700 border-4 border-white dark:border-gray-900"></span>
-                        <h4 className="font-bold text-gray-800 dark:text-white">۲. آموزش (Knowledge Base)</h4>
-                        <p className="mt-1 text-sm">فایل‌های PDF یا متنی خود را آپلود کنید و دکمه "پردازش" را بزنید تا ربات آن‌ها را یاد بگیرد.</p>
-                    </li>
-                    <li className="mr-6">
-                        <span className="absolute -right-2 top-1 w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-700 border-4 border-white dark:border-gray-900"></span>
-                        <h4 className="font-bold text-gray-800 dark:text-white">۳. اتصال N8N</h4>
-                        <p className="mt-1 text-sm">ورک‌فلو N8N را طبق راهنمای تب "رفع اشکال" تنظیم کنید تا داده‌ها را از فایل‌ها استخراج کند.</p>
-                    </li>
-                </ol>
+            <div className="animate-fade-in pb-10">
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/50">
+                    <h3 className="font-bold text-blue-800 dark:text-blue-300 text-sm mb-2">به مگالایو خوش آمدید!</h3>
+                    <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
+                        این پلتفرم به شما کمک می‌کند بدون نیاز به دانش برنامه‌نویسی، یک دستیار هوشمند اختصاصی برای پاسخگویی ۲۴ ساعته به مشتریان خود بسازید.
+                    </p>
+                </div>
+
+                <div className="space-y-2">
+                    <GuideStep number={1} icon={<PlayCircle size={18}/>} title="ساخت اولین ربات">
+                        <p>از منوی «ساخت ربات جدید»، نام نمایشی (مثلاً «پشتیبانی فروش») و یک شناسه انگلیسی یکتا (Slug) انتخاب کنید.</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 p-2 rounded mt-2">
+                            نکته: شناسه (Slug) باید فقط شامل حروف کوچک انگلیسی باشد و بعد از ساخت قابل تغییر نیست.
+                        </p>
+                    </GuideStep>
+
+                    <GuideStep number={2} icon={<UploadCloud size={18}/>} title="آموزش (پایگاه دانش)">
+                        <p>مهم‌ترین بخش! به تب «پایگاه دانش» بروید و فایل‌های PDF، Word یا متنی خود را آپلود کنید. این فایل‌ها مغز ربات شما هستند.</p>
+                        <ul className="list-disc list-inside mt-2 space-y-1 marker:text-gray-400">
+                            <li>اطلاعات محصولات و قیمت‌ها</li>
+                            <li>قوانین و مقررات</li>
+                            <li>سوالات متداول</li>
+                        </ul>
+                        <p className="mt-2 font-medium">پس از آپلود، حتماً دکمه «پردازش» (Build) را بزنید تا ربات آن‌ها را یاد بگیرد.</p>
+                    </GuideStep>
+
+                    <GuideStep number={3} icon={<Settings size={18}/>} title="شخصی‌سازی رفتار">
+                        <p>در تب «تنظیمات عمومی» می‌توانید دستورالعمل سیستم (System Prompt) را ویرایش کنید.</p>
+                        <p>مثلاً بنویسید: "تو یک مشاور املاک حرفه‌ای هستی که با لحنی رسمی و مؤدبانه صحبت می‌کنی."</p>
+                    </GuideStep>
+
+                    <GuideStep number={4} icon={<Rocket size={18}/>} title="انتشار نهایی">
+                        <p>پس از تست ربات در پیش‌نمایش، به تب «انتشار» بروید.</p>
+                        <p>کد اسکریپت را کپی کرده و در انتهای تگ <code>&lt;body&gt;</code> سایت خود قرار دهید. آیکون چت بلافاصله در گوشه سایت شما ظاهر می‌شود.</p>
+                    </GuideStep>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <h4 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                        <FileText size={18} className="text-green-500"/>
+                        نکات طلایی برای پاسخ‌های بهتر
+                    </h4>
+                    <ul className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                        <li className="flex gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0"></span>
+                            <span>فایل‌های PDF باید دارای متن قابل انتخاب (Text-based) باشند. فایل‌های اسکن شده (تصویری) قابل خواندن نیستند.</span>
+                        </li>
+                        <li className="flex gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0"></span>
+                            <span>سعی کنید هر موضوع را در یک فایل جداگانه آپلود کنید (مثلاً "لیست قیمت.pdf" جدا از "قوانین.pdf").</span>
+                        </li>
+                        <li className="flex gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0"></span>
+                            <span>در تنظیمات پیشرفته، می‌توانید "پیام اتصال به اپراتور" را تعیین کنید تا اگر ربات جواب را ندانست، کاربر را راهنمایی کند.</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
           )}
+          
           {activeTab === 'faq' && (
              <div className="animate-fade-in space-y-2">
-                {faqs.map((faq, index) => (
-                    <FAQItem key={index} title={faq.q} openFaq={openFaq} index={index} setOpenFaq={setOpenFaq}>
-                        {faq.a}
-                    </FAQItem>
-                ))}
+                {loadingFaqs ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3">
+                        <Loader2 className="animate-spin" size={24} />
+                        <span className="text-sm">در حال دریافت سوالات...</span>
+                    </div>
+                ) : errorFaqs ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-red-500 gap-3 text-center">
+                        <AlertCircle size={24} />
+                        <span className="text-sm px-4">{errorFaqs}</span>
+                        <button onClick={() => setSystemFaqs([])} className="text-xs underline hover:text-red-700">تلاش مجدد</button>
+                    </div>
+                ) : systemFaqs.length > 0 ? (
+                    systemFaqs.map((faq, index) => (
+                        <FAQItem key={faq.id || index} title={faq.faq_question} openFaq={openFaq} index={index} setOpenFaq={setOpenFaq}>
+                            <div className="prose dark:prose-invert prose-sm max-w-none text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: faq.faq_answer }} />
+                        </FAQItem>
+                    ))
+                ) : (
+                    <div className="text-center py-8 text-gray-500">
+                        سوالی یافت نشد.
+                    </div>
+                )}
              </div>
           )}
+          
           {activeTab === 'contact' && (
              <div className="space-y-6 animate-fade-in">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
                     <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-2">نیاز به کمک دارید؟</h3>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">تیم پشتیبانی ما آماده پاسخگویی به سوالات فنی شما در مورد اتصال N8N و تنظیمات ربات است.</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">تیم پشتیبانی ما آماده پاسخگویی به سوالات فنی شما در مورد اتصال و تنظیمات ربات است.</p>
                 </div>
                 
                 <div className="space-y-4">
@@ -237,7 +240,7 @@ return results;`;
                     <div className="bg-white dark:bg-gray-700 p-2 rounded-lg text-blue-600 dark:text-blue-400 shadow-sm"><Phone size={20} /></div>
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">تلفن پشتیبانی</p>
-                      <p className="font-bold text-gray-800 dark:text-white dir-ltr text-left">021-91000000</p>
+                      <p className="font-bold text-gray-800 dark:text-white dir-ltr text-left">021-22891616</p>
                     </div>
                   </div>
                    <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -247,6 +250,12 @@ return results;`;
                       <a href="mailto:support@megalive.ir" className="font-bold text-gray-800 dark:text-white hover:text-blue-600 transition-colors">support@megalive.ir</a>
                     </div>
                   </div>
+                </div>
+                
+                <div className="pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
+                    <p className="text-xs text-gray-400 mb-2">ساعات پاسخگویی</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">شنبه تا چهارشنبه: ۹ صبح تا ۵ عصر</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">پنج‌شنبه: ۹ صبح تا ۱ ظهر</p>
                 </div>
              </div>
           )}

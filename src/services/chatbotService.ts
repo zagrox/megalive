@@ -1,6 +1,7 @@
 
+
 import { directus } from './directus';
-import { readItems, readItem, createItem, updateItem, readFolders, createFolder, readFiles } from '@directus/sdk';
+import { readItems, readItem, createItem, updateItem, readFolders, createFolder, readFiles, readSingleton } from '@directus/sdk';
 import { Chatbot } from '../types';
 
 export const fetchUserChatbots = async (): Promise<Chatbot[]> => {
@@ -150,6 +151,22 @@ export const recalculateChatbotStats = async (chatbotId: number): Promise<Chatbo
 
 export const createChatbot = async (name: string, slug: string, businessName: string): Promise<Chatbot | null> => {
   try {
+    // 0. Fetch default avatar from configuration
+    let defaultAvatar = null;
+    try {
+        // @ts-ignore
+        const config = await directus.request(readSingleton('configuration', {
+            fields: ['app_avatar']
+        }));
+        // @ts-ignore
+        if (config && config.app_avatar) {
+            // @ts-ignore
+            defaultAvatar = typeof config.app_avatar === 'object' ? config.app_avatar.id : config.app_avatar;
+        }
+    } catch (e) {
+        console.warn("Failed to fetch default bot avatar configuration:", e);
+    }
+
     // 1. Create the Chatbot item
     // @ts-ignore
     const result = await directus.request(createItem('chatbot', {
@@ -161,7 +178,8 @@ export const createChatbot = async (name: string, slug: string, businessName: st
       status: 'published',
       chatbot_messages: "0",
       chatbot_storage: "0",
-      chatbot_llm: 0
+      chatbot_llm: 0,
+      chatbot_logo: defaultAvatar
     }));
 
     // 2. Create the corresponding folder in Directus

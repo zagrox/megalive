@@ -59,8 +59,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'داشبورد چت‌بات', icon: <LayoutDashboard size={20} /> },
     { id: 'general', label: 'تنظیمات عمومی', icon: <Settings size={20} /> },
     { id: 'appearance', label: 'ظاهر چت‌بات', icon: <Palette size={20} /> },
-    { id: 'knowledge', label: 'پایگاه دانش (فایل)', icon: <Database size={20} /> },
     { id: 'content-manager', label: 'مدیریت محتوا', icon: <BookOpenCheck size={20} /> },
+    { id: 'knowledge', label: 'پایگاه دانش', icon: <Database size={20} /> },
     { id: 'deploy', label: 'انتشار آنلاین', icon: <Rocket size={20} /> },
     // { id: 'integrations', label: 'اتصال برنامه', icon: <Puzzle size={20} /> },
   ];

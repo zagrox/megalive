@@ -109,6 +109,16 @@ export interface FAQItem {
   is_indexed?: boolean;
 }
 
+export interface SystemFAQ {
+  id: number;
+  status: string;
+  sort?: number;
+  date_created?: string;
+  date_updated?: string;
+  faq_question: string;
+  faq_answer: string;
+}
+
 export interface DirectusFile {
   id: string;
   filename_download: string;
@@ -130,6 +140,7 @@ export interface DirectusConfiguration {
   temperature?: number;
   logo?: string | DirectusFile; // Bot avatar
   app_role?: string; // The ID of the role for new users
+  app_avatar?: string | DirectusFile; // Default avatar for new bots
 }
 
 export interface UserProfile {
@@ -215,6 +226,7 @@ export interface DirectusSchema {
   faq_items: FAQItem[];
   order: Order[];
   transaction: Transaction[];
+  faq: SystemFAQ[];
 }
 
 export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout' | 'orders' | 'payment_verify';

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Chatbot, DirectusFile, LLMJob, ProcessedFile, BuildStatus } from '../../types';
 import { directus } from '../../services/directus';
 import { uploadFiles, readFiles, readFolders, createItem, readItems, updateItem } from '@directus/sdk';
-import { UploadCloud, FileText, CheckCircle2, Loader2, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, HardDrive, Search } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, Loader2, AlertCircle, FolderOpen, RefreshCw, Layers, PauseCircle, ArrowLeft, HardDrive, Search, ZapOff, Trash2 } from 'lucide-react';
 import FileDetails from './FileDetails';
 import ConfirmationModal from '../ConfirmationModal';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +20,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
   const [llmJobs, setLlmJobs] = useState<LLMJob[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPurging, setIsPurging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
@@ -31,13 +32,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     title: string;
     message: React.ReactNode;
     onConfirm: () => void;
+    confirmText?: string;
+    confirmVariant?: 'danger' | 'primary';
   } | null>(null);
 
 
   // 1. Resolve Folder ID based on selectedChatbot
   useEffect(() => {
     const resolveFolder = async () => {
-      // Clear state if no chatbot selected
       if (!selectedChatbot) {
         setFolderId(null);
         setFolderName(null);
@@ -50,7 +52,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       setIsLoading(true);
       setError(null);
 
-      // Strategy A: Use direct folder relation if available
       if (selectedChatbot.chatbot_folder) {
           setFolderId(selectedChatbot.chatbot_folder);
           setFolderName(`llm/${selectedChatbot.chatbot_slug}`);
@@ -58,7 +59,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
           return;
       }
       
-      // Strategy B: Fallback to searching by slug name inside 'llm' folder
       if (!selectedChatbot.chatbot_slug) {
           setError("شناسه بات (Slug) نامعتبر است.");
           setIsLoading(false);
@@ -119,7 +119,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       }
     };
     
-    const intervalId = setInterval(pollJobs, 5000); // Poll every 5 seconds
+    const intervalId = setInterval(pollJobs, 5000); 
     
     return () => clearInterval(intervalId);
   }, [selectedChatbot?.id]);
@@ -146,15 +146,12 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       setFiles(fetchedFiles);
       setLlmJobs(jobsResult as LLMJob[]);
 
-      // Calculate Total Size in MB for Storage Sync
       const currentTotalBytes = fetchedFiles.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
       const currentTotalMB = Math.ceil(currentTotalBytes / (1024 * 1024));
       
       const dbStorage = selectedChatbot?.chatbot_storage ? parseInt(selectedChatbot.chatbot_storage) : 0;
 
-      // Auto-Sync: Check if the file count OR storage matches the chatbot's DB stats
       if (selectedChatbot && (selectedChatbot.chatbot_llm !== fileCount || dbStorage !== currentTotalMB)) {
-          console.log(`Syncing Stats: LLM ${selectedChatbot.chatbot_llm}->${fileCount}, Storage ${dbStorage}->${currentTotalMB}`);
           await onUpdateChatbot(selectedChatbot.id, { 
               chatbot_llm: fileCount,
               chatbot_storage: currentTotalMB.toString()
@@ -177,7 +174,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
   const updateBotStats = async () => {
     if (!folderId || !selectedChatbot || !user?.id) return;
     try {
-        // Fetch actual file count from server to be precise
         const filesList = await directus.request(readFiles({
             filter: { folder: { _eq: folderId } },
             limit: -1,
@@ -188,13 +184,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         const totalBytes = filesList.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
         const totalMB = Math.ceil(totalBytes / (1024 * 1024));
 
-        // Update Chatbot (DB + Local State via prop)
         await onUpdateChatbot(selectedChatbot.id, {
             chatbot_llm: count,
             chatbot_storage: totalMB.toString()
         });
 
-        // Sync Profile Stats
         await syncProfileStats(user.id);
         await refreshUser();
     } catch (error) {
@@ -256,7 +250,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     if (!folderId || !selectedChatbot) return alert("پوشه مقصد مشخص نیست. امکان آپلود وجود ندارد.");
 
     const optimisticFileId = `uploading-${Date.now()}`;
-    // Optimistic UI for upload
     setFiles(prev => [{
       id: optimisticFileId,
       filename_download: file.name,
@@ -273,7 +266,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       
       const uploadedFile = await directus.request(uploadFiles(formData)) as DirectusFile;
 
-      // Auto-create the LLM job with 'ready' status
       const newJobPayload = {
           llm_chatbot: selectedChatbot.id,
           llm_file: uploadedFile.id,
@@ -283,8 +275,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       setLlmJobs(prev => [newJob, ...prev]);
       
       setFiles(prev => [uploadedFile, ...prev.filter(f => f.id !== optimisticFileId)]);
-      
-      // Update stats after successful upload
       await updateBotStats();
 
     } catch (err) {
@@ -311,11 +301,9 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
     try {
       if (llmJobId) {
-        // UPDATE existing job to 'start' to trigger the flow
         const updatedJob = await directus.request(updateItem('llm', llmJobId, { llm_status: 'start' }, { fields: ['*', { llm_file: ['id'] }] })) as LLMJob;
         setLlmJobs(prev => prev.map(j => j.id === llmJobId ? updatedJob : j));
       } else {
-        // CREATE a new job with 'start' for legacy (idle) files
         const newJobPayload = {
             llm_chatbot: selectedChatbot.id,
             llm_file: fileId,
@@ -326,13 +314,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       }
     } catch (err: any) {
         console.error("Failed to create/start build job:", err);
-        let errorMessage = "خطا در ایجاد دستور پردازش.";
-        if (err?.errors?.[0]?.message) {
-            errorMessage = err.errors[0].message;
-        } else if (err?.message) {
-            errorMessage = err.message;
-        }
-        setError(errorMessage);
+        setError(err?.errors?.[0]?.message || err?.message || "خطا در ایجاد دستور پردازش.");
     } finally {
         setBuildingFileId(null);
     }
@@ -354,6 +336,59 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     }
   };
 
+  const handlePurgeMemory = async () => {
+    if (!selectedChatbot) return;
+    setIsPurging(true);
+    setError(null);
+    
+    try {
+        // Use the validated Webhook URL (GET method)
+        const PURGE_FLOW_URL = `https://crm.megalive.ir/flows/trigger/84e65536-4a20-4778-b0d6-074708eaec32?bot_id=${selectedChatbot.id}&slug=${selectedChatbot.chatbot_slug}`; 
+        
+        const response = await fetch(PURGE_FLOW_URL, {
+            method: 'GET'
+        });
+
+        if (!response.ok) throw new Error("Purge request failed");
+        
+        // Refresh local data to show new "Ready" statuses
+        if (folderId) await loadFilesAndJobs(folderId, selectedChatbot.id);
+        
+        alert("حافظه چت‌بات با موفقیت پاکسازی شد. تمامی محتواها و فایل‌ها ریست شده و آماده پردازش مجدد هستند.");
+    } catch (err) {
+        console.error("Purge failed:", err);
+        setError("خطا در پاکسازی حافظه. لطفا اتصال اینترنت و تنظیمات Flow را بررسی کنید.");
+    } finally {
+        setIsPurging(false);
+    }
+  };
+
+  const requestPurge = () => {
+      setModalState({
+          isOpen: true,
+          title: "پاکسازی کامل حافظه چت‌بات",
+          confirmText: "تایید و پاکسازی نهایی",
+          confirmVariant: "danger",
+          message: (
+              <div className="space-y-4">
+                  <p>آیا از پاکسازی کامل حافظه این چت‌بات اطمینان دارید؟</p>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-xs leading-relaxed text-right">
+                      <p className="font-bold mb-2">چه اتفاقی می‌افتد؟</p>
+                      <ul className="list-disc list-inside space-y-1.5">
+                          <li>تمامی وکتورهای موجود در Qdrant حذف می‌شوند.</li>
+                          <li>تمامی آیتم‌های بخش "مدیریت محتوا" از وضعیت ایندکس خارج می‌شوند.</li>
+                          <li>وضعیت تمامی فایل‌های آپلود شده در این بخش به <span className="font-bold text-gray-900 dark:text-white">"آماده پردازش" (Ready)</span> تغییر می‌کند تا بتوانید مجدداً آن‌ها را Build کنید.</li>
+                      </ul>
+                  </div>
+              </div>
+          ),
+          onConfirm: () => {
+              setModalState(null);
+              handlePurgeMemory();
+          }
+      });
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -364,7 +399,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
   const StatusAndActionButton: React.FC<{ file: ProcessedFile }> = ({ file }) => {
     const isBuildingThis = buildingFileId === file.id;
-    
     const onBuildClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         handleBuild(file.id, file.llmJobId);
@@ -372,85 +406,22 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
     switch (file.buildStatus) {
       case 'ready':
-        return (
-          <button
-            onClick={onBuildClick}
-            disabled={isBuildingThis}
-            className="flex items-center gap-2 px-4 py-1.5 font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50"
-          >
-            {isBuildingThis ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} />}
-            <span>پردازش</span>
-          </button>
-        );
-      case 'start':
-        return (
-          <div className="flex items-center gap-2 text-xs text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 px-2.5 py-1.5 rounded-full font-medium">
-            <Loader2 size={14} className="animate-spin" />
-            <span>در صف پردازش...</span>
-          </div>
-        );
-      case 'building':
-        return (
-          <div className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-1.5 rounded-full font-medium">
-            <Loader2 size={14} className="animate-spin" />
-            <span>در حال پردازش...</span>
-          </div>
-        );
-      case 'completed':
-        return (
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded-full font-medium">
-              <CheckCircle2 size={14} />
-              آماده
-            </span>
-          </div>
-        );
-      case 'error':
-        return (
-            <div className="flex items-center gap-4">
-                <div className="group relative">
-                    <span className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-full font-medium cursor-pointer">
-                        <AlertCircle size={14} />
-                        خطا
-                    </span>
-                    <div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                        {file.errorMessage || 'خطای نامشخص'}
-                    </div>
-                </div>
-                <button
-                    onClick={onBuildClick}
-                    disabled={isBuildingThis}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"
-                >
-                    <RefreshCw size={12} />
-                    تلاش مجدد
-                </button>
-            </div>
-        );
       case 'idle':
-      default:
-        return (
-          <button
-            onClick={onBuildClick}
-            disabled={isBuildingThis}
-            className="flex items-center gap-2 px-4 py-1.5 font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50"
-          >
-            {isBuildingThis ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} />}
-            <span>پردازش</span>
-          </button>
-        );
+        return <button onClick={onBuildClick} disabled={isBuildingThis} className="flex items-center gap-2 px-4 py-1.5 font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50">{isBuildingThis ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} />}<span>پردازش</span></button>;
+      case 'start':
+        return <div className="flex items-center gap-2 text-xs text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 px-2.5 py-1.5 rounded-full font-medium"><Loader2 size={14} className="animate-spin" /><span>در صف...</span></div>;
+      case 'building':
+        return <div className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-1.5 rounded-full font-medium"><Loader2 size={14} className="animate-spin" /><span>در حال پردازش...</span></div>;
+      case 'completed':
+        return <div className="flex items-center gap-4"><span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded-full font-medium"><CheckCircle2 size={14} />آماده</span></div>;
+      case 'error':
+        return <div className="flex items-center gap-4"><div className="group relative"><span className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-full font-medium cursor-pointer"><AlertCircle size={14} />خطا</span><div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">{file.errorMessage || 'خطای نامشخص'}</div></div><button onClick={onBuildClick} disabled={isBuildingThis} className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"><RefreshCw size={12} />تلاش مجدد</button></div>;
+      default: return null;
     }
   };
 
   if (viewingFile) {
-    return <FileDetails 
-      file={viewingFile} 
-      onBack={() => setViewingFile(null)} 
-      onBuild={handleBuild}
-      onPause={handlePause}
-      isBuilding={buildingFileId === viewingFile.id}
-      isPausing={pausingFileId === viewingFile.id}
-    />;
+    return <FileDetails file={viewingFile} onBack={() => setViewingFile(null)} onBuild={handleBuild} onPause={handlePause} isBuilding={buildingFileId === viewingFile.id} isPausing={pausingFileId === viewingFile.id} />;
   }
 
   if (!selectedChatbot) return <div className="flex flex-col items-center justify-center h-64 text-gray-400"><AlertCircle size={48} className="mb-4 opacity-20" /><p>لطفا ابتدا یک چت‌بات را انتخاب کنید</p></div>;
@@ -461,73 +432,20 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         <div>
           <p className="text-gray-500 dark:text-gray-400 text-lg">فایل‌های دانشی خود را آپلود و برای استفاده ربات پردازش (Build) کنید.</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            {folderName && (
-                <div className="flex items-center gap-2 text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr">
-                    <FolderOpen size={14} />
-                    Target Folder: {folderName}
-                </div>
-            )}
-            {files.length > 0 && (
-                <div className="flex items-center gap-2 text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr">
-                    <HardDrive size={14} />
-                    Total Size: {formatSize(totalSizeBytes)}
-                </div>
-            )}
+            {folderName && <div className="flex items-center gap-2 text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr"><FolderOpen size={14} />Target Folder: {folderName}</div>}
+            {files.length > 0 && <div className="flex items-center gap-2 text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg w-fit dir-ltr"><HardDrive size={14} />Total Size: {formatSize(totalSizeBytes)}</div>}
           </div>
         </div>
 
         {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400"><AlertCircle size={20} /><p className="text-sm">{error}</p></div>}
 
-        {/* File Stats Summary */}
-        {!isLoading && files.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                        <FileText size={18} />
-                    </div>
-                    <div>
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">کل فایل‌ها</span>
-                        <span className="block font-bold text-gray-800 dark:text-white">{stats.total}</span>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                        <Layers size={18} />
-                    </div>
-                    <div>
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">آماده پردازش</span>
-                        <span className="block font-bold text-gray-800 dark:text-white">{stats.ready + stats.idle}</span>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
-                        <Loader2 size={18} className={stats.processing > 0 ? "animate-spin" : ""} />
-                    </div>
-                    <div>
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">در حال پردازش</span>
-                        <span className="block font-bold text-gray-800 dark:text-white">{stats.processing}</span>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
-                        <CheckCircle2 size={18} />
-                    </div>
-                    <div>
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">تکمیل شده</span>
-                        <span className="block font-bold text-gray-800 dark:text-white">{stats.completed}</span>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
-                        <AlertCircle size={18} />
-                    </div>
-                    <div>
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">خطا</span>
-                        <span className="block font-bold text-gray-800 dark:text-white">{stats.error}</span>
-                    </div>
-                </div>
-            </div>
-        )}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3"><div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"><FileText size={18} /></div><div><span className="block text-xs text-gray-500 dark:text-gray-400">کل فایل‌ها</span><span className="block font-bold text-gray-800 dark:text-white">{stats.total}</span></div></div>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3"><div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"><Layers size={18} /></div><div><span className="block text-xs text-gray-500 dark:text-gray-400">آماده پردازش</span><span className="block font-bold text-gray-800 dark:text-white">{stats.ready + stats.idle}</span></div></div>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3"><div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"><Loader2 size={18} className={stats.processing > 0 ? "animate-spin" : ""} /></div><div><span className="block text-xs text-gray-500 dark:text-gray-400">در حال پردازش</span><span className="block font-bold text-gray-800 dark:text-white">{stats.processing}</span></div></div>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3"><div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"><CheckCircle2 size={18} /></div><div><span className="block text-xs text-gray-500 dark:text-gray-400">تکمیل شده</span><span className="block font-bold text-gray-800 dark:text-white">{stats.completed}</span></div></div>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 rounded-xl flex items-center gap-3"><div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"><AlertCircle size={18} /></div><div><span className="block text-xs text-gray-500 dark:text-gray-400">خطا</span><span className="block font-bold text-gray-800 dark:text-white">{stats.error}</span></div></div>
+        </div>
 
         <div className={`relative border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'} ${!folderId ? 'opacity-50 pointer-events-none grayscale' : ''}`} onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop} onClick={() => folderId && document.getElementById('file-upload')?.click()}>
           <input id="file-upload" type="file" className="hidden" multiple={false} onChange={handleChange} accept=".pdf,.docx,.txt,.md,.csv" />
@@ -560,32 +478,40 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
                           </div>
                       </div>
                   </div>
-
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                      {isPausing ? (
-                         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 px-4 py-1.5">
-                            <Loader2 size={14} className="animate-spin" />
-                            {'در حال توقف...'}
-                         </div>
-                      ) : (
-                         <>
-                           <StatusAndActionButton file={file} />
-                           {isProcessing ? (
-                             <button onClick={(e) => {e.stopPropagation(); handlePause(file)}} className="p-2 text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="توقف پردازش">
-                                  <PauseCircle size={18} />
-                             </button>
-                           ) : (
-                             <button onClick={(e) => { e.stopPropagation(); setViewingFile(file);}} className="p-2 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="مشاهده جزئیات">
-                                 <ArrowLeft size={18} />
-                             </button>
-                           )}
-                         </>
-                      )}
+                      {isPausing ? <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 px-4 py-1.5"><Loader2 size={14} className="animate-spin" />{'در حال توقف...'}</div> : <><StatusAndActionButton file={file} />{isProcessing ? <button onClick={(e) => {e.stopPropagation(); handlePause(file)}} className="p-2 text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="توقف پردازش"><PauseCircle size={18} /></button> : <button onClick={(e) => { e.stopPropagation(); setViewingFile(file);}} className="p-2 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="مشاهده جزئیات"><ArrowLeft size={18} /></button>}</>}
                   </div>
                   </div>
                 )
              })}
           </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="mt-12 pt-8 border-t-2 border-dashed border-red-100 dark:border-red-900/30">
+            <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl p-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                        <div className="p-3 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-xl">
+                            <ZapOff size={24} />
+                        </div>
+                        <div>
+                            <h4 className="text-lg font-bold text-red-700 dark:text-red-400">پاکسازی کامل حافظه موقت (Qdrant Purge)</h4>
+                            <p className="text-sm text-red-600/70 dark:text-red-400/60 mt-1 leading-relaxed text-right">
+                                این عملیات تمامی دانش فعلی ربات را از حافظه هوش مصنوعی حذف می‌کند. تمامی فایل‌ها و محتواها از وضعیت ایندکس خارج شده و باید مجدداً پردازش شوند.
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={requestPurge}
+                        disabled={isPurging}
+                        className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-900 text-red-600 dark:text-red-500 border-2 border-red-200 dark:border-red-900/50 rounded-xl font-bold hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                    >
+                        {isPurging ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                        {isPurging ? 'در حال پاکسازی...' : 'حذف تمام وکتورها'}
+                    </button>
+                </div>
+            </div>
         </div>
         
       </div>
@@ -596,6 +522,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
           onConfirm={modalState.onConfirm}
           title={modalState.title}
           message={modalState.message}
+          confirmText={modalState.confirmText}
+          confirmVariant={modalState.confirmVariant}
         />
       )}
     </>
