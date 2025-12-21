@@ -496,9 +496,9 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
                             <ZapOff size={24} />
                         </div>
                         <div>
-                            <h4 className="text-lg font-bold text-red-700 dark:text-red-400">پاکسازی کامل حافظه موقت (Qdrant Purge)</h4>
+                            <h4 className="text-lg font-bold text-red-700 dark:text-red-400">پاکسازی حافظه چت‌بات</h4>
                             <p className="text-sm text-red-600/70 dark:text-red-400/60 mt-1 leading-relaxed text-right">
-                                این عملیات تمامی دانش فعلی ربات را از حافظه هوش مصنوعی حذف می‌کند. تمامی فایل‌ها و محتواها از وضعیت ایندکس خارج شده و باید مجدداً پردازش شوند.
+                               حذف کامل پایگاه داده چت‌بات شما شامل محتواها و فایل ها
                             </p>
                         </div>
                     </div>
@@ -508,7 +508,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
                         className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-900 text-red-600 dark:text-red-500 border-2 border-red-200 dark:border-red-900/50 rounded-xl font-bold hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
                     >
                         {isPurging ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-                        {isPurging ? 'در حال پاکسازی...' : 'حذف تمام وکتورها'}
+                        {isPurging ? 'در حال پاکسازی...' : 'شروع پاکسازی'}
                     </button>
                 </div>
             </div>

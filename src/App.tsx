@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -180,9 +181,10 @@ const App: React.FC = () => {
            const savedBot = savedId ? bots.find(b => b.id === Number(savedId)) : null;
            setSelectedChatbot(savedBot || bots[0]);
         } else {
-           // No chatbots found (new user), redirect to PRICING page first
+           // No chatbots found (new user), redirect to CREATE-BOT page first
+           // User Register Funnel Step 1: Identity/Creation
            if (!isPlanExpired && activeTab !== 'payment_verify') {
-             setActiveTab('pricing');
+             setActiveTab('create-bot');
            }
         }
       };
@@ -229,11 +231,20 @@ const App: React.FC = () => {
   };
 
   const handleSubmitCreateChatbot = async (name: string, slug: string, businessName: string) => {
+    // Detect if this is the user's very first chatbot
+    const isFirstChatbot = chatbots.length === 0;
+    
     const newBot = await createChatbot(name, slug, businessName);
     if (newBot) {
       setChatbots(prev => [newBot, ...prev]);
       handleSelectChatbot(newBot);
-      setActiveTab('general');
+      
+      // User Register Funnel Step 2: Plan Selection
+      if (isFirstChatbot) {
+          setActiveTab('pricing');
+      } else {
+          setActiveTab('general');
+      }
     }
     return newBot;
   };
@@ -348,7 +359,7 @@ const App: React.FC = () => {
       {/* Content Wrapper */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
         
-        {/* Top Header */}
+        {/* Header */}
         <Header 
           activeTab={activeTab} 
           setActiveTab={setActiveTab}
