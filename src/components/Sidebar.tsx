@@ -1,7 +1,6 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock } from 'lucide-react';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock, Activity } from 'lucide-react';
 import { TabType, Chatbot, Plan } from '../types';
 import { User } from '../context/AuthContext';
 import { fetchPricingPlans } from '../services/configService';
@@ -62,22 +61,23 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'content-manager', label: 'مدیریت محتوا', icon: <BookOpenCheck size={20} /> },
     { id: 'knowledge', label: 'پایگاه دانش', icon: <Database size={20} /> },
     { id: 'deploy', label: 'انتشار آنلاین', icon: <Rocket size={20} /> },
-    // { id: 'integrations', label: 'اتصال برنامه', icon: <Puzzle size={20} /> },
+    { id: 'logs', label: 'تاریخچه چت‌ها', icon: <Activity size={20} /> },
   ];
 
   // Calculate Message Usage
   const profile = user?.profile;
   
-  // Resolve Plan: Check by ID first (Relation), then Name (Legacy)
+  // Resolve Plan Configuration
   const currentPlan = plans.find(p => 
     p.id === Number(profile?.profile_plan) || 
     (typeof profile?.profile_plan === 'object' && (profile?.profile_plan as any)?.id === p.id) ||
     String(p.plan_name || '').toLowerCase() === String(profile?.profile_plan || '').toLowerCase()
   );
   
-  // Default to 100 if plan not loaded yet or free
+  // Default to 100 if plan not loaded yet
   const limitMessages = currentPlan?.plan_messages || 100;
-  const currentMessages = profile?.profile_messages ? parseInt(profile.profile_messages) : 0;
+  // Ensure numeric value from profile
+  const currentMessages = Number(profile?.profile_messages || 0);
   
   const usagePercent = Math.min((currentMessages / limitMessages) * 100, 100);
 
@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       ${isCollapsed ? 'w-20' : 'w-64'}
     `}>
       
-      {/* Toggle Button (Visible on all devices - On Border) */}
+      {/* Toggle Button */}
       <button 
         onClick={toggleCollapse}
         className={`
@@ -121,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
         <div className={`transition-opacity duration-200 overflow-hidden ${isCollapsed ? 'hidden' : 'block'}`}>
-          <h1 className="text-lg font-bold text-gray-800 dark:text-white text-base whitespace-nowrap">{appTitle}</h1>
+          <h1 className="text-lg font-bold text-gray-800 dark:text-white whitespace-nowrap">{appTitle}</h1>
           <p className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{appSlogan}</p>
         </div>
       </div>
@@ -185,7 +185,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                           {isPlanExpired ? <Lock size={14} /> : <Plus size={14} />}
                           ساخت چت‌بات جدید
                       </button>
-                      
                       {!isPlanExpired && (
                         <button 
                             onClick={() => { setActiveTab('manage-bots'); setIsBotDropdownOpen(false); }}
@@ -207,11 +206,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           return (
             <button
                 key={item.id}
-                onClick={() => {
-                if (!isDisabled) {
-                    setActiveTab(item.id);
-                }
-                }}
+                onClick={() => !isDisabled && setActiveTab(item.id)}
                 disabled={isDisabled}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${isCollapsed ? 'justify-center' : ''}
                 ${isDisabled 
@@ -233,8 +228,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className={`whitespace-nowrap text-sm transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
                 {item.label}
                 </span>
-                
-                {/* Tooltip for collapsed state */}
                 {isCollapsed && (
                 <div className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg flex items-center gap-1">
                     {isDisabled && <Lock size={10} />}
@@ -246,10 +239,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Footer Actions (Messages Usage) */}
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
-        
-        {/* Messages Widget */}
+      {/* Footer Actions (Messages Usage Widget) */}
+      <div className="p-4 border-t border-gray-100 dark:border-gray-800">
         <div className={`bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
           {!isCollapsed ? (
             <div className="overflow-hidden">
@@ -258,15 +249,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                 پیام‌های مصرفی
               </p>
               <div className="w-full bg-white dark:bg-gray-900 rounded-full h-1.5 mb-2 overflow-hidden border border-gray-100 dark:border-gray-700">
-                <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${usagePercent}%` }}></div>
+                <div 
+                  className="bg-blue-600 h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${usagePercent}%` }}
+                ></div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-left dir-ltr whitespace-nowrap font-mono">
-                {currentMessages.toLocaleString('en-US')} / {limitMessages.toLocaleString('en-US')}
-              </p>
+              <div className="flex justify-between items-center text-[10px] font-mono whitespace-nowrap" dir="ltr">
+                <span className="text-blue-600 dark:text-blue-400 font-bold">{currentMessages.toLocaleString('en-US')}</span>
+                <span className="text-gray-300 dark:text-gray-600 mx-1">/</span>
+                <span className="text-gray-500 dark:text-gray-400">{limitMessages.toLocaleString('en-US')}</span>
+              </div>
             </div>
           ) : (
               <div className="flex flex-col items-center gap-1">
-                <div className="w-1.5 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
+                <div className="w-1.5 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative" title={`مصرف: ${Math.round(usagePercent)}%`}>
                     <div className="absolute bottom-0 w-full bg-blue-600 transition-all duration-500" style={{ height: `${usagePercent}%` }}></div>
                 </div>
                 <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">{Math.round(usagePercent)}%</span>

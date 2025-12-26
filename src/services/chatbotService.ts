@@ -1,5 +1,4 @@
 
-
 import { directus } from './directus';
 import { readItems, readItem, createItem, updateItem, readFolders, createFolder, readFiles, readSingleton } from '@directus/sdk';
 import { Chatbot } from '../types';
@@ -18,42 +17,28 @@ export const fetchUserChatbots = async (): Promise<Chatbot[]> => {
 };
 
 /**
- * Calculates the total stats from all chatbots belonging to the current user
- * and updates the single Profile item for that user.
+ * Aggregates stats from all user chatbots and updates the global profile.
+ * Now strictly uses Numbers to match Integer field types.
  */
 export const syncProfileStats = async (userId: string): Promise<void> => {
   try {
-    // 1. Fetch all chatbots for this user (user_created is automatically handled by permissions, 
-    // but explicit filtering ensures we get the right list context)
     // @ts-ignore
     const bots = await directus.request(readItems('chatbot', {
       filter: { user_created: { _eq: userId } },
       fields: ['chatbot_llm', 'chatbot_messages', 'chatbot_storage']
     })) as Chatbot[];
 
-    // 2. Aggregate Stats
     let totalLlm = 0;
     let totalMessages = 0;
     let totalStorage = 0;
 
     bots.forEach(bot => {
-      // LLM (Vectors)
-      if (bot.chatbot_llm) {
-        totalLlm += bot.chatbot_llm;
-      }
-      
-      // Messages (stored as string/bigint)
-      if (bot.chatbot_messages) {
-        totalMessages += parseInt(bot.chatbot_messages);
-      }
-
-      // Storage (stored as string/bigint)
-      if (bot.chatbot_storage) {
-        totalStorage += parseInt(bot.chatbot_storage);
-      }
+      // Use Number() and logical OR to prevent undefined/null issues
+      totalLlm += Number(bot.chatbot_llm || 0);
+      totalMessages += Number(bot.chatbot_messages || 0);
+      totalStorage += Number(bot.chatbot_storage || 0);
     });
 
-    // 3. Find the user's profile item
     // @ts-ignore
     const profiles = await directus.request(readItems('profile', {
       filter: { user_created: { _eq: userId } },
@@ -63,38 +48,30 @@ export const syncProfileStats = async (userId: string): Promise<void> => {
 
     if (profiles && profiles.length > 0) {
       const profileId = profiles[0].id;
-
-      // 4. Update Profile with aggregated data
       // @ts-ignore
       await directus.request(updateItem('profile', profileId, {
         profile_chatbots: bots.length,
         profile_llm: totalLlm,
-        profile_messages: totalMessages.toString(),
-        profile_storages: totalStorage.toString()
+        profile_messages: totalMessages,
+        profile_storages: totalStorage
       }));
     }
-
   } catch (error) {
     console.error("Failed to sync profile stats:", error);
   }
 };
 
 /**
- * Forces a sync between the actual number of files in the chatbot's folder
- * and the 'chatbot_llm' field in the database.
+ * Syncs the 'chatbot_llm' count with actual physical files in the folder.
+ * Also triggers a global profile sync.
  */
 export const recalculateChatbotStats = async (chatbotId: number): Promise<Chatbot | null> => {
   try {
-    // 1. Get the chatbot to find its folder
-    // FIX: Used readItem instead of readItems for fetching by ID to prevent "in operator" error
     // @ts-ignore
     const chatbot = await directus.request(readItem('chatbot', chatbotId)) as Chatbot;
-    
     if (!chatbot) return null;
 
     let folderId = chatbot.chatbot_folder;
-
-    // Fallback: If no folder relation, try to find by slug (legacy support)
     if (!folderId && chatbot.chatbot_slug) {
         // @ts-ignore
         const llmFolders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } } }));
@@ -106,43 +83,42 @@ export const recalculateChatbotStats = async (chatbotId: number): Promise<Chatbo
             }));
             if (botFolders && botFolders.length > 0) {
                 folderId = botFolders[0].id;
-                // Auto-fix: Link the folder if it wasn't linked
+                // Auto-fix link
                 // @ts-ignore
                 await directus.request(updateItem('chatbot', chatbotId, { chatbot_folder: folderId }));
             }
         }
     }
 
-    if (!folderId) {
-        console.warn(`No folder found for chatbot ${chatbotId}`);
-        return chatbot;
-    }
+    let updatedBot = chatbot;
 
-    // 2. Count files in the folder
-    // @ts-ignore
-    const files = await directus.request(readFiles({
-        filter: { folder: { _eq: folderId } },
-        limit: -1, // No limit to get accurate count
-        fields: ['id']
-    }));
-    
-    const fileCount = files.length;
-
-    // 3. Update Chatbot if count differs
-    if (chatbot.chatbot_llm !== fileCount) {
+    if (folderId) {
+        // Count files and calculate size
         // @ts-ignore
-        const updatedBot = await directus.request(updateItem('chatbot', chatbotId, {
-            chatbot_llm: fileCount
-        }));
+        const files = await directus.request(readFiles({
+            filter: { folder: { _eq: folderId } },
+            limit: -1,
+            fields: ['id', 'filesize']
+        })) as { id: string, filesize: string }[];
         
-        // 4. Trigger profile sync to update global usage
-        await syncProfileStats(chatbot.user_created);
-        
-        return updatedBot as Chatbot;
+        const fileCount = files.length;
+        const totalBytes = files.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
+        const totalMB = Math.ceil(totalBytes / (1024 * 1024));
+
+        // Update bot if files or storage changed
+        if (chatbot.chatbot_llm !== fileCount || Number(chatbot.chatbot_storage || 0) !== totalMB) {
+            // @ts-ignore
+            updatedBot = await directus.request(updateItem('chatbot', chatbotId, {
+                chatbot_llm: fileCount,
+                chatbot_storage: totalMB
+            })) as Chatbot;
+        }
     }
 
-    return chatbot;
-
+    // Always trigger profile sync to catch background message increments
+    await syncProfileStats(chatbot.user_created);
+    
+    return updatedBot;
   } catch (error) {
     console.error("Error recalculating chatbot stats:", error);
     return null;
@@ -151,23 +127,16 @@ export const recalculateChatbotStats = async (chatbotId: number): Promise<Chatbo
 
 export const createChatbot = async (name: string, slug: string, businessName: string): Promise<Chatbot | null> => {
   try {
-    // 0. Fetch default avatar from configuration
     let defaultAvatar = null;
     try {
         // @ts-ignore
-        const config = await directus.request(readSingleton('configuration', {
-            fields: ['app_avatar']
-        }));
-        // @ts-ignore
+        const config = await directus.request(readSingleton('configuration', { fields: ['app_avatar'] }));
         if (config && config.app_avatar) {
-            // @ts-ignore
             defaultAvatar = typeof config.app_avatar === 'object' ? config.app_avatar.id : config.app_avatar;
         }
-    } catch (e) {
-        console.warn("Failed to fetch default bot avatar configuration:", e);
-    }
+    } catch (e) { /* ignore */ }
 
-    // 1. Create the Chatbot item
+    // Create with numeric defaults
     // @ts-ignore
     const result = await directus.request(createItem('chatbot', {
       chatbot_name: name,
@@ -176,52 +145,27 @@ export const createChatbot = async (name: string, slug: string, businessName: st
       chatbot_business: businessName,
       chatbot_active: false,
       status: 'published',
-      chatbot_messages: "0",
-      chatbot_storage: "0",
+      chatbot_messages: 0,
+      chatbot_storage: 0,
       chatbot_llm: 0,
       chatbot_logo: defaultAvatar
     }));
 
-    // 2. Create the corresponding folder in Directus
     try {
-      // Search for the parent "llm" folder
       // @ts-ignore
-      const folders = await directus.request(readFolders({
-        filter: {
-          name: { _eq: 'llm' }
-        },
-        limit: 1
-      }));
-
-      // If "llm" folder exists, create the subfolder
+      const folders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } }, limit: 1 }));
       if (folders && folders.length > 0) {
         const parentId = folders[0].id;
-        
         // @ts-ignore
-        const newFolder = await directus.request(createFolder({
-          name: slug,
-          parent: parentId
-        }));
-
-        // 3. Update the chatbot with the new folder ID
+        const newFolder = await directus.request(createFolder({ name: slug, parent: parentId }));
         if (newFolder && newFolder.id) {
             // @ts-ignore
-            await directus.request(updateItem('chatbot', result.id, {
-                chatbot_folder: newFolder.id
-            }));
-            
-            // Update the local result object to return the complete data
+            await directus.request(updateItem('chatbot', result.id, { chatbot_folder: newFolder.id }));
             // @ts-ignore
             result.chatbot_folder = newFolder.id;
         }
-
-      } else {
-        console.warn("Parent folder 'llm' not found. Skipping subfolder creation.");
       }
-    } catch (folderError) {
-      // Log error but don't fail the whole process since the bot is created
-      console.error('Error creating folder for chatbot:', folderError);
-    }
+    } catch (fErr) { /* ignore */ }
 
     return result as Chatbot;
   } catch (error) {
@@ -233,9 +177,7 @@ export const createChatbot = async (name: string, slug: string, businessName: st
 export const updateChatbot = async (id: number, data: Partial<Chatbot>): Promise<Chatbot | null> => {
   try {
     // @ts-ignore
-    const result = await directus.request(updateItem('chatbot', id, data, {
-      fields: ['*'] // Request the full object back after update
-    }));
+    const result = await directus.request(updateItem('chatbot', id, data, { fields: ['*'] }));
     return result as Chatbot;
   } catch (error) {
     console.error('Error updating chatbot:', error);

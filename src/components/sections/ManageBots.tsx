@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bot, Settings, Globe, PlusCircle, Crown, MessageSquare, HardDrive, Cpu, AlertTriangle, ArrowUpCircle, FileText, Server } from 'lucide-react';
 import { Chatbot, TabType, Plan } from '../../types';
@@ -116,16 +117,16 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
   const limitVectors = currentPlanConfig?.plan_llm || 1;
 
   const currentChatbots = chatbots.length;
-  // Parse current usage for calculations
-  const currentMessages = profile?.profile_messages ? parseInt(profile.profile_messages) : 0;
-  const currentStorage = profile?.profile_storages ? parseInt(profile.profile_storages) : 0;
+  // FIX: Removed parseInt as profile_messages and profile_storages are already numbers in the interface.
+  const currentMessages = profile?.profile_messages || 0;
+  const currentStorage = profile?.profile_storages || 0;
   const currentVectors = profile?.profile_llm || 0;
 
   const isLimitReached = currentChatbots >= limitChatbots;
 
-  const formatBigInt = (val?: string) => {
+  const formatBigInt = (val?: number) => {
       if(!val) return '0';
-      return parseInt(val).toLocaleString('en-US');
+      return val.toLocaleString('en-US');
   };
 
   const getPercentage = (current: number, limit: number) => {
@@ -251,9 +252,9 @@ const ManageBots: React.FC<Props> = ({ chatbots, onUpdateChatbot, onSelectChatbo
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {chatbots.map(bot => {
-          // Parse Bot Stats
-          const botMsgCount = bot.chatbot_messages ? parseInt(bot.chatbot_messages) : 0;
-          const botStorageSize = bot.chatbot_storage ? parseInt(bot.chatbot_storage) : 0;
+          // FIX: Removed parseInt as chatbot_messages and chatbot_storage are already numbers.
+          const botMsgCount = bot.chatbot_messages || 0;
+          const botStorageSize = bot.chatbot_storage || 0;
           const botFileCount = bot.chatbot_llm || 0;
           const botVectorCount = bot.chatbot_vector || 0;
 

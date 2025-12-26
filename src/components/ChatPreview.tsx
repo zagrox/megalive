@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle, MapPin } from 'lucide-react';
 import { BotConfig, Message } from '../types';
@@ -148,6 +145,7 @@ const ChatPreview: React.FC<ChatPreviewProps> = ({ config }) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                botId: config.id, // Added Bot ID for counter tracking
                 sessionId: sessionIdRef.current,
                 chatInput: textToSend,
                 action: 'chat'

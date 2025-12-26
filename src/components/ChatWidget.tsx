@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, RefreshCw, Sparkles, Tag, Maximize2, Minimize2, MoreVertical, Moon, Sun, Phone, Instagram, MessageCircle, MapPin } from 'lucide-react';
 import { BotConfig, Message } from '../types';
@@ -139,7 +138,7 @@ const ChatWidget: React.FC = () => {
     const fetchConfig = async () => {
       try {
         const publicFields = [
-          'chatbot_name', 'chabot_title', 'chatbot_welcome', 'chatbot_logo', 
+          'id', 'chatbot_name', 'chabot_title', 'chatbot_welcome', 'chatbot_logo', 
           'chatbot_color', 'chatbot_input', 'chatbot_suggestion', 'chatbot_active', 'chatbot_webhook',
           'chatbot_phone', 'chatbot_instagram', 'chatbot_whatsapp', 'chatbot_telegram',
           'chatbot_address', 'chatbot_location'
@@ -160,6 +159,7 @@ const ChatWidget: React.FC = () => {
         }
         
         const fetchedConfig: Partial<BotConfig> = {
+          id: data.id,
           name: data.chatbot_name,
           description: data.chabot_title,
           welcomeMessage: data.chatbot_welcome,
@@ -217,6 +217,7 @@ const ChatWidget: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          botId: config.id, // Added Bot ID for counter tracking
           sessionId: sessionIdRef.current,
           chatInput: textToSend,
           action: 'chat'

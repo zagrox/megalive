@@ -149,12 +149,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       const currentTotalBytes = fetchedFiles.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
       const currentTotalMB = Math.ceil(currentTotalBytes / (1024 * 1024));
       
-      const dbStorage = selectedChatbot?.chatbot_storage ? parseInt(selectedChatbot.chatbot_storage) : 0;
+      // FIX: Removed parseInt as chatbot_storage is already a number in the interface.
+      const dbStorage = selectedChatbot?.chatbot_storage || 0;
 
       if (selectedChatbot && (selectedChatbot.chatbot_llm !== fileCount || dbStorage !== currentTotalMB)) {
+          // FIX: Passed currentTotalMB directly as it's a number.
           await onUpdateChatbot(selectedChatbot.id, { 
               chatbot_llm: fileCount,
-              chatbot_storage: currentTotalMB.toString()
+              chatbot_storage: currentTotalMB
           });
           
           if (user?.id) {
@@ -184,9 +186,10 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         const totalBytes = filesList.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
         const totalMB = Math.ceil(totalBytes / (1024 * 1024));
 
+        // FIX: Passed totalMB directly as it's a number.
         await onUpdateChatbot(selectedChatbot.id, {
             chatbot_llm: count,
-            chatbot_storage: totalMB.toString()
+            chatbot_storage: totalMB
         });
 
         await syncProfileStats(user.id);

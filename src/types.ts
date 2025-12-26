@@ -1,14 +1,14 @@
 
-
 export interface UploadedFile {
   id: string;
   name: string;
   size: number;
-  status: 'uploading' | 'ready' | 'error'; // Removed 'indexing'
+  status: 'uploading' | 'ready' | 'error';
   uploadDate: string;
 }
 
 export interface BotConfig {
+  id?: number;
   appTitle?: string;
   appSlogan?: string;
   appLogoUrl?: string;
@@ -30,11 +30,14 @@ export interface BotConfig {
   address?: string;
   location?: {
     type: 'Point';
-    coordinates: [number, number]; // [longitude, latitude]
+    coordinates: [number, number];
   };
 }
 
-// --- Directus Schema Definitions ---
+export interface ChatbotActivityEntry {
+  q: string;
+  t: string;
+}
 
 export interface Chatbot {
   id: number;
@@ -44,10 +47,10 @@ export interface Chatbot {
   user_updated: string;
   date_updated: string;
   chatbot_name: string;
-  chabot_title: string; // Note: typo from DB schema maintained
+  chabot_title: string;
   chatbot_business?: string;
   chatbot_site?: string;
-  chatbot_telegram?: string; // This was existing but maybe unused, now used for contact
+  chatbot_telegram?: string;
   chatbot_webhook?: string;
   chatbot_welcome?: string;
   chatbot_logo?: string;
@@ -58,21 +61,21 @@ export interface Chatbot {
   chatbot_input?: string;
   chatbot_color?: string;
   chatbot_slug?: string;
-  chatbot_llm?: number; // Renamed from chatbot_vector (Files count)
-  chatbot_vector?: number; // NEW: Actual vector count from Qdrant
+  chatbot_llm?: number;
+  chatbot_vector?: number;
   chatbot_human?: string;
-  chatbot_folder?: string; // UUID of the related folder
-  chatbot_phone?: string; // Contact phone number
-  chatbot_instagram?: string; // Contact Instagram
-  chatbot_whatsapp?: string; // Contact WhatsApp
-  chatbot_address?: string; // Address text
+  chatbot_folder?: string;
+  chatbot_phone?: string;
+  chatbot_instagram?: string;
+  chatbot_whatsapp?: string;
+  chatbot_address?: string;
   chatbot_location?: {
     type: 'Point';
-    coordinates: [number, number]; // [longitude, latitude]
+    coordinates: [number, number];
   };
-  // Usage stats per bot
-  chatbot_messages?: string; // Stored as string/bigint in DB
-  chatbot_storage?: string; // Stored as string/bigint in DB
+  chatbot_messages: number;
+  chatbot_storage: number;
+  chatbot_activity?: ChatbotActivityEntry[];
 }
 
 export interface ContentItem {
@@ -83,64 +86,15 @@ export interface ContentItem {
   date_updated: string;
   content_type: 'faq' | 'product';
   content_chatbot: number;
-  content_index?: boolean; // New field to track indexing status
-  // Common
+  content_index?: boolean;
   content_link?: string;
   content_image?: string;
-  // FAQ Fields
   content_question?: string;
   content_answer?: string;
-  // Product Fields
-  content_product?: string; // Name
+  content_product?: string;
   content_price?: string;
   content_sku?: string;
   content_details?: string;
-}
-
-export interface FAQItem {
-  id: number;
-  status?: string;
-  user_created?: string;
-  date_created: string;
-  date_updated?: string;
-  question: string;
-  answer: string;
-  chatbot: number;
-  is_indexed?: boolean;
-}
-
-export interface SystemFAQ {
-  id: number;
-  status: string;
-  sort?: number;
-  date_created?: string;
-  date_updated?: string;
-  faq_question: string;
-  faq_answer: string;
-}
-
-export interface DirectusFile {
-  id: string;
-  filename_download: string;
-  filesize: string; // Directus returns filesize as string or number depending on version, usually number in API V2
-  uploaded_on: string;
-  type: string;
-}
-
-export interface DirectusConfiguration {
-  app_title?: string;
-  app_slogan?: string;
-  app_logo?: string | DirectusFile; // Can be ID or expanded object
-  name?: string;
-  description?: string;
-  system_instruction?: string;
-  primary_color?: string;
-  welcome_message?: string;
-  n8n_webhook_url?: string;
-  temperature?: number;
-  logo?: string | DirectusFile; // Bot avatar
-  app_role?: string; // The ID of the role for new users
-  app_avatar?: string | DirectusFile; // Default avatar for new bots
 }
 
 export interface UserProfile {
@@ -156,13 +110,11 @@ export interface UserProfile {
   profile_telegram?: string;
   profile_website?: string;
   profile_company?: string;
-  // Subscription fields
-  profile_plan?: string | number | any; // Relaxed type to handle ID, String, or Relation Object
+  profile_plan?: string | number | any;
   profile_chatbots?: number;
-  profile_messages?: string;
-  profile_storages?: string;
-  profile_llm?: number; // Renamed from profile_vectors
-  // Subscription timing
+  profile_messages: number;
+  profile_storages: number;
+  profile_llm?: number;
   profile_duration?: 'monthly' | 'yearly';
   profile_start?: string;
   profile_end?: string;
@@ -177,8 +129,8 @@ export interface Plan {
   plan_monthly: number;
   plan_yearly: number;
   plan_bots: number;
-  plan_contents?: number; // NEW: Number of content entries (FAQ/Product)
-  plan_vector?: string; // Kept as string to match DB if needed, though mostly unused in UI math
+  plan_contents?: number;
+  plan_vector?: string;
   plan_copyright?: boolean;
 }
 
@@ -200,36 +152,61 @@ export interface Order {
   order_status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   order_duration: 'monthly' | 'yearly';
   order_amount: string;
-  order_profile: number; // Relation ID to Profile
-  order_plan: number; // Relation ID to Plan
-  order_transaction?: number | Transaction; // Relation ID to Transaction or Object
-  profile_end?: string; // Optional field for order expiration date
+  order_profile: number;
+  order_plan: number;
+  order_transaction?: number | Transaction;
+  profile_end?: string;
 }
 
 export interface LLMJob {
   id: number;
   llm_status: 'ready' | 'start' | 'building' | 'completed' | 'error';
-  llm_file: string | DirectusFile; // Can be ID or the full object
+  llm_file: string | DirectusFile;
   llm_chatbot: number | Chatbot;
   llm_error?: string | null;
   date_created: string;
 }
 
+export interface DirectusFile {
+  id: string;
+  filename_download: string;
+  filesize: string;
+  uploaded_on: string;
+  type: string;
+}
+
+export interface SystemFAQ {
+  id: number;
+  status: string;
+  faq_question: string;
+  faq_answer: string;
+}
+
+export interface FAQItem {
+  id: number;
+  status: string;
+  question: string;
+  answer: string;
+  chatbot: number;
+  is_indexed: boolean;
+  date_created: string;
+}
+
 export interface DirectusSchema {
-  configuration: DirectusConfiguration;
+  configuration: any;
   directus_files: DirectusFile;
   chatbot: Chatbot[];
   llm: LLMJob[];
   profile: UserProfile[];
   plan: Plan[];
-  content: ContentItem[]; // Replaces faq_items
-  faq_items: FAQItem[];
+  content: ContentItem[];
   order: Order[];
   transaction: Transaction[];
   faq: SystemFAQ[];
+  faq_items: FAQItem[];
 }
 
-export type TabType = 'dashboard' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout' | 'orders' | 'payment_verify';
+export type TabType = 'dashboard' | 'logs' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout' | 'orders' | 'payment_verify';
 
 export interface Message {
   id: string;
