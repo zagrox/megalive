@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ArrowRight, FileText, Layers, CheckCircle2, Loader2, AlertCircle, Clock, RefreshCw, PauseCircle } from 'lucide-react';
+import { ArrowRight, FileText, Layers, CheckCircle2, Loader2, AlertCircle, Clock, RefreshCw, PauseCircle, Trash2 } from 'lucide-react';
 import { ProcessedFile, BuildStatus } from '../../types';
 
 interface FileDetailsProps {
@@ -8,6 +7,7 @@ interface FileDetailsProps {
   onBack: () => void;
   onBuild: (fileId: string, llmJobId?: number) => void;
   onPause: (file: ProcessedFile) => void;
+  onDelete: (file: ProcessedFile) => void;
   isBuilding: boolean;
   isPausing: boolean;
 }
@@ -43,7 +43,9 @@ const StatusBadge: React.FC<{ status: BuildStatus, error?: string | null }> = ({
     }
 };
 
-const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onBuild, onPause, isBuilding, isPausing }) => {
+const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onBuild, onPause, onDelete, isBuilding, isPausing }) => {
+    const isCSV = file.name.toLowerCase().endsWith('.csv');
+    const canDelete = file.buildStatus === 'idle' || file.buildStatus === 'ready' || file.buildStatus === 'error';
 
     const ActionButton: React.FC = () => {
         if (isPausing) {
@@ -73,28 +75,50 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onBuild, onPaus
 
             case 'error':
                  return (
-                    <button
-                        onClick={() => onBuild(file.id, file.llmJobId)}
-                        disabled={isBuilding}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-60"
-                    >
-                        {isBuilding ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
-                        <span>{isBuilding ? 'درخواست مجدد...' : 'پردازش مجدد'}</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {!isCSV && (
+                            <button
+                                onClick={() => onBuild(file.id, file.llmJobId)}
+                                disabled={isBuilding}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-60"
+                            >
+                                {isBuilding ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                                <span>{isBuilding ? 'درخواست مجدد...' : 'پردازش مجدد'}</span>
+                            </button>
+                        )}
+                        <button
+                            onClick={() => onDelete(file)}
+                            className="flex items-center gap-2 px-5 py-2.5 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 font-medium transition-colors"
+                        >
+                            <Trash2 size={18} />
+                            <span>حذف فایل</span>
+                        </button>
+                    </div>
                 );
 
             case 'ready':
             case 'idle':
             default:
                 return (
-                    <button
-                        onClick={() => onBuild(file.id, file.llmJobId)}
-                        disabled={isBuilding}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-60"
-                    >
-                        {isBuilding ? <Loader2 size={18} className="animate-spin" /> : <Layers size={18} />}
-                        <span>{isBuilding ? 'در حال ارسال...' : 'پردازش فایل'}</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {!isCSV && (
+                            <button
+                                onClick={() => onBuild(file.id, file.llmJobId)}
+                                disabled={isBuilding}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-60"
+                            >
+                                {isBuilding ? <Loader2 size={18} className="animate-spin" /> : <Layers size={18} />}
+                                <span>{isBuilding ? 'در حال ارسال...' : 'پردازش فایل'}</span>
+                            </button>
+                        )}
+                        <button
+                            onClick={() => onDelete(file)}
+                            className="flex items-center gap-2 px-5 py-2.5 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 font-medium transition-colors"
+                        >
+                            <Trash2 size={18} />
+                            <span>حذف فایل</span>
+                        </button>
+                    </div>
                 );
         }
     };
@@ -138,13 +162,28 @@ const FileDetails: React.FC<FileDetailsProps> = ({ file, onBack, onBuild, onPaus
                 </dl>
             </div>
 
-            {file.buildStatus !== 'completed' && (
+            {(file.buildStatus !== 'completed' || isCSV) && (
                 <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
                     <h4 className="font-semibold text-gray-800 dark:text-white">عملیات فایل</h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
                         عملیات مورد نظر را بر روی این فایل اجرا کنید.
                     </p>
                     <ActionButton />
+                </div>
+            )}
+
+            {isCSV && (
+                <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-4 rounded-xl flex items-start gap-3">
+                        <AlertCircle className="text-emerald-600 dark:text-emerald-400 mt-0.5" size={18} />
+                        <div>
+                            <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">فایل داده‌ای شناسایی شد</p>
+                            <p className="text-xs text-emerald-700 dark:text-emerald-400/80 leading-relaxed mt-1">
+                                این فایل با فرمت CSV است. فایل‌های CSV به جای پردازش به عنوان سند، باید مستقیماً به بخش "مدیریت محتوا" وارد شوند. 
+                                برای این کار از دکمه "وارد کردن محتوا" در لیست فایل‌ها استفاده کنید.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

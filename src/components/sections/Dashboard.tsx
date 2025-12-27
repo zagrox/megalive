@@ -1,10 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-    Activity, Server, ArrowUpRight, Palette, Settings, Database, Rocket, Puzzle, ArrowLeft,
-    MessageSquare, Send, Table, LayoutTemplate, Bot, RefreshCw, FileText, HardDrive, List, ChevronLeft, BookOpenCheck
+    Activity, Server, ArrowUpRight, Palette, Settings, Database, Rocket, 
+    MessageSquare, Send, Table, LayoutTemplate, Bot, RefreshCw, FileText, HardDrive, List, ChevronLeft, BookOpenCheck, Clock,
+    // FIX: Added missing Lucide icons Puzzle and ArrowLeft
+    Puzzle, ArrowLeft
 } from 'lucide-react';
-import { TabType, Chatbot } from '../../types';
+import { TabType, Chatbot, ChatbotActivityEntry } from '../../types';
 import { getAssetUrl } from '../../services/directus';
 
 interface DashboardProps {
@@ -12,6 +13,60 @@ interface DashboardProps {
   selectedChatbot: Chatbot | null;
   onRefresh: () => Promise<void>;
 }
+
+const RecentMessagesTicker: React.FC<{ logs: ChatbotActivityEntry[] }> = ({ logs }) => {
+    const [index, setIndex] = useState(0);
+
+    useEffect(() => {
+        if (logs.length <= 1) return;
+        const interval = setInterval(() => {
+            setIndex((prev) => (prev + 1) % logs.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [logs.length]);
+
+    if (logs.length === 0) return null;
+
+    const currentLog = logs[index];
+    const timeDisplay = new Date(currentLog.t).toLocaleTimeString('fa-IR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
+    return (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm overflow-hidden flex items-center gap-4 h-16 group transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            {/* Indicator Badge */}
+            <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest hidden sm:block">
+                Recent
+            </div>
+
+            <div className="flex-shrink-0 text-gray-400 dark:text-gray-600">
+                <MessageSquare size={18} />
+            </div>
+
+            {/* Ticker Content */}
+            <div className="flex-1 overflow-hidden relative h-6">
+                <div 
+                    key={index}
+                    className="flex items-center gap-3 animate-slide-down-fade h-full"
+                >
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate flex-1 text-right">
+                        {currentLog.q}
+                    </p>
+                    <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-mono whitespace-nowrap bg-gray-50 dark:bg-gray-800/50 px-2 py-0.5 rounded border border-gray-100 dark:border-gray-800">
+                        <Clock size={10} />
+                        {timeDisplay}
+                    </div>
+                </div>
+            </div>
+
+            {/* View All Indicator */}
+            <div className="flex-shrink-0 text-gray-300 dark:text-gray-700 group-hover:text-blue-500 transition-colors">
+                <ChevronLeft size={16} />
+            </div>
+        </div>
+    );
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   setActiveTab,
@@ -222,9 +277,11 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
+    
+
       {/* Row 1: Bot Management */}
       <div>
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">مدیریت چت‌بات</h3>
+        {/* <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">مدیریت چت‌بات</h3> */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {quickAccessCards.map((card) => (
                 <button 
@@ -257,9 +314,26 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Row 2: Integrations */}
+      {/* Row 2: Recent Activity (Ticker Style) */}
       <div>
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">اتصال چت‌بات</h3>
+        {activityLog.length === 0 ? (
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-12 text-center opacity-40 shadow-sm">
+                <MessageSquare size={48} className="mx-auto mb-4" />
+                <p className="text-sm font-medium">هنوز فعالیتی ثبت نشده است</p>
+            </div>
+        ) : (
+            <button 
+                onClick={() => setActiveTab('logs')}
+                className="w-full block text-right"
+            >
+                <RecentMessagesTicker logs={activityLog} />
+            </button>
+        )}
+      </div>
+
+      {/* Row 3: Integrations */}
+      <div>
+        {/* <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6">اتصال چت‌بات</h3> */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {integrationStatus.map((item, index) => (
                 <button
@@ -290,41 +364,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Row 3: Recent Activity (Full Width Grid) - Showing up to 50 items */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-               مکالمات جدید
-            </h3>
-            <button 
-                onClick={() => setActiveTab('logs')}
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline"
-            >
-                مشاهده همه <ChevronLeft size={12} />
-            </button>
-        </div>
-        
-        {activityLog.length === 0 ? (
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-12 text-center opacity-40 shadow-sm">
-                <MessageSquare size={48} className="mx-auto mb-4" />
-                <p className="text-sm font-medium">هنوز فعالیتی ثبت نشده است</p>
-            </div>
-        ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {activityLog.slice(0, 50).map((log, index) => (
-                    <div 
-                        key={index} 
-                        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all animate-fade-in" 
-                        style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                        <p className="text-xs text-gray-700 dark:text-gray-200 leading-relaxed font-medium line-clamp-3">
-                            {log.q}
-                        </p>
-                    </div>
-                ))}
-            </div>
-        )}
-      </div>
+      
     </div>
   );
 };
