@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock, Activity } from 'lucide-react';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock, Activity, BarChart3 } from 'lucide-react';
 import { TabType, Chatbot, Plan } from '../types';
 import { User } from '../context/AuthContext';
 import { fetchPricingPlans } from '../services/configService';
@@ -56,6 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const menuItems: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'داشبورد چت‌بات', icon: <LayoutDashboard size={20} /> },
+    { id: 'insights', label: 'تحلیل و آمار', icon: <BarChart3 size={20} /> },
     { id: 'general', label: 'تنظیمات عمومی', icon: <Settings size={20} /> },
     { id: 'appearance', label: 'ظاهر چت‌بات', icon: <Palette size={20} /> },
     { id: 'content-manager', label: 'مدیریت محتوا', icon: <BookOpenCheck size={20} /> },
@@ -107,11 +107,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className={`p-4 flex items-center gap-4 border-b border-gray-200 dark:border-gray-800 h-[65px] ${isCollapsed ? 'justify-center' : ''}`}>
         {appLogoUrl ? (
-           <div className="w-9 h-9 rounded-lg overflow-hidden shadow-lg shadow-blue-600/20 flex-shrink-0 bg-white dark:bg-gray-800 p-0.5">
+           <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-gray-800 p-0.5">
               <img 
                 src={appLogoUrl} 
                 alt="App Logo" 
-                className="w-full h-full object-contain dark:invert" 
+                className="w-full h-full object-contain" 
                 referrerPolicy="no-referrer"
               />
            </div>

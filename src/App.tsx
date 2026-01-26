@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/sections/Dashboard';
 import ActivityLogs from './components/sections/ActivityLogs';
+import Insights from './components/sections/Insights';
 import GeneralSettings from './components/sections/GeneralSettings';
 import AppearanceSettings from './components/sections/AppearanceSettings';
 import KnowledgeBase from './components/sections/KnowledgeBase';
@@ -315,6 +315,9 @@ const App: React.FC = () => {
               )}
               {!isPlanExpired && activeTab === 'logs' && (
                 <ActivityLogs selectedChatbot={selectedChatbot} />
+              )}
+              {!isPlanExpired && activeTab === 'insights' && (
+                <Insights selectedChatbot={selectedChatbot} />
               )}
               {!isPlanExpired && activeTab === 'manage-bots' && (
                 <ManageBots chatbots={chatbots} onUpdateChatbot={handleUpdateChatbot} onSelectChatbot={handleSelectChatbot} setActiveTab={setActiveTab} onCreateChatbot={handleCreateChatbot} />
