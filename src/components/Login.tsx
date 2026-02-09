@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Lock, Mail, ArrowLeft, Loader2, KeyRound, CheckCircle2, ArrowRight, UserPlus, User } from 'lucide-react';
@@ -127,11 +126,12 @@ const Login: React.FC = () => {
         <div className="bg-blue-600 dark:bg-blue-700 p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <div className="relative z-10">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-inner">
-              {view === 'login' && <Lock className="text-white" size={32} />}
-              {view === 'register' && <UserPlus className="text-white" size={32} />}
-              {view === 'forgot' && <KeyRound className="text-white" size={32} />}
-              {view === 'reset' && <CheckCircle2 className="text-white" size={32} />}
+            <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-xl overflow-hidden border border-white/30">
+              <img 
+                src="https://crm.megalive.ir/assets/591ec94d-48d1-4748-85bd-c24953d501c0" 
+                alt="MegaLive AI Logo" 
+                className="w-full h-full object-contain p-4"
+              />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">
               {view === 'login' ? 'MegaLive' : 
