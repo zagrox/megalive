@@ -18,7 +18,6 @@ export const fetchUserChatbots = async (): Promise<Chatbot[]> => {
 
 /**
  * Aggregates stats from all user chatbots and updates the global profile.
- * Now strictly uses Numbers to match Integer field types.
  */
 export const syncProfileStats = async (userId: string): Promise<void> => {
   try {
@@ -26,14 +25,13 @@ export const syncProfileStats = async (userId: string): Promise<void> => {
     const bots = await directus.request(readItems('chatbot', {
       filter: { user_created: { _eq: userId } },
       fields: ['chatbot_llm', 'chatbot_messages', 'chatbot_storage']
-    })) as Chatbot[];
+    })) as unknown as Chatbot[];
 
     let totalLlm = 0;
     let totalMessages = 0;
     let totalStorage = 0;
 
     bots.forEach(bot => {
-      // Use Number() and logical OR to prevent undefined/null issues
       totalLlm += Number(bot.chatbot_llm || 0);
       totalMessages += Number(bot.chatbot_messages || 0);
       totalStorage += Number(bot.chatbot_storage || 0);
@@ -44,7 +42,7 @@ export const syncProfileStats = async (userId: string): Promise<void> => {
       filter: { user_created: { _eq: userId } },
       limit: 1,
       fields: ['id']
-    }));
+    })) as unknown as any[];
 
     if (profiles && profiles.length > 0) {
       const profileId = profiles[0].id;
@@ -63,27 +61,25 @@ export const syncProfileStats = async (userId: string): Promise<void> => {
 
 /**
  * Syncs the 'chatbot_llm' count with actual physical files in the folder.
- * Also triggers a global profile sync.
  */
 export const recalculateChatbotStats = async (chatbotId: number): Promise<Chatbot | null> => {
   try {
     // @ts-ignore
-    const chatbot = await directus.request(readItem('chatbot', chatbotId)) as Chatbot;
+    const chatbot = await directus.request(readItem('chatbot', chatbotId)) as unknown as Chatbot;
     if (!chatbot) return null;
 
     let folderId = chatbot.chatbot_folder;
     if (!folderId && chatbot.chatbot_slug) {
         // @ts-ignore
-        const llmFolders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } } }));
+        const llmFolders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } } })) as unknown as any[];
         const llmFolderId = llmFolders[0]?.id;
         if (llmFolderId) {
             // @ts-ignore
             const botFolders = await directus.request(readFolders({ 
                 filter: { _and: [ { parent: { _eq: llmFolderId } }, { name: { _eq: chatbot.chatbot_slug } } ] } 
-            }));
+            })) as unknown as any[];
             if (botFolders && botFolders.length > 0) {
                 folderId = botFolders[0].id;
-                // Auto-fix link
                 // @ts-ignore
                 await directus.request(updateItem('chatbot', chatbotId, { chatbot_folder: folderId }));
             }
@@ -93,29 +89,26 @@ export const recalculateChatbotStats = async (chatbotId: number): Promise<Chatbo
     let updatedBot = chatbot;
 
     if (folderId) {
-        // Count files and calculate size
         // @ts-ignore
         const files = await directus.request(readFiles({
             filter: { folder: { _eq: folderId } },
             limit: -1,
             fields: ['id', 'filesize']
-        })) as { id: string, filesize: string }[];
+        })) as unknown as { id: string, filesize: string }[];
         
         const fileCount = files.length;
         const totalBytes = files.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
         const totalMB = Math.ceil(totalBytes / (1024 * 1024));
 
-        // Update bot if files or storage changed
         if (chatbot.chatbot_llm !== fileCount || Number(chatbot.chatbot_storage || 0) !== totalMB) {
             // @ts-ignore
             updatedBot = await directus.request(updateItem('chatbot', chatbotId, {
                 chatbot_llm: fileCount,
                 chatbot_storage: totalMB
-            })) as Chatbot;
+            })) as unknown as Chatbot;
         }
     }
 
-    // Always trigger profile sync to catch background message increments
     await syncProfileStats(chatbot.user_created);
     
     return updatedBot;
@@ -130,13 +123,12 @@ export const createChatbot = async (name: string, slug: string, businessName: st
     let defaultAvatar = null;
     try {
         // @ts-ignore
-        const config = await directus.request(readSingleton('configuration', { fields: ['app_avatar'] }));
+        const config = await directus.request(readSingleton('configuration', { fields: ['app_avatar'] })) as any;
         if (config && config.app_avatar) {
             defaultAvatar = typeof config.app_avatar === 'object' ? config.app_avatar.id : config.app_avatar;
         }
     } catch (e) { /* ignore */ }
 
-    // Create with numeric defaults
     // @ts-ignore
     const result = await directus.request(createItem('chatbot', {
       chatbot_name: name,
@@ -149,25 +141,24 @@ export const createChatbot = async (name: string, slug: string, businessName: st
       chatbot_storage: 0,
       chatbot_llm: 0,
       chatbot_logo: defaultAvatar
-    }));
+    })) as unknown as Chatbot;
 
     try {
       // @ts-ignore
-      const folders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } }, limit: 1 }));
+      const folders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } }, limit: 1 })) as any[];
       if (folders && folders.length > 0) {
         const parentId = folders[0].id;
         // @ts-ignore
-        const newFolder = await directus.request(createFolder({ name: slug, parent: parentId }));
+        const newFolder = await directus.request(createFolder({ name: slug, parent: parentId })) as any;
         if (newFolder && newFolder.id) {
             // @ts-ignore
             await directus.request(updateItem('chatbot', result.id, { chatbot_folder: newFolder.id }));
-            // @ts-ignore
             result.chatbot_folder = newFolder.id;
         }
       }
     } catch (fErr) { /* ignore */ }
 
-    return result as Chatbot;
+    return result;
   } catch (error) {
     console.error('Error creating chatbot:', error);
     throw error;

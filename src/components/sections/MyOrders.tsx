@@ -33,12 +33,12 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
           // @ts-ignore
           directus.request(readItems('order', {
             sort: ['-date_created'],
-            fields: ['id', 'date_created', 'order_status', 'order_amount', 'order_duration', 'order_plan', 'order_transaction']
+            fields: ['*']
           }))
         ]);
 
         setPlans(fetchedPlans);
-        setOrders(fetchedOrders as Order[]);
+        setOrders(fetchedOrders as unknown as Order[]);
       } catch (err: any) {
         console.error("Failed to load orders:", JSON.stringify(err, null, 2));
         const msg = err?.errors?.[0]?.message || "خطا در دریافت لیست سفارش‌ها.";
@@ -67,7 +67,6 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onRenew }) => {
         setOrders(prev => prev.filter(o => o.id !== id));
     } catch (err: any) {
         console.error("Delete failed:", err);
-        // Assuming permission error if it fails on non-completed
         setError('خطا در حذف سفارش. ممکن است دسترسی لازم را نداشته باشید.');
     } finally {
         setDeletingId(null);

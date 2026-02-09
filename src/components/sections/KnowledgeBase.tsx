@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chatbot, DirectusFile, LLMJob, ProcessedFile, BuildStatus, ContentItem } from '../../types';
 import { directus, getAssetUrl } from '../../services/directus';
@@ -87,7 +88,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       }
 
       try {
-        const llmFolders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } } }));
+        const llmFolders = await directus.request(readFolders({ filter: { name: { _eq: 'llm' } } })) as any[];
         const llmFolderId = llmFolders[0]?.id;
 
         if (!llmFolderId) {
@@ -96,7 +97,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
              return;
         }
 
-        const botFolders = await directus.request(readFolders({ filter: { _and: [ { parent: { _eq: llmFolderId } }, { name: { _eq: selectedChatbot.chatbot_slug } } ] } }));
+        const botFolders = await directus.request(readFolders({ filter: { _and: [ { parent: { _eq: llmFolderId } }, { name: { _eq: selectedChatbot.chatbot_slug } } ] } })) as any[];
 
         if (botFolders && botFolders.length > 0) {
             setFolderId(botFolders[0].id);
@@ -133,7 +134,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         const result = await directus.request(readItems('llm', {
           fields: ['*', { llm_file: ['id'] }],
           filter: { llm_chatbot: { _eq: selectedChatbot.id } },
-        })) as LLMJob[];
+        })) as unknown as LLMJob[];
         setLlmJobs(result);
       } catch (err) {
         console.warn("Polling for LLM jobs failed:", err);
@@ -161,11 +162,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         }))
       ]);
 
-      const fetchedFiles = filesResult as DirectusFile[];
+      const fetchedFiles = filesResult as unknown as DirectusFile[];
       const fileCount = fetchedFiles.length;
 
       setFiles(fetchedFiles);
-      setLlmJobs(jobsResult as LLMJob[]);
+      setLlmJobs(jobsResult as unknown as LLMJob[]);
 
       const currentTotalBytes = fetchedFiles.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
       const currentTotalMB = Math.ceil(currentTotalBytes / (1024 * 1024));
@@ -199,7 +200,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
             filter: { folder: { _eq: folderId } },
             limit: -1,
             fields: ['id', 'filesize']
-        })) as { id: string, filesize: string }[];
+        })) as unknown as { id: string, filesize: string }[];
         
         const count = filesList.length;
         const totalBytes = filesList.reduce((acc, f) => acc + (Number(f.filesize) || 0), 0);
@@ -219,7 +220,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
   const processedFiles: ProcessedFile[] = useMemo(() => {
     return files.map(file => {
-      const job = llmJobs.find(j => (j.llm_file as DirectusFile)?.id === file.id || j.llm_file === file.id);
+      const job = llmJobs.find(j => (j.llm_file as any)?.id === file.id || j.llm_file === file.id);
       return {
         id: file.id,
         name: file.filename_download,
@@ -285,14 +286,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
       formData.append('folder', folderId);
       formData.append('file', file);
       
-      const uploadedFile = await directus.request(uploadFiles(formData)) as DirectusFile;
+      const uploadedFile = await directus.request(uploadFiles(formData)) as unknown as DirectusFile;
 
       const newJobPayload = {
           llm_chatbot: selectedChatbot.id,
           llm_file: uploadedFile.id,
           llm_status: 'ready' as const,
       };
-      const newJob = await directus.request(createItem('llm', newJobPayload)) as LLMJob;
+      const newJob = await directus.request(createItem('llm', newJobPayload)) as unknown as LLMJob;
       setLlmJobs(prev => [newJob, ...prev]);
       
       setFiles(prev => [uploadedFile, ...prev.filter(f => f.id !== optimisticFileId)]);
@@ -322,7 +323,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
     try {
       if (llmJobId) {
-        const updatedJob = await directus.request(updateItem('llm', llmJobId, { llm_status: 'start' }, { fields: ['*', { llm_file: ['id'] }] })) as LLMJob;
+        const updatedJob = await directus.request(updateItem('llm', llmJobId, { llm_status: 'start' }, { fields: ['*', { llm_file: ['id'] }] })) as unknown as LLMJob;
         setLlmJobs(prev => prev.map(j => j.id === llmJobId ? updatedJob : j));
       } else {
         const newJobPayload = {
@@ -330,7 +331,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
             llm_file: fileId,
             llm_status: 'start' as const,
         };
-        const newJob = await directus.request(createItem('llm', newJobPayload, { fields: ['*', { llm_file: ['id'] }] })) as LLMJob;
+        const newJob = await directus.request(createItem('llm', newJobPayload, { fields: ['*', { llm_file: ['id'] }] })) as unknown as LLMJob;
         setLlmJobs(prev => [newJob, ...prev]);
       }
     } catch (err: any) {
@@ -347,7 +348,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
 
     setPausingFileId(file.id);
     try {
-        const updatedJob = await directus.request(updateItem('llm', file.llmJobId, { llm_status: 'ready' }, { fields: ['*', { llm_file: ['id'] }] })) as LLMJob;
+        const updatedJob = await directus.request(updateItem('llm', file.llmJobId, { llm_status: 'ready' }, { fields: ['*', { llm_file: ['id'] }] })) as unknown as LLMJob;
         setLlmJobs(prev => prev.map(j => j.id === file.llmJobId ? updatedJob : j));
     } catch (err) {
         console.error("Failed to pause job:", err);
@@ -378,35 +379,21 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
         setModalState(null);
         setIsLoading(true);
         try {
-          /**
-           * STEP 1: Delete the LLM Job record first.
-           * This is a custom collection, so permissions are usually less restricted 
-           * than core collections. This ensures the file is removed from the bot immediately.
-           */
           if (file.llmJobId) {
             // @ts-ignore
             await directus.request(deleteItem('llm', String(file.llmJobId)));
-            
-            // Update UI immediately to reflect the link removal
             setLlmJobs(prev => prev.filter(j => j.id !== file.llmJobId));
             setFiles(prev => prev.filter(f => f.id !== file.id));
           }
 
-          /**
-           * STEP 2: Attempt cleanup of the core file.
-           * Wrapped in try/catch to silently fail if core permissions block it.
-           * We use the specialized 'deleteFile' helper for the core collection.
-           */
           try {
             // @ts-ignore
             await directus.request(deleteFile(file.id));
-            // Ensure state is cleared if not already cleared by step 1
             setFiles(prev => prev.filter(f => f.id !== file.id));
           } catch (fileErr) {
             console.warn("Core file deletion suppressed:", fileErr);
           }
 
-          // Refresh aggregated stats
           await updateBotStats();
           setViewingFile(null);
         } catch (err: any) {
@@ -479,7 +466,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // CSV Parsing helper (Standard regex for CSV splitting including quoted fields)
+  // CSV Parsing helper
   const parseCSVLine = (line: string) => {
       const result = [];
       let start = 0;
@@ -509,7 +496,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
           const rows = lines.map(line => parseCSVLine(line));
           
           setImportRows(rows);
-          // Auto-suggest type based on columns
           if (rows[0]?.length >= 5) setImportType('product');
           else setImportType('faq');
 
@@ -539,16 +525,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
               return item;
           });
 
-          // 1. Perform bulk insert
           // @ts-ignore
           await directus.request(createItems('content', payload));
           
-          // 2. Mark LLM Job as 'completed' to show visual feedback
           if (importingFile.llmJobId) {
              try {
                 // @ts-ignore
-                const updatedJob = await directus.request(updateItem('llm', importingFile.llmJobId, { llm_status: 'completed' }));
-                setLlmJobs(prev => prev.map(j => j.id === importingFile.llmJobId ? (updatedJob as LLMJob) : j));
+                const updatedJob = await directus.request(updateItem('llm', importingFile.llmJobId, { llm_status: 'completed' })) as unknown as LLMJob;
+                setLlmJobs(prev => prev.map(j => j.id === importingFile.llmJobId ? updatedJob : j));
              } catch (jobErr) {
                 console.warn("Failed to update job status after import:", jobErr);
              }
@@ -577,7 +561,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
   const StatusAndActionButton: React.FC<{ file: ProcessedFile }> = ({ file }) => {
     const isBuildingThis = buildingFileId === file.id;
     const isCSV = file.name.toLowerCase().endsWith('.csv');
-    const isImported = isCSV && file.buildStatus === 'completed';
     
     const onBuildClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -618,9 +601,9 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
                         <span>بروزرسانی محتوا</span>
                     </button>
                 )}
-                <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full font-medium ${isImported ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30' : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'}`}>
+                <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full font-medium ${isCSV && file.buildStatus === 'completed' ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30' : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'}`}>
                     <CheckCircle2 size={14} />
-                    {isImported ? 'محتوا وارد شده' : 'آماده'}
+                    {isCSV && file.buildStatus === 'completed' ? 'محتوا وارد شده' : 'آماده'}
                 </span>
             </div>
         );
@@ -693,12 +676,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ selectedChatbot, onUpdate
                     const isPausing = pausingFileId === file.id;
                     const isProcessing = file.buildStatus === 'start' || file.buildStatus === 'building';
                     const isCSV = file.name.toLowerCase().endsWith('.csv');
-                    const isImported = isCSV && file.buildStatus === 'completed';
 
                     return (
-                      <div key={file.id} onClick={() => setViewingFile(file)} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-all duration-300 cursor-pointer ${isPausing ? 'opacity-70 bg-amber-50 dark:bg-amber-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} ${isImported ? 'bg-emerald-50/10 dark:bg-emerald-900/5' : ''}`}>
+                      <div key={file.id} onClick={() => setViewingFile(file)} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-all duration-300 cursor-pointer ${isPausing ? 'opacity-70 bg-amber-50 dark:bg-amber-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'} ${isCSV && file.buildStatus === 'completed' ? 'bg-emerald-50/10 dark:bg-emerald-900/5' : ''}`}>
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isImported ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'}`}><FileText size={20} /></div>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isCSV && file.buildStatus === 'completed' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'}`}><FileText size={20} /></div>
                           <div className="min-w-0">
                               <p className="font-medium text-gray-800 dark:text-gray-200 text-sm truncate">{file.name}</p>
                               <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
