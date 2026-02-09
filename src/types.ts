@@ -206,7 +206,7 @@ export interface DirectusSchema {
   faq_items: FAQItem[];
 }
 
-export type TabType = 'dashboard' | 'logs' | 'insights' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout' | 'orders' | 'payment_verify';
+export type TabType = 'dashboard' | 'logs' | 'insights' | 'general' | 'appearance' | 'knowledge' | 'content-manager' | 'integrations' | 'deploy' | 'profile' | 'create-bot' | 'manage-bots' | 'pricing' | 'checkout' | 'orders' | 'payment_verify' | 'roadmap';
 
 export interface Message {
   id: string;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -17,6 +18,7 @@ import Pricing from './components/sections/Pricing';
 import Checkout from './components/sections/Checkout';
 import MyOrders from './components/sections/MyOrders';
 import PaymentVerify from './components/sections/PaymentVerify';
+import Roadmap from './components/sections/Roadmap'; // Import the new component
 import ChatPreview from './components/ChatPreview';
 import Login from './components/Login';
 import { DEFAULT_CONFIG } from './constants';
@@ -142,11 +144,9 @@ const App: React.FC = () => {
     }
   }, [user?.id, isPlanExpired]);
 
-  // Background Auto-Sync: Updates profile stats every 60 seconds
   useEffect(() => {
     if (user?.id) {
       const interval = setInterval(async () => {
-        console.log("Auto-syncing profile stats...");
         await syncProfileStats(user.id);
         await refreshUser();
       }, 60000); 
@@ -212,11 +212,8 @@ const App: React.FC = () => {
 
   const handleRefreshChatbots = async () => {
     if (selectedChatbot && user?.id) {
-        // 1. Recalculate physical stats (files/storage) for current bot
         await recalculateChatbotStats(selectedChatbot.id);
-        // 2. Explicitly trigger global profile sync (messages/aggregation)
         await syncProfileStats(user.id);
-        // 3. Refresh user context to update sidebar UI
         await refreshUser();
     }
     const bots = await fetchUserChatbots();
@@ -277,7 +274,7 @@ const App: React.FC = () => {
   const showPreview = !isPlanExpired && ['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy'].includes(activeTab);
 
   return (
-    <div className="fixed inset-0 flex w-full bg-gray-50 dark:bg-gray-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
+    <div className="fixed inset-0 flex w-full bg-gray-50 dark:bg-slate-950 font-vazir text-right transition-colors duration-300 overflow-hidden" dir="rtl">
       <Sidebar 
         appTitle={config.appTitle}
         appSlogan={config.appSlogan}
@@ -322,8 +319,8 @@ const App: React.FC = () => {
               {!isPlanExpired && activeTab === 'manage-bots' && (
                 <ManageBots chatbots={chatbots} onUpdateChatbot={handleUpdateChatbot} onSelectChatbot={handleSelectChatbot} setActiveTab={setActiveTab} onCreateChatbot={handleCreateChatbot} />
               )}
-              {['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout', 'orders', 'payment_verify'].includes(activeTab) && (
-                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' || activeTab === 'checkout' || activeTab === 'orders' || activeTab === 'payment_verify' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
+              {['general', 'appearance', 'knowledge', 'content-manager', 'integrations', 'deploy', 'profile', 'create-bot', 'pricing', 'checkout', 'orders', 'payment_verify', 'roadmap'].includes(activeTab) && (
+                  <div className={`mx-auto ${activeTab === 'profile' || activeTab === 'pricing' || activeTab === 'checkout' || activeTab === 'orders' || activeTab === 'payment_verify' || activeTab === 'roadmap' ? 'max-w-5xl' : activeTab === 'create-bot' ? 'max-w-2xl' : 'max-w-3xl'}`}>
                     {!isPlanExpired && activeTab === 'create-bot' && <CreateBot onSubmit={handleSubmitCreateChatbot} onCancel={chatbots.length > 0 ? () => setActiveTab('dashboard') : undefined} currentChatbotCount={chatbots.length} onShowPricing={() => setActiveTab('pricing')} />}
                     {!isPlanExpired && activeTab === 'general' && <GeneralSettings selectedChatbot={selectedChatbot} onUpdateChatbot={handleUpdateChatbot} onPreviewUpdate={handlePreviewUpdate} />}
                     {!isPlanExpired && activeTab === 'appearance' && <AppearanceSettings selectedChatbot={selectedChatbot} onUpdateChatbot={handleUpdateChatbot} onPreviewUpdate={handlePreviewUpdate} />}
@@ -331,6 +328,7 @@ const App: React.FC = () => {
                     {!isPlanExpired && activeTab === 'content-manager' && <ContentManager selectedChatbot={selectedChatbot} />}
                     {!isPlanExpired && activeTab === 'integrations' && <Integrations />}
                     {!isPlanExpired && activeTab === 'deploy' && <Deploy selectedChatbot={selectedChatbot} />}
+                    {!isPlanExpired && activeTab === 'roadmap' && <Roadmap />}
                     {activeTab === 'profile' && <Profile />}
                     {activeTab === 'pricing' && <Pricing onSelectPlan={handleSelectPlan} />}
                     {activeTab === 'checkout' && <Checkout plan={checkoutPlan} onBack={() => setActiveTab('pricing')} onSuccess={() => setActiveTab('orders')} />}

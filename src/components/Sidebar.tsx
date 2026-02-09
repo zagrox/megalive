@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock, Activity, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Settings, Palette, Database, Puzzle, Rocket, ChevronLeft, Box, Bot, ChevronDown, Check, Plus, List, MessageSquare, BookOpenCheck, Lock, Activity, BarChart3, Milestone, User } from 'lucide-react';
 import { TabType, Chatbot, Plan } from '../types';
-import { User } from '../context/AuthContext';
+import { User as AuthUser } from '../context/AuthContext';
 import { fetchPricingPlans } from '../services/configService';
+import { getAssetUrl } from '../services/directus';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -16,7 +17,7 @@ interface SidebarProps {
   selectedChatbot: Chatbot | null;
   onSelectChatbot: (bot: Chatbot) => void;
   onCreateChatbot: () => void;
-  user: User | null;
+  user: AuthUser | null;
   isPlanExpired?: boolean;
 }
 
@@ -130,148 +131,146 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="px-3 pt-3 pb-1 relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsBotDropdownOpen(!isBotDropdownOpen)}
-            className={`w-full flex items-center gap-2 p-2 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-400 dark:hover:border-blue-600 transition-all ${isBotDropdownOpen ? 'ring-2 ring-blue-100 dark:ring-blue-900 border-blue-400' : ''} bg-gray-50 dark:bg-gray-800/50 ${isCollapsed ? 'justify-center aspect-square p-0' : ''}`}
+            className={`w-full flex items-center gap-2 p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all ${isCollapsed ? 'justify-center' : ''}`}
           >
-              <div className={`w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0`}>
-                <Bot size={18} />
-              </div>
-              
-              {!isCollapsed && (
-                  <>
-                    <div className="flex flex-col items-start overflow-hidden flex-1 min-w-0">
-                        <span className="text-[10px] text-gray-400 font-medium">چت‌بات فعال</span>
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-full text-right">
-                            {selectedChatbot?.chatbot_name || 'انتخاب...'}
-                        </span>
-                    </div>
-                    <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 transition-transform ${isBotDropdownOpen ? 'rotate-180' : ''}`} />
-                  </>
-              )}
+            <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm shrink-0 overflow-hidden">
+                {selectedChatbot?.chatbot_logo ? (
+                    <img src={getAssetUrl(selectedChatbot.chatbot_logo)} alt="Bot" className="w-full h-full object-cover" />
+                ) : (
+                    <Bot size={18} />
+                )}
+            </div>
+            {!isCollapsed && (
+              <>
+                <div className="flex-1 text-right min-w-0">
+                  <p className="text-xs font-bold text-gray-800 dark:text-white truncate">{selectedChatbot?.chatbot_name || 'انتخاب ربات'}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{selectedChatbot?.chabot_title || 'دستیار هوشمند'}</p>
+                </div>
+                <ChevronDown size={14} className={`text-gray-400 transition-transform ${isBotDropdownOpen ? 'rotate-180' : ''}`} />
+              </>
+            )}
           </button>
 
-          {/* Dropdown Menu */}
-          {isBotDropdownOpen && (
-              <div className={`absolute z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden animate-fade-in mt-2
-                 ${isCollapsed ? 'right-full -mr-2 top-0 w-56 ml-3 origin-top-right' : 'left-3 right-3 origin-top'}
-              `}>
-                  <div className="py-1 max-h-60 overflow-y-auto custom-scrollbar">
-                      {chatbots.length > 0 ? chatbots.map(bot => (
-                          <button 
-                              key={bot.id}
-                              onClick={() => { onSelectChatbot(bot); setIsBotDropdownOpen(false); }}
-                              disabled={isPlanExpired}
-                              className={`w-full text-right px-3 py-2 flex items-center gap-2 transition-colors ${isPlanExpired ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                          >
-                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${bot.chatbot_active ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></span>
-                              <span className={`text-sm truncate flex-1 ${selectedChatbot?.id === bot.id ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                                  {bot.chatbot_name}
-                              </span>
-                              {selectedChatbot?.id === bot.id && <Check size={14} className="text-blue-600 dark:text-blue-400" />}
-                          </button>
-                      )) : (
-                         <div className="p-3 text-xs text-gray-400 text-center">لیست خالی</div>
-                      )}
-                  </div>
-                  <div className="border-t border-gray-100 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950 flex flex-col gap-2">
-                      <button 
-                          onClick={() => { onCreateChatbot(); setIsBotDropdownOpen(false); }}
-                          disabled={isPlanExpired}
-                          className={`w-full flex items-center justify-center gap-2 text-xs font-bold bg-white dark:bg-gray-800 border py-2.5 rounded-lg transition-colors shadow-sm
-                            ${isPlanExpired 
-                                ? 'border-gray-200 text-gray-400 cursor-not-allowed opacity-70' 
-                                : 'text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900 hover:bg-blue-50 dark:hover:bg-blue-900/20'}
-                          `}
-                      >
-                          {isPlanExpired ? <Lock size={14} /> : <Plus size={14} />}
-                          ساخت چت‌بات جدید
-                      </button>
-                      {!isPlanExpired && (
-                        <button 
-                            onClick={() => { setActiveTab('manage-bots'); setIsBotDropdownOpen(false); }}
-                            className="w-full flex items-center justify-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-2.5 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm group"
-                        >
-                            <List size={14} className="text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white transition-colors" />
-                            مدیریت چت‌بات‌ها
-                        </button>
-                      )}
-                  </div>
+          {/* Chatbot Dropdown */}
+          {!isCollapsed && isBotDropdownOpen && (
+            <div className="absolute top-full left-3 right-3 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
+              <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                {chatbots.map((bot) => (
+                  <button
+                    key={bot.id}
+                    onClick={() => {
+                      onSelectChatbot(bot);
+                      setIsBotDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-right ${selectedChatbot?.id === bot.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center shrink-0 overflow-hidden border border-gray-100 dark:border-gray-800">
+                        {bot.chatbot_logo ? (
+                             <img src={getAssetUrl(bot.chatbot_logo)} alt="Bot" className="w-full h-full object-cover" />
+                        ) : (
+                             <Bot size={16} />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">{bot.chatbot_name}</p>
+                      <p className="text-[10px] opacity-70 truncate">{bot.chabot_title}</p>
+                    </div>
+                    {selectedChatbot?.id === bot.id && <Check size={14} />}
+                  </button>
+                ))}
               </div>
+              <div className="p-1 border-t border-gray-100 dark:border-gray-800">
+                <button 
+                  onClick={() => {
+                    onCreateChatbot();
+                    setIsBotDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors text-right"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                    <Plus size={16} />
+                  </div>
+                  <span className="text-xs font-bold">ساخت ربات جدید</span>
+                </button>
+              </div>
+            </div>
           )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 lg:p-3 space-y-1.5 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar">
         {menuItems.map((item) => {
-          const isDisabled = isPlanExpired;
+          const isActive = activeTab === item.id;
           return (
             <button
-                key={item.id}
-                onClick={() => !isDisabled && setActiveTab(item.id)}
-                disabled={isDisabled}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${isCollapsed ? 'justify-center' : ''}
-                ${isDisabled 
-                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-70' 
-                    : activeTab === item.id
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              disabled={isPlanExpired && !['pricing', 'orders', 'profile'].includes(item.id)}
+              className={`
+                w-full flex items-center gap-3 p-2.5 rounded-xl transition-all group relative
+                ${isActive 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400'
                 }
-                `}
+                ${isCollapsed ? 'justify-center' : ''}
+                ${isPlanExpired && !['pricing', 'orders', 'profile'].includes(item.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}
+              `}
+              title={isCollapsed ? item.label : ''}
             >
-                <div className="flex-shrink-0 relative">
-                    {item.icon}
-                    {isDisabled && (
-                        <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-900 rounded-full p-0.5">
-                            <Lock size={10} className="text-red-500" />
-                        </div>
-                    )}
-                </div>
-                <span className={`whitespace-nowrap text-sm transition-all duration-200 ${isCollapsed ? 'hidden' : 'block'}`}>
-                {item.label}
-                </span>
-                {isCollapsed && (
-                <div className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg flex items-center gap-1">
-                    {isDisabled && <Lock size={10} />}
-                    {item.label}
-                </div>
-                )}
+              <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                {item.icon}
+              </div>
+              {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+              {isActive && !isCollapsed && (
+                <div className="absolute left-2 w-1.5 h-1.5 bg-white rounded-full"></div>
+              )}
+              {isPlanExpired && !['pricing', 'orders', 'profile'].includes(item.id) && !isCollapsed && (
+                <Lock size={12} className="mr-auto text-gray-400" />
+              )}
             </button>
           );
         })}
-      </nav>
+      </div>
 
-      {/* Footer Actions (Messages Usage Widget) */}
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-        <div className={`bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-          {!isCollapsed ? (
-            <div className="overflow-hidden">
-              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-2 whitespace-nowrap flex items-center gap-2">
-                <MessageSquare size={16} className="text-gray-400" />
-                پیام‌های مصرفی
-              </p>
-              <div className="w-full bg-white dark:bg-gray-900 rounded-full h-1.5 mb-2 overflow-hidden border border-gray-100 dark:border-gray-700">
-                <div 
-                  className="bg-blue-600 h-full rounded-full transition-all duration-500" 
-                  style={{ width: `${usagePercent}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between items-center text-[10px] font-mono whitespace-nowrap" dir="ltr">
-                <span className="text-blue-600 dark:text-blue-400 font-bold">{currentMessages.toLocaleString('en-US')}</span>
-                <span className="text-gray-300 dark:text-gray-600 mx-1">/</span>
-                <span className="text-gray-500 dark:text-gray-400">{limitMessages.toLocaleString('en-US')}</span>
-              </div>
+      {/* Usage Indicator */}
+      {!isCollapsed && (
+        <div className="p-4 mx-3 mb-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+               <MessageSquare size={14} />
+               <span className="text-[10px] font-bold">مصرف پیام</span>
             </div>
-          ) : (
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-1.5 h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative" title={`مصرف: ${Math.round(usagePercent)}%`}>
-                    <div className="absolute bottom-0 w-full bg-blue-600 transition-all duration-500" style={{ height: `${usagePercent}%` }}></div>
-                </div>
-                <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">{Math.round(usagePercent)}%</span>
-              </div>
+            <span className="text-[10px] font-mono text-gray-500">{currentMessages} / {limitMessages}</span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
+            <div 
+                className={`h-full rounded-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-blue-500'}`} 
+                style={{ width: `${usagePercent}%` }}
+            ></div>
+          </div>
+          {usagePercent > 80 && (
+             <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-2 font-medium">نزدیک به سقف مجاز پیام</p>
           )}
         </div>
+      )}
+
+      {/* User Status / Footer */}
+      <div className={`p-4 border-t border-gray-100 dark:border-gray-800 ${isCollapsed ? 'flex justify-center' : ''}`}>
+         <div className={`flex items-center gap-3 ${isCollapsed ? '' : 'bg-gray-50 dark:bg-gray-800/30 p-2 rounded-xl border border-gray-100 dark:border-gray-800'}`}>
+            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+               <User size={18} />
+            </div>
+            {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-gray-800 dark:text-white truncate">{user?.first_name || 'کاربر'} {user?.last_name || ''}</p>
+                    <p className="text-[9px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                </div>
+            )}
+         </div>
       </div>
     </div>
   );
 };
 
+// FIX: Added the missing default export for Sidebar component
 export default Sidebar;
